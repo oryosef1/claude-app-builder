@@ -19,7 +19,8 @@
       "Bash(npm run build:*)",
       "Bash(npm run preview:*)",
       "Bash(npm test)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(kill:*)"
     ],
     "deny": []
   }

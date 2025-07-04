@@ -13,17 +13,23 @@ describe('MemoryEditor Component', () => {
   }
 
   it('displays memory content in preview mode', () => {
-    render(React.createElement(MemoryEditor, defaultProps))
+    act(() => {
+      render(React.createElement(MemoryEditor, defaultProps))
+    })
     expect(screen.getByText(mockMemoryContent)).toBeInTheDocument()
   })
 
   it('has edit button', () => {
-    render(React.createElement(MemoryEditor, defaultProps))
+    act(() => {
+      render(React.createElement(MemoryEditor, defaultProps))
+    })
     expect(screen.getByText('Edit')).toBeInTheDocument()
   })
 
   it('enters edit mode when edit button clicked', async () => {
-    render(React.createElement(MemoryEditor, defaultProps))
+    act(() => {
+      render(React.createElement(MemoryEditor, defaultProps))
+    })
     
     await act(async () => {
       fireEvent.click(screen.getByText('Edit'))
@@ -33,7 +39,9 @@ describe('MemoryEditor Component', () => {
   })
 
   it('shows save and cancel buttons in edit mode', async () => {
-    render(React.createElement(MemoryEditor, defaultProps))
+    act(() => {
+      render(React.createElement(MemoryEditor, defaultProps))
+    })
     
     await act(async () => {
       fireEvent.click(screen.getByText('Edit'))
@@ -46,7 +54,9 @@ describe('MemoryEditor Component', () => {
   it('calls onChange when save button clicked', async () => {
     const user = userEvent.setup()
     const mockOnChange = vi.fn()
-    render(React.createElement(MemoryEditor, { ...defaultProps, onChange: mockOnChange }))
+    act(() => {
+      render(React.createElement(MemoryEditor, { ...defaultProps, onChange: mockOnChange }))
+    })
     
     await act(async () => {
       fireEvent.click(screen.getByText('Edit'))
@@ -67,7 +77,9 @@ describe('MemoryEditor Component', () => {
   })
 
   it('cancels editing when cancel button clicked', async () => {
-    render(React.createElement(MemoryEditor, defaultProps))
+    act(() => {
+      render(React.createElement(MemoryEditor, defaultProps))
+    })
     
     await act(async () => {
       fireEvent.click(screen.getByText('Edit'))
@@ -82,7 +94,9 @@ describe('MemoryEditor Component', () => {
   })
 
   it('renders memory editor heading', () => {
-    render(React.createElement(MemoryEditor, defaultProps))
+    act(() => {
+      render(React.createElement(MemoryEditor, defaultProps))
+    })
     expect(screen.getByText('Memory Editor')).toBeInTheDocument()
   })
 })

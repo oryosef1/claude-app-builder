@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import React from 'react'
 import App from '../../src/App'
@@ -7,17 +7,24 @@ import App from '../../src/App'
 describe('Dashboard E2E Tests', () => {
   it('complete workflow management flow', async () => {
     const user = userEvent.setup()
-    render(React.createElement(App))
+    let component
+    await act(async () => {
+      component = render(React.createElement(App))
+    })
     
     // Start at dashboard
     expect(screen.getByText(/Claude App Builder Dashboard/i)).toBeInTheDocument()
     
     // Navigate to todo management
-    fireEvent.click(screen.getByText('Todo'))
+    await act(async () => {
+      fireEvent.click(screen.getByText('Todo'))
+    })
     
     // Add a new todo
-    await user.type(screen.getByPlaceholderText('New todo...'), 'Test new feature')
-    fireEvent.click(screen.getByText('Add Todo'))
+    await act(async () => {
+      await user.type(screen.getByPlaceholderText('New todo...'), 'Test new feature')
+      fireEvent.click(screen.getByText('Add Todo'))
+    })
     
     // Verify todo was added
     await waitFor(() => {
@@ -25,10 +32,14 @@ describe('Dashboard E2E Tests', () => {
     })
     
     // Navigate to workflow control
-    fireEvent.click(screen.getByText('Workflow'))
+    await act(async () => {
+      fireEvent.click(screen.getByText('Workflow'))
+    })
     
     // Start workflow
-    fireEvent.click(screen.getByText('Start Workflow'))
+    await act(async () => {
+      fireEvent.click(screen.getByText('Start Workflow'))
+    })
     
     // Verify workflow status changes
     await waitFor(() => {
@@ -36,7 +47,9 @@ describe('Dashboard E2E Tests', () => {
     })
     
     // Navigate to logs
-    fireEvent.click(screen.getByText('Logs'))
+    await act(async () => {
+      fireEvent.click(screen.getByText('Logs'))
+    })
     
     // Should show workflow logs
     await waitFor(() => {
@@ -46,20 +59,31 @@ describe('Dashboard E2E Tests', () => {
 
   it('memory editing workflow', async () => {
     const user = userEvent.setup()
-    render(React.createElement(App))
+    let component
+    await act(async () => {
+      component = render(React.createElement(App))
+    })
     
     // Navigate to memory editor
-    fireEvent.click(screen.getByText('Memory'))
+    await act(async () => {
+      fireEvent.click(screen.getByText('Memory'))
+    })
     
     // Edit memory content
-    fireEvent.click(screen.getByText('Edit'))
+    await act(async () => {
+      fireEvent.click(screen.getByText('Edit'))
+    })
     
     const textarea = screen.getByRole('textbox')
-    await user.clear(textarea)
-    await user.type(textarea, '# Updated Memory\n\nThis is updated content')
+    await act(async () => {
+      await user.clear(textarea)
+      await user.type(textarea, '# Updated Memory\n\nThis is updated content')
+    })
     
     // Save changes
-    fireEvent.click(screen.getByText('Save'))
+    await act(async () => {
+      fireEvent.click(screen.getByText('Save'))
+    })
     
     // Verify content was saved
     await waitFor(() => {
@@ -68,13 +92,20 @@ describe('Dashboard E2E Tests', () => {
   })
 
   it('real-time status updates', async () => {
-    render(React.createElement(App))
+    let component
+    await act(async () => {
+      component = render(React.createElement(App))
+    })
     
     // Navigate to workflow control
-    fireEvent.click(screen.getByText('Workflow'))
+    await act(async () => {
+      fireEvent.click(screen.getByText('Workflow'))
+    })
     
     // Start workflow
-    fireEvent.click(screen.getByText('Start Workflow'))
+    await act(async () => {
+      fireEvent.click(screen.getByText('Start Workflow'))
+    })
     
     // Status should update to running
     await waitFor(() => {
@@ -82,7 +113,9 @@ describe('Dashboard E2E Tests', () => {
     })
     
     // Navigate to dashboard - should still show running status
-    fireEvent.click(screen.getByText('Dashboard'))
+    await act(async () => {
+      fireEvent.click(screen.getByText('Dashboard'))
+    })
     await waitFor(() => {
       expect(screen.getByText(/Status: running/i)).toBeInTheDocument()
     })
@@ -90,17 +123,26 @@ describe('Dashboard E2E Tests', () => {
 
   it('log filtering and search', async () => {
     const user = userEvent.setup()
-    render(React.createElement(App))
+    let component
+    await act(async () => {
+      component = render(React.createElement(App))
+    })
     
     // Navigate to logs
-    fireEvent.click(screen.getByText('Logs'))
+    await act(async () => {
+      fireEvent.click(screen.getByText('Logs'))
+    })
     
     // Search logs
-    await user.type(screen.getByPlaceholderText('Search logs...'), 'error')
+    await act(async () => {
+      await user.type(screen.getByPlaceholderText('Search logs...'), 'error')
+    })
     
     // Filter by level
-    fireEvent.click(screen.getByText('All Levels'))
-    fireEvent.click(screen.getByText('Error'))
+    await act(async () => {
+      fireEvent.click(screen.getByText('All Levels'))
+      fireEvent.click(screen.getByText('Error'))
+    })
     
     // Only error logs should be visible
     await waitFor(() => {
@@ -110,7 +152,9 @@ describe('Dashboard E2E Tests', () => {
   })
 
   it('responsive navigation', async () => {
-    render(React.createElement(App))
+    act(() => {
+      render(React.createElement(App))
+    })
     
     // All navigation items should be visible
     expect(screen.getByText('Dashboard')).toBeInTheDocument()
@@ -121,7 +165,6 @@ describe('Dashboard E2E Tests', () => {
     
     // Navigation should be accessible
     const nav = screen.getByRole('navigation')
-    expect(nav).toBeInTheDocument()
     expect(nav).toBeInTheDocument()
   })
 })

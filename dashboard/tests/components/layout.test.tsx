@@ -1,21 +1,40 @@
 import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, act } from '@testing-library/react'
+import { BrowserRouter } from 'react-router-dom'
 import React from 'react'
 import Layout from '../../src/components/Layout'
 
 describe('Layout Component', () => {
   it('renders sidebar navigation', () => {
-    render(React.createElement(Layout, { children: React.createElement('div', {}, 'Test Content') }))
+    act(() => {
+      render(
+        React.createElement(BrowserRouter, {},
+          React.createElement(Layout, { children: React.createElement('div', {}, 'Test Content') })
+        )
+      )
+    })
     expect(screen.getByRole('navigation')).toBeInTheDocument()
   })
 
   it('renders main content area', () => {
-    render(React.createElement(Layout, { children: React.createElement('div', { 'data-testid': 'content' }, 'Test Content') }))
+    act(() => {
+      render(
+        React.createElement(BrowserRouter, {},
+          React.createElement(Layout, { children: React.createElement('div', { 'data-testid': 'content' }, 'Test Content') })
+        )
+      )
+    })
     expect(screen.getByTestId('content')).toBeInTheDocument()
   })
 
   it('displays navigation links', () => {
-    render(React.createElement(Layout, { children: React.createElement('div') }))
+    act(() => {
+      render(
+        React.createElement(BrowserRouter, {},
+          React.createElement(Layout, { children: React.createElement('div') })
+        )
+      )
+    })
     expect(screen.getByText('Dashboard')).toBeInTheDocument()
     expect(screen.getByText('Workflow')).toBeInTheDocument()
     expect(screen.getByText('Todo')).toBeInTheDocument()
@@ -24,7 +43,15 @@ describe('Layout Component', () => {
   })
 
   it('has proper CSS classes', () => {
-    const { container } = render(React.createElement(Layout, { children: React.createElement('div') }))
+    let container
+    act(() => {
+      const result = render(
+        React.createElement(BrowserRouter, {},
+          React.createElement(Layout, { children: React.createElement('div') })
+        )
+      )
+      container = result.container
+    })
     expect(container.querySelector('.layout')).toBeInTheDocument()
     expect(container.querySelector('.sidebar')).toBeInTheDocument()
     expect(container.querySelector('.main-content')).toBeInTheDocument()

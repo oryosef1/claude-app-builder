@@ -17,8 +17,8 @@ export declare class LogService extends EventEmitter {
     warn(message: string, metadata?: Record<string, unknown>): Promise<void>;
     error(message: string, metadata?: Record<string, unknown>): Promise<void>;
     debug(message: string, metadata?: Record<string, unknown>): Promise<void>;
-    getLogs(limit?: number, level?: string): LogEntry[];
-    clearLogs(): void;
+    getLogs(options?: any): Promise<LogEntry[]>;
+    clearLogs(): Promise<boolean>;
     private generateId;
     private writeToFile;
     loadLogsFromFile(): Promise<void>;

@@ -28,6 +28,17 @@ export class WorkflowController {
     try {
       const command = req.body as WorkflowCommand;
       
+      // Check if command exists
+      if (!command || !command.action) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Command is required',
+          timestamp: new Date()
+        };
+        res.status(400).json(response);
+        return;
+      }
+      
       // Validate command action
       const validActions = ['start', 'stop', 'pause', 'resume'];
       if (!validActions.includes(command.action)) {
@@ -64,7 +75,7 @@ export class WorkflowController {
       const level = req.query.level as string;
 
       // Validate pagination parameters
-      if (isNaN(page) || isNaN(limit) || page < 1 || limit < 1) {
+      if (isNaN(page) || isNaN(limit) || page < 1 || limit < 1 || limit > 100) {
         const response: ApiResponse = {
           success: false,
           error: 'Invalid pagination parameters',

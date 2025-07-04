@@ -13,7 +13,7 @@ export interface ProcessResult {
 }
 export declare class ProcessManager extends EventEmitter {
     private processes;
-    executeProcess(options: ProcessOptions): Promise<ProcessResult>;
+    executeProcess(command?: string, args?: string[], options?: any): Promise<ProcessResult>;
     killProcess(pid: number): boolean;
     getRunningProcesses(): number[];
     killAllProcesses(): void;

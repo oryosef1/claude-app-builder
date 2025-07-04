@@ -16,33 +16,43 @@ describe('WorkflowLogs Component', () => {
   }
 
   it('displays log messages', () => {
-    render(React.createElement(WorkflowLogs, defaultProps))
+    act(() => {
+      render(React.createElement(WorkflowLogs, defaultProps))
+    })
     expect(screen.getByText('Test log message 1')).toBeInTheDocument()
     expect(screen.getByText('Test error message')).toBeInTheDocument()
   })
 
   it('shows log timestamps', () => {
-    render(React.createElement(WorkflowLogs, defaultProps))
+    act(() => {
+      render(React.createElement(WorkflowLogs, defaultProps))
+    })
     expect(screen.getByText('2023-01-01T10:00:00Z')).toBeInTheDocument()
     expect(screen.getByText('2023-01-01T10:01:00Z')).toBeInTheDocument()
   })
 
   it('displays log levels', () => {
-    render(React.createElement(WorkflowLogs, defaultProps))
+    act(() => {
+      render(React.createElement(WorkflowLogs, defaultProps))
+    })
     expect(screen.getByText('info')).toBeInTheDocument()
     expect(screen.getByText('error')).toBeInTheDocument()
     expect(screen.getByText('warning')).toBeInTheDocument()
   })
 
   it('shows log roles', () => {
-    render(React.createElement(WorkflowLogs, defaultProps))
+    act(() => {
+      render(React.createElement(WorkflowLogs, defaultProps))
+    })
     expect(screen.getByText('[test-writer]')).toBeInTheDocument()
     expect(screen.getByText('[developer]')).toBeInTheDocument()
   })
 
   it('has clear logs button', async () => {
     const mockOnClear = vi.fn()
-    render(React.createElement(WorkflowLogs, { ...defaultProps, onClear: mockOnClear }))
+    act(() => {
+      render(React.createElement(WorkflowLogs, { ...defaultProps, onClear: mockOnClear }))
+    })
     
     await act(async () => {
       fireEvent.click(screen.getByText('Clear Logs'))
@@ -52,18 +62,26 @@ describe('WorkflowLogs Component', () => {
   })
 
   it('renders workflow logs heading', () => {
-    render(React.createElement(WorkflowLogs, defaultProps))
+    act(() => {
+      render(React.createElement(WorkflowLogs, defaultProps))
+    })
     expect(screen.getByText('Workflow Logs')).toBeInTheDocument()
   })
 
   it('shows empty state when no logs', () => {
-    render(React.createElement(WorkflowLogs, { ...defaultProps, logs: [] }))
+    act(() => {
+      render(React.createElement(WorkflowLogs, { ...defaultProps, logs: [] }))
+    })
     expect(screen.getByText('Workflow Logs')).toBeInTheDocument()
     expect(screen.getByText('Clear Logs')).toBeInTheDocument()
   })
 
   it('applies proper CSS classes to log entries', () => {
-    const { container } = render(React.createElement(WorkflowLogs, defaultProps))
+    let container
+    act(() => {
+      const result = render(React.createElement(WorkflowLogs, defaultProps))
+      container = result.container
+    })
     expect(container.querySelector('.log-entry.info')).toBeInTheDocument()
     expect(container.querySelector('.log-entry.error')).toBeInTheDocument()
     expect(container.querySelector('.log-entry.warning')).toBeInTheDocument()

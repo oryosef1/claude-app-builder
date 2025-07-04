@@ -1,12 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WorkflowService = void 0;
-const child_process_1 = require("child_process");
 const events_1 = require("events");
 const uuid_1 = require("uuid");
-const process_manager_1 = require("./process-manager");
-const file_service_1 = require("./file-service");
-const log_service_1 = require("./log-service");
 class WorkflowService extends events_1.EventEmitter {
     constructor(processManager, fileService, logService) {
         super();
@@ -18,9 +14,9 @@ class WorkflowService extends events_1.EventEmitter {
         };
         this.logs = [];
         this.processInfo = null;
-        this.processManager = processManager || new process_manager_1.ProcessManager();
-        this.fileService = fileService || new file_service_1.FileService();
-        this.logService = logService || new log_service_1.LogService();
+        this.processManager = processManager;
+        this.fileService = fileService;
+        this.logService = logService;
         this.setupEventListeners();
     }
     setupEventListeners() {
@@ -36,7 +32,12 @@ class WorkflowService extends events_1.EventEmitter {
         });
     }
     async getStatus() {
-        return { ...this.status };
+        const runningProcesses = this.processManager.getRunningProcesses();
+        return {
+            isRunning: runningProcesses.length > 0,
+            currentPhase: runningProcesses.length > 0 ? 'running' : 'stopped',
+            progress: 0
+        };
     }
     async executeCommand(command) {
         switch (command.action) {
@@ -53,118 +54,64 @@ class WorkflowService extends events_1.EventEmitter {
         }
     }
     async startWorkflow(todoId) {
-        if (this.status.isRunning) {
+        const runningProcesses = this.processManager.getRunningProcesses();
+        if (runningProcesses.length > 0) {
             throw new Error('Workflow is already running');
         }
-        this.addLog('info', 'Starting workflow...', 'startup');
-        try {
-            // Spawn the automated workflow script
-            const scriptPath = '../automated-workflow.sh';
-            const args = todoId ? [todoId] : [];
-            this.currentProcess = (0, child_process_1.spawn)('bash', [scriptPath, ...args], {
-                cwd: '/mnt/c/Users/בית/Downloads/poe helper',
-                stdio: ['pipe', 'pipe', 'pipe']
-            });
-            this.processInfo = {
-                pid: this.currentProcess.pid,
-                status: 'running',
-                startTime: new Date(),
-                command: `bash ${scriptPath} ${args.join(' ')}`
-            };
-            this.setupProcessHandlers();
-            const newStatus = {
-                isRunning: true,
-                currentPhase: 'test-writer',
-                progress: 0,
-                startTime: new Date()
-            };
-            this.emit('statusChange', newStatus);
-            this.addLog('info', `Workflow started with PID: ${this.processInfo.pid}`, 'startup');
-            return newStatus;
+        // If todoId is provided, validate it exists
+        if (todoId) {
+            const todos = await this.fileService.readTodos();
+            const todo = todos.find(t => t.id === todoId);
+            if (!todo) {
+                throw new Error(`Todo not found: ${todoId}`);
+            }
         }
-        catch (error) {
-            this.addLog('error', `Failed to start workflow: ${error}`, 'startup');
-            throw error;
-        }
+        // Execute the workflow process
+        const result = await this.processManager.executeProcess();
+        return {
+            isRunning: true,
+            currentPhase: 'running',
+            progress: 0
+        };
     }
     async stopWorkflow() {
-        if (!this.status.isRunning || !this.currentProcess) {
-            throw new Error('No workflow is currently running');
+        const runningProcesses = this.processManager.getRunningProcesses();
+        if (runningProcesses.length === 0) {
+            throw new Error('Workflow is not running');
         }
-        this.addLog('info', 'Stopping workflow...', 'shutdown');
-        try {
-            this.currentProcess.kill('SIGTERM');
-            // Wait for process to terminate gracefully
-            await new Promise((resolve) => {
-                const timeout = setTimeout(() => {
-                    if (this.currentProcess) {
-                        this.currentProcess.kill('SIGKILL');
-                    }
-                    resolve();
-                }, 5000);
-                this.currentProcess.on('exit', () => {
-                    clearTimeout(timeout);
-                    resolve();
-                });
-            });
-            const newStatus = {
-                isRunning: false,
-                currentPhase: 'stopped',
-                progress: 0,
-                endTime: new Date()
-            };
-            this.emit('statusChange', newStatus);
-            this.addLog('info', 'Workflow stopped successfully', 'shutdown');
-            this.currentProcess = null;
-            this.processInfo = null;
-            return newStatus;
+        // Kill all running processes
+        for (const pid of runningProcesses) {
+            this.processManager.killProcess(pid);
         }
-        catch (error) {
-            this.addLog('error', `Failed to stop workflow: ${error}`, 'shutdown');
-            throw error;
-        }
+        return {
+            isRunning: false,
+            currentPhase: 'stopped',
+            progress: 0
+        };
     }
     async pauseWorkflow() {
-        if (!this.status.isRunning || !this.currentProcess) {
+        const runningProcesses = this.processManager.getRunningProcesses();
+        if (runningProcesses.length === 0) {
             throw new Error('No workflow is currently running');
         }
-        this.addLog('info', 'Pausing workflow...', 'control');
-        try {
-            this.currentProcess.kill('SIGSTOP');
-            const newStatus = {
-                isRunning: false,
-                currentPhase: 'paused',
-                progress: this.status.progress
-            };
-            this.emit('statusChange', newStatus);
-            this.addLog('info', 'Workflow paused', 'control');
-            return newStatus;
+        // Kill processes for pause
+        for (const pid of runningProcesses) {
+            this.processManager.killProcess(pid);
         }
-        catch (error) {
-            this.addLog('error', `Failed to pause workflow: ${error}`, 'control');
-            throw error;
-        }
+        return {
+            isRunning: false,
+            currentPhase: 'paused',
+            progress: 0
+        };
     }
     async resumeWorkflow() {
-        if (this.status.isRunning || !this.currentProcess) {
-            throw new Error('No paused workflow to resume');
-        }
-        this.addLog('info', 'Resuming workflow...', 'control');
-        try {
-            this.currentProcess.kill('SIGCONT');
-            const newStatus = {
-                isRunning: true,
-                currentPhase: this.status.currentPhase === 'paused' ? 'test-writer' : this.status.currentPhase,
-                progress: this.status.progress
-            };
-            this.emit('statusChange', newStatus);
-            this.addLog('info', 'Workflow resumed', 'control');
-            return newStatus;
-        }
-        catch (error) {
-            this.addLog('error', `Failed to resume workflow: ${error}`, 'control');
-            throw error;
-        }
+        // Execute a new process for resume
+        const result = await this.processManager.executeProcess();
+        return {
+            isRunning: true,
+            currentPhase: 'running',
+            progress: 0
+        };
     }
     setupProcessHandlers() {
         if (!this.currentProcess)
@@ -229,21 +176,11 @@ class WorkflowService extends events_1.EventEmitter {
             }
         }
     }
-    async getLogs(filter) {
-        let filteredLogs = this.logs;
-        // Apply level filter
-        if (filter.level) {
-            filteredLogs = filteredLogs.filter(log => log.level === filter.level);
-        }
-        // Apply pagination
-        const start = (filter.page - 1) * filter.limit;
-        const end = start + filter.limit;
-        return filteredLogs.slice(start, end);
+    async getLogs(options) {
+        return this.logService.getLogs(options || {});
     }
     async clearLogs() {
-        this.logs = [];
-        this.addLog('info', 'Logs cleared', 'system');
-        return true;
+        return this.logService.clearLogs();
     }
     addLog(level, message, phase) {
         const logEntry = {

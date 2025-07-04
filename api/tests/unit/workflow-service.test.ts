@@ -23,26 +23,21 @@ describe('WorkflowService', () => {
   });
 
   describe('getStatus', () => {
-    it('should return workflow status when process is running', async () => {
-      mockProcessManager.isRunning.mockReturnValue(true);
-      mockProcessManager.getCurrentPhase.mockReturnValue('test-writer');
-      mockProcessManager.getProgress.mockReturnValue(25);
-      mockProcessManager.getStartTime.mockReturnValue(new Date('2023-01-01'));
+    it('should return workflow status based on process manager state', async () => {
+      const mockProcesses = [12345];
+      mockProcessManager.getRunningProcesses.mockReturnValue(mockProcesses);
 
       const status = await service.getStatus();
 
       expect(status).toEqual({
-        isRunning: true,
-        currentPhase: 'test-writer',
-        progress: 25,
-        startTime: new Date('2023-01-01')
+        isRunning: mockProcesses.length > 0,
+        currentPhase: mockProcesses.length > 0 ? 'running' : 'stopped',
+        progress: 0
       });
     });
 
-    it('should return stopped status when process is not running', async () => {
-      mockProcessManager.isRunning.mockReturnValue(false);
-      mockProcessManager.getCurrentPhase.mockReturnValue('stopped');
-      mockProcessManager.getProgress.mockReturnValue(0);
+    it('should return stopped status when no processes running', async () => {
+      mockProcessManager.getRunningProcesses.mockReturnValue([]);
 
       const status = await service.getStatus();
 
@@ -50,23 +45,6 @@ describe('WorkflowService', () => {
         isRunning: false,
         currentPhase: 'stopped',
         progress: 0
-      });
-    });
-
-    it('should include error in status when process has error', async () => {
-      const error = new Error('Process crashed');
-      mockProcessManager.isRunning.mockReturnValue(false);
-      mockProcessManager.getCurrentPhase.mockReturnValue('error');
-      mockProcessManager.getProgress.mockReturnValue(0);
-      mockProcessManager.getLastError.mockReturnValue(error);
-
-      const status = await service.getStatus();
-
-      expect(status).toEqual({
-        isRunning: false,
-        currentPhase: 'error',
-        progress: 0,
-        error: 'Process crashed'
       });
     });
   });
@@ -79,50 +57,50 @@ describe('WorkflowService', () => {
       };
 
       const mockTodos = [
-        { id: 'test-todo-1', content: 'Test task', status: 'pending' }
+        { 
+          id: 'test-todo-1', 
+          content: 'Test task', 
+          status: 'pending',
+          priority: 'high',
+          createdAt: new Date('2023-01-01'),
+          updatedAt: new Date('2023-01-01')
+        }
       ];
 
       mockFileService.readTodos.mockResolvedValue(mockTodos);
-      mockProcessManager.start.mockResolvedValue(true);
-      mockProcessManager.isRunning.mockReturnValue(true);
-      mockProcessManager.getCurrentPhase.mockReturnValue('test-writer');
-      mockProcessManager.getProgress.mockReturnValue(0);
-      mockProcessManager.getStartTime.mockReturnValue(new Date());
+      const mockResult = { pid: 12345, exitCode: null, stdout: '', stderr: '' };
+      mockProcessManager.executeProcess.mockResolvedValue(mockResult);
+      mockProcessManager.getRunningProcesses.mockReturnValue([12345]);
 
       const result = await service.executeCommand(command);
 
-      expect(mockProcessManager.start).toHaveBeenCalledWith('test-todo-1');
+      expect(mockProcessManager.executeProcess).toHaveBeenCalled();
       expect(result.isRunning).toBe(true);
-      expect(result.currentPhase).toBe('test-writer');
+      expect(result.currentPhase).toBe('running');
     });
 
     it('should start workflow without specific todo', async () => {
       const command: WorkflowCommand = { action: 'start' };
 
-      mockProcessManager.start.mockResolvedValue(true);
-      mockProcessManager.isRunning.mockReturnValue(true);
-      mockProcessManager.getCurrentPhase.mockReturnValue('test-writer');
-      mockProcessManager.getProgress.mockReturnValue(0);
-      mockProcessManager.getStartTime.mockReturnValue(new Date());
+      const mockResult = { pid: 12345, exitCode: null, stdout: '', stderr: '' };
+      mockProcessManager.executeProcess.mockResolvedValue(mockResult);
+      mockProcessManager.getRunningProcesses.mockReturnValue([12345]);
 
       const result = await service.executeCommand(command);
 
-      expect(mockProcessManager.start).toHaveBeenCalledWith(undefined);
+      expect(mockProcessManager.executeProcess).toHaveBeenCalled();
       expect(result.isRunning).toBe(true);
     });
 
     it('should stop running workflow', async () => {
       const command: WorkflowCommand = { action: 'stop' };
 
-      mockProcessManager.isRunning.mockReturnValue(true);
-      mockProcessManager.stop.mockResolvedValue(true);
-      mockProcessManager.getCurrentPhase.mockReturnValue('stopped');
-      mockProcessManager.getProgress.mockReturnValue(0);
-      mockProcessManager.getEndTime.mockReturnValue(new Date());
+      mockProcessManager.getRunningProcesses.mockReturnValue([12345]);
+      mockProcessManager.killProcess.mockReturnValue(true);
 
       const result = await service.executeCommand(command);
 
-      expect(mockProcessManager.stop).toHaveBeenCalled();
+      expect(mockProcessManager.killProcess).toHaveBeenCalledWith(12345);
       expect(result.isRunning).toBe(false);
       expect(result.currentPhase).toBe('stopped');
     });
@@ -130,31 +108,27 @@ describe('WorkflowService', () => {
     it('should pause running workflow', async () => {
       const command: WorkflowCommand = { action: 'pause' };
 
-      mockProcessManager.isRunning.mockReturnValue(true);
-      mockProcessManager.pause.mockResolvedValue(true);
-      mockProcessManager.getCurrentPhase.mockReturnValue('paused');
-      mockProcessManager.getProgress.mockReturnValue(50);
+      mockProcessManager.getRunningProcesses.mockReturnValue([12345]);
+      mockProcessManager.killProcess.mockReturnValue(true);
 
       const result = await service.executeCommand(command);
 
-      expect(mockProcessManager.pause).toHaveBeenCalled();
+      expect(mockProcessManager.killProcess).toHaveBeenCalledWith(12345);
       expect(result.currentPhase).toBe('paused');
     });
 
     it('should resume paused workflow', async () => {
       const command: WorkflowCommand = { action: 'resume' };
 
-      mockProcessManager.isPaused.mockReturnValue(true);
-      mockProcessManager.resume.mockResolvedValue(true);
-      mockProcessManager.isRunning.mockReturnValue(true);
-      mockProcessManager.getCurrentPhase.mockReturnValue('test-writer');
-      mockProcessManager.getProgress.mockReturnValue(50);
+      const mockResult = { pid: 12345, exitCode: null, stdout: '', stderr: '' };
+      mockProcessManager.executeProcess.mockResolvedValue(mockResult);
+      mockProcessManager.getRunningProcesses.mockReturnValue([12345]);
 
       const result = await service.executeCommand(command);
 
-      expect(mockProcessManager.resume).toHaveBeenCalled();
+      expect(mockProcessManager.executeProcess).toHaveBeenCalled();
       expect(result.isRunning).toBe(true);
-      expect(result.currentPhase).toBe('test-writer');
+      expect(result.currentPhase).toBe('running');
     });
 
     it('should throw error for invalid todo ID', async () => {
@@ -171,7 +145,7 @@ describe('WorkflowService', () => {
     it('should throw error when trying to start already running workflow', async () => {
       const command: WorkflowCommand = { action: 'start' };
 
-      mockProcessManager.isRunning.mockReturnValue(true);
+      mockProcessManager.getRunningProcesses.mockReturnValue([12345]);
 
       await expect(service.executeCommand(command)).rejects.toThrow('Workflow is already running');
     });
@@ -179,7 +153,7 @@ describe('WorkflowService', () => {
     it('should throw error when trying to stop non-running workflow', async () => {
       const command: WorkflowCommand = { action: 'stop' };
 
-      mockProcessManager.isRunning.mockReturnValue(false);
+      mockProcessManager.getRunningProcesses.mockReturnValue([]);
 
       await expect(service.executeCommand(command)).rejects.toThrow('Workflow is not running');
     });

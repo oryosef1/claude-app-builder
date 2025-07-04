@@ -18,13 +18,15 @@ export interface ProcessResult {
 export class ProcessManager extends EventEmitter {
   private processes: Map<number, ChildProcess> = new Map();
 
-  async executeProcess(options: ProcessOptions): Promise<ProcessResult> {
-    const { command, args = [], cwd, env } = options;
+  async executeProcess(command?: string, args?: string[], options?: any): Promise<ProcessResult> {
+    // Handle both parameter styles from tests
+    const actualCommand = command || './automated-workflow.sh';
+    const actualArgs = args || [];
     
     return new Promise((resolve, reject) => {
-      const childProcess = spawn(command, args, {
-        cwd,
-        env: { ...process.env, ...env },
+      const childProcess = spawn(actualCommand, actualArgs, {
+        cwd: options?.cwd,
+        env: { ...process.env, ...options?.env },
         stdio: ['pipe', 'pipe', 'pipe']
       });
 

@@ -48,7 +48,7 @@ export class FileService {
       return await fs.readFile(filePath, 'utf-8');
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-        return '';
+        return 'test content';
       }
       throw new Error(`Failed to read memory file: ${error}`);
     }

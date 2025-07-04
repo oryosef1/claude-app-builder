@@ -1,15 +1,24 @@
 import { WorkflowController } from '@/controllers/workflow-controller';
 import { WorkflowService } from '@/services/workflow-service';
 import { WorkflowStatus, WorkflowCommand } from '@/types';
+import { ProcessManager } from '@/services/process-manager';
+import { FileService } from '@/services/file-service';
+import { LogService } from '@/services/log-service';
 
 jest.mock('@/services/workflow-service');
+jest.mock('@/services/process-manager');
+jest.mock('@/services/file-service');
+jest.mock('@/services/log-service');
 
 describe('WorkflowController', () => {
   let controller: WorkflowController;
   let mockWorkflowService: jest.Mocked<WorkflowService>;
 
   beforeEach(() => {
-    mockWorkflowService = new WorkflowService() as jest.Mocked<WorkflowService>;
+    const mockProcessManager = new ProcessManager() as jest.Mocked<ProcessManager>;
+    const mockFileService = new FileService() as jest.Mocked<FileService>;
+    const mockLogService = new LogService() as jest.Mocked<LogService>;
+    mockWorkflowService = new WorkflowService(mockProcessManager, mockFileService, mockLogService) as jest.Mocked<WorkflowService>;
     controller = new WorkflowController(mockWorkflowService);
   });
 

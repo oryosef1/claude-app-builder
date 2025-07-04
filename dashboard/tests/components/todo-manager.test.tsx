@@ -17,13 +17,17 @@ describe('TodoManager Component', () => {
   }
 
   it('displays todo list', () => {
-    render(React.createElement(TodoManager, defaultProps))
+    act(() => {
+      render(React.createElement(TodoManager, defaultProps))
+    })
     expect(screen.getByText('Test todo 1')).toBeInTheDocument()
     expect(screen.getByText('Test todo 2')).toBeInTheDocument()
   })
 
   it('shows add todo form', () => {
-    render(React.createElement(TodoManager, { ...defaultProps, todos: [] }))
+    act(() => {
+      render(React.createElement(TodoManager, { ...defaultProps, todos: [] }))
+    })
     expect(screen.getByPlaceholderText('New todo...')).toBeInTheDocument()
     expect(screen.getByText('Add Todo')).toBeInTheDocument()
   })
@@ -31,7 +35,9 @@ describe('TodoManager Component', () => {
   it('calls onAddTodo when adding new todo', async () => {
     const user = userEvent.setup()
     const mockOnAddTodo = vi.fn()
-    render(React.createElement(TodoManager, { ...defaultProps, todos: [], onAddTodo: mockOnAddTodo }))
+    act(() => {
+      render(React.createElement(TodoManager, { ...defaultProps, todos: [], onAddTodo: mockOnAddTodo }))
+    })
     
     await act(async () => {
       await user.type(screen.getByPlaceholderText('New todo...'), 'New todo item')
@@ -50,7 +56,9 @@ describe('TodoManager Component', () => {
 
   it('calls onDeleteTodo when deleting todo', async () => {
     const mockOnDeleteTodo = vi.fn()
-    render(React.createElement(TodoManager, { ...defaultProps, onDeleteTodo: mockOnDeleteTodo }))
+    act(() => {
+      render(React.createElement(TodoManager, { ...defaultProps, onDeleteTodo: mockOnDeleteTodo }))
+    })
     
     await act(async () => {
       fireEvent.click(screen.getAllByText('Delete')[0])
@@ -60,7 +68,9 @@ describe('TodoManager Component', () => {
   })
 
   it('shows todo status and priority', () => {
-    render(React.createElement(TodoManager, defaultProps))
+    act(() => {
+      render(React.createElement(TodoManager, defaultProps))
+    })
     expect(screen.getByText('pending')).toBeInTheDocument()
     expect(screen.getByText('high')).toBeInTheDocument()
     expect(screen.getByText('completed')).toBeInTheDocument()
@@ -68,12 +78,16 @@ describe('TodoManager Component', () => {
   })
 
   it('has priority selector in add form', () => {
-    render(React.createElement(TodoManager, { ...defaultProps, todos: [] }))
+    act(() => {
+      render(React.createElement(TodoManager, { ...defaultProps, todos: [] }))
+    })
     expect(screen.getByDisplayValue('Medium')).toBeInTheDocument()
   })
 
   it('renders todo manager heading', () => {
-    render(React.createElement(TodoManager, defaultProps))
+    act(() => {
+      render(React.createElement(TodoManager, defaultProps))
+    })
     expect(screen.getByText('Todo Manager')).toBeInTheDocument()
   })
 })

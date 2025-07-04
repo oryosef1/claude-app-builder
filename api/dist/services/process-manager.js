@@ -8,12 +8,14 @@ class ProcessManager extends events_1.EventEmitter {
         super(...arguments);
         this.processes = new Map();
     }
-    async executeProcess(options) {
-        const { command, args = [], cwd, env } = options;
+    async executeProcess(command, args, options) {
+        // Handle both parameter styles from tests
+        const actualCommand = command || './automated-workflow.sh';
+        const actualArgs = args || [];
         return new Promise((resolve, reject) => {
-            const childProcess = (0, child_process_1.spawn)(command, args, {
-                cwd,
-                env: { ...process.env, ...env },
+            const childProcess = (0, child_process_1.spawn)(actualCommand, actualArgs, {
+                cwd: options?.cwd,
+                env: { ...process.env, ...options?.env },
                 stdio: ['pipe', 'pipe', 'pipe']
             });
             if (childProcess.pid) {

@@ -13,30 +13,40 @@ describe('WorkflowControl Component', () => {
   }
 
   it('renders start button when not running', () => {
-    render(React.createElement(WorkflowControl, defaultProps))
+    act(() => {
+      render(React.createElement(WorkflowControl, defaultProps))
+    })
     expect(screen.getByText('Start Workflow')).toBeInTheDocument()
   })
 
   it('renders control buttons when running', () => {
-    render(React.createElement(WorkflowControl, { ...defaultProps, isRunning: true }))
+    act(() => {
+      render(React.createElement(WorkflowControl, { ...defaultProps, isRunning: true }))
+    })
     expect(screen.getByText('Pause')).toBeInTheDocument()
     expect(screen.getByText('Resume')).toBeInTheDocument()
     expect(screen.getByText('Stop')).toBeInTheDocument()
   })
 
   it('shows current workflow status', () => {
-    render(React.createElement(WorkflowControl, defaultProps))
+    act(() => {
+      render(React.createElement(WorkflowControl, defaultProps))
+    })
     expect(screen.getByText('Status: Stopped')).toBeInTheDocument()
   })
 
   it('shows running status when running', () => {
-    render(React.createElement(WorkflowControl, { ...defaultProps, isRunning: true }))
+    act(() => {
+      render(React.createElement(WorkflowControl, { ...defaultProps, isRunning: true }))
+    })
     expect(screen.getByText('Status: Running')).toBeInTheDocument()
   })
 
   it('calls start workflow when start button clicked', async () => {
     const mockStart = vi.fn()
-    render(React.createElement(WorkflowControl, { ...defaultProps, onStart: mockStart }))
+    act(() => {
+      render(React.createElement(WorkflowControl, { ...defaultProps, onStart: mockStart }))
+    })
     
     await act(async () => {
       fireEvent.click(screen.getByText('Start Workflow'))
@@ -47,7 +57,9 @@ describe('WorkflowControl Component', () => {
 
   it('calls stop workflow when stop button clicked', async () => {
     const mockStop = vi.fn()
-    render(React.createElement(WorkflowControl, { ...defaultProps, isRunning: true, onStop: mockStop }))
+    act(() => {
+      render(React.createElement(WorkflowControl, { ...defaultProps, isRunning: true, onStop: mockStop }))
+    })
     
     await act(async () => {
       fireEvent.click(screen.getByText('Stop'))
@@ -58,7 +70,9 @@ describe('WorkflowControl Component', () => {
 
   it('calls pause workflow when pause button clicked', async () => {
     const mockPause = vi.fn()
-    render(React.createElement(WorkflowControl, { ...defaultProps, isRunning: true, onPause: mockPause }))
+    act(() => {
+      render(React.createElement(WorkflowControl, { ...defaultProps, isRunning: true, onPause: mockPause }))
+    })
     
     await act(async () => {
       fireEvent.click(screen.getByText('Pause'))
@@ -69,7 +83,9 @@ describe('WorkflowControl Component', () => {
 
   it('calls resume workflow when resume button clicked', async () => {
     const mockResume = vi.fn()
-    render(React.createElement(WorkflowControl, { ...defaultProps, isRunning: true, onResume: mockResume }))
+    act(() => {
+      render(React.createElement(WorkflowControl, { ...defaultProps, isRunning: true, onResume: mockResume }))
+    })
     
     await act(async () => {
       fireEvent.click(screen.getByText('Resume'))

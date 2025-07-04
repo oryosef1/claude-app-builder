@@ -3,11 +3,6 @@ import { WorkflowStatus, WorkflowCommand, LogEntry, ProcessInfo } from '../types
 import { ProcessManager } from './process-manager';
 import { FileService } from './file-service';
 import { LogService } from './log-service';
-interface LogFilter {
-    page: number;
-    limit: number;
-    level?: 'info' | 'warn' | 'error' | 'debug';
-}
 export declare class WorkflowService extends EventEmitter {
     private currentProcess;
     private status;
@@ -16,7 +11,7 @@ export declare class WorkflowService extends EventEmitter {
     private processManager;
     private fileService;
     private logService;
-    constructor(processManager?: ProcessManager, fileService?: FileService, logService?: LogService);
+    constructor(processManager: ProcessManager, fileService: FileService, logService: LogService);
     private setupEventListeners;
     getStatus(): Promise<WorkflowStatus>;
     executeCommand(command: WorkflowCommand): Promise<WorkflowStatus>;
@@ -26,10 +21,9 @@ export declare class WorkflowService extends EventEmitter {
     private resumeWorkflow;
     private setupProcessHandlers;
     private parseWorkflowOutput;
-    getLogs(filter: LogFilter): Promise<LogEntry[]>;
+    getLogs(options?: any): Promise<LogEntry[]>;
     clearLogs(): Promise<boolean>;
     private addLog;
     getProcessInfo(): ProcessInfo | null;
 }
-export {};
 //# sourceMappingURL=workflow-service.d.ts.map

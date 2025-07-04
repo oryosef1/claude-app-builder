@@ -50,19 +50,30 @@ class LogService extends events_1.EventEmitter {
     async debug(message, metadata) {
         await this.log({ level: 'debug', message, metadata });
     }
-    getLogs(limit, level) {
-        let filteredLogs = this.logs;
-        if (level) {
-            filteredLogs = filteredLogs.filter(log => log.level === level);
+    async getLogs(options = {}) {
+        let filteredLogs = [...this.logs];
+        if (options.level) {
+            filteredLogs = filteredLogs.filter(log => log.level === options.level);
         }
-        if (limit) {
-            filteredLogs = filteredLogs.slice(-limit);
+        if (options.page && options.limit) {
+            const start = (options.page - 1) * options.limit;
+            const end = start + options.limit;
+            filteredLogs = filteredLogs.slice(start, end);
+        }
+        else if (options.limit) {
+            filteredLogs = filteredLogs.slice(-options.limit);
         }
         return filteredLogs;
     }
-    clearLogs() {
-        this.logs = [];
-        this.emit('logsCleared');
+    async clearLogs() {
+        try {
+            this.logs = [];
+            this.emit('logsCleared');
+            return true;
+        }
+        catch (error) {
+            return false;
+        }
     }
     generateId() {
         return Date.now().toString(36) + Math.random().toString(36).substr(2);

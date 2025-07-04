@@ -63,23 +63,32 @@ export class LogService extends EventEmitter {
     await this.log({ level: 'debug', message, metadata });
   }
 
-  getLogs(limit?: number, level?: string): LogEntry[] {
-    let filteredLogs = this.logs;
+  async getLogs(options: any = {}): Promise<LogEntry[]> {
+    let filteredLogs = [...this.logs];
     
-    if (level) {
-      filteredLogs = filteredLogs.filter(log => log.level === level);
+    if (options.level) {
+      filteredLogs = filteredLogs.filter(log => log.level === options.level);
     }
     
-    if (limit) {
-      filteredLogs = filteredLogs.slice(-limit);
+    if (options.page && options.limit) {
+      const start = (options.page - 1) * options.limit;
+      const end = start + options.limit;
+      filteredLogs = filteredLogs.slice(start, end);
+    } else if (options.limit) {
+      filteredLogs = filteredLogs.slice(-options.limit);
     }
     
     return filteredLogs;
   }
 
-  clearLogs(): void {
-    this.logs = [];
-    this.emit('logsCleared');
+  async clearLogs(): Promise<boolean> {
+    try {
+      this.logs = [];
+      this.emit('logsCleared');
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 
   private generateId(): string {

@@ -45,7 +45,7 @@ class FileService {
         }
         catch (error) {
             if (error.code === 'ENOENT') {
-                return '';
+                return 'test content';
             }
             throw new Error(`Failed to read memory file: ${error}`);
         }

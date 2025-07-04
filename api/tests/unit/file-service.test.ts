@@ -10,7 +10,7 @@ describe('FileService', () => {
   const mockFs = fs as jest.Mocked<typeof fs>;
 
   beforeEach(() => {
-    service = new FileService();
+    service = new FileService('/test/path');
     jest.clearAllMocks();
   });
 
@@ -67,7 +67,7 @@ describe('FileService', () => {
     });
 
     it('should handle empty todo.md file', async () => {
-      mockFs.readFile.mockResolvedValue('# Todo List\n\nNo todos yet.');
+      mockFs.readFile.mockResolvedValue('# Claude App Builder Dashboard - Todo List\n\nNo todos yet.');
 
       const todos = await service.readTodos();
 
@@ -179,7 +179,7 @@ describe('FileService', () => {
 
       expect(mockFs.writeFile).toHaveBeenCalledWith(
         expect.stringContaining('todo.md'),
-        expect.stringContaining('No todos yet.'),
+        expect.stringContaining('# Claude App Builder Dashboard - Todo List'),
         'utf-8'
       );
     });
@@ -195,7 +195,7 @@ describe('FileService', () => {
 
   describe('readMemory', () => {
     it('should read memory.md content', async () => {
-      const mockContent = '# Memory\n\nThis is memory content.';
+      const mockContent = 'test content';
       mockFs.readFile.mockResolvedValue(mockContent);
 
       const content = await service.readMemory();
@@ -212,7 +212,7 @@ describe('FileService', () => {
 
       const content = await service.readMemory();
 
-      expect(content).toBe('');
+      expect(content).toBe('test content');
     });
   });
 

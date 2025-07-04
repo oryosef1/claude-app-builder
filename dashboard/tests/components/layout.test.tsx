@@ -23,9 +23,10 @@ describe('Layout Component', () => {
     expect(screen.getByText('Logs')).toBeInTheDocument()
   })
 
-  it('has responsive design structure', () => {
-    render(React.createElement(Layout, { children: React.createElement('div') }))
-    const nav = screen.getByRole('navigation')
-    expect(nav).toHaveClass('sidebar')
+  it('has proper CSS classes', () => {
+    const { container } = render(React.createElement(Layout, { children: React.createElement('div') }))
+    expect(container.querySelector('.layout')).toBeInTheDocument()
+    expect(container.querySelector('.sidebar')).toBeInTheDocument()
+    expect(container.querySelector('.main-content')).toBeInTheDocument()
   })
 })

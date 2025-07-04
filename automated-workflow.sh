@@ -191,6 +191,30 @@ suggest_template() {
     fi
 }
 
+# Check if todo.md has incomplete tasks
+has_incomplete_tasks() {
+    if [ -f "todo.md" ]; then
+        grep -q "\[\s*\]" todo.md
+        return $?
+    fi
+    return 1
+}
+
+# Watch for todo.md changes
+watch_todo_changes() {
+    echo -e "${BLUE}Watching todo.md for changes... (Press Ctrl+C to stop)${NC}"
+    while true; do
+        if has_incomplete_tasks; then
+            echo -e "${GREEN}New incomplete tasks detected! Starting workflow...${NC}"
+            return 0
+        fi
+        sleep 5
+    done
+}
+
+# Handle Ctrl+C gracefully
+trap 'echo -e "\n${YELLOW}Shutting down gracefully...${NC}"; exit 0' INT
+
 # Main workflow loop
 echo -e "${YELLOW}=== Starting Automated Claude App Builder TDD Workflow ===${NC}"
 echo "This workflow will automatically run Claude Code in different roles."
@@ -199,10 +223,18 @@ echo ""
 # Initialize Git
 initialize_git
 
-iteration=0
-max_iterations=20  # Safety limit
-
-while [ $iteration -lt $max_iterations ]; do
+# Continuous monitoring mode
+while true; do
+    # Check if there are incomplete tasks
+    if ! has_incomplete_tasks; then
+        echo -e "${GREEN}No incomplete tasks found. Entering watch mode...${NC}"
+        watch_todo_changes
+    fi
+    
+    iteration=0
+    max_iterations=20  # Safety limit
+    
+    while [ $iteration -lt $max_iterations ] && has_incomplete_tasks; do
     iteration=$((iteration + 1))
     echo -e "${YELLOW}=== Iteration $iteration ===${NC}"
     
@@ -318,11 +350,13 @@ Co-Authored-By: Claude <noreply@anthropic.com>" || true
     
     # Small delay before next iteration
     sleep 3
+    done
+    
+    if [ $iteration -eq $max_iterations ]; then
+        echo -e "${YELLOW}Reached maximum iterations ($max_iterations). Stopping current batch.${NC}"
+    fi
+    
+    echo -e "${GREEN}=== Current batch complete. Watching for new tasks... ===${NC}"
+    echo "Add new tasks to todo.md or press Ctrl+C to exit."
+    echo ""
 done
-
-if [ $iteration -eq $max_iterations ]; then
-    echo -e "${YELLOW}Reached maximum iterations ($max_iterations). Stopping workflow.${NC}"
-fi
-
-echo -e "${GREEN}=== Automated Workflow Finished ===${NC}"
-echo "Check memory.md and todo.md for final status."

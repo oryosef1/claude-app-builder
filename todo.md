@@ -1,13 +1,19 @@
 # Claude App Builder Dashboard - Todo List
 
-## High Priority
-- [ ] Initialize web dashboard project with React and TypeScript
-- [ ] Create main dashboard layout with sidebar navigation
-- [ ] Build workflow control panel (start/stop/pause workflow)
-- [ ] Implement real-time workflow status display
-- [ ] Create todo management interface (add/edit/remove tasks)
-- [ ] Build memory.md viewer and editor
-- [ ] Add workflow logs viewer with live updates
+## High Priority - CRITICAL: CONNECT DASHBOARD TO REAL BACKEND
+- [x] Initialize web dashboard project with React and TypeScript
+- [x] Create main dashboard layout with sidebar navigation
+- [x] Build workflow control panel (start/stop/pause workflow)
+- [x] Implement real-time workflow status display
+- [x] Create todo management interface (add/edit/remove tasks)
+- [x] Build memory.md viewer and editor
+- [x] Add workflow logs viewer with live updates
+- [ ] **URGENT: Create Node.js backend API to control automated-workflow.sh**
+- [ ] **URGENT: Add WebSocket/SSE for real-time communication between dashboard and workflow**
+- [ ] **URGENT: Implement workflow process spawning and control (start/stop/pause)**
+- [ ] **URGENT: Connect dashboard API calls to real backend endpoints**
+- [ ] **URGENT: Add file operations API for todo.md and memory.md editing**
+- [ ] **URGENT: Implement real-time log streaming from workflow to dashboard**
 
 ## Medium Priority
 - [ ] Create project templates selector (Web App, CLI, API, etc.)

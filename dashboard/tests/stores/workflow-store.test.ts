@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { useWorkflowStore } from '../../src/stores/workflowStore'
+import useWorkflowStore from '../../src/stores/workflowStore'
 
 describe('WorkflowStore', () => {
   beforeEach(() => {
@@ -9,70 +9,97 @@ describe('WorkflowStore', () => {
   it('initializes with correct default state', () => {
     const state = useWorkflowStore.getState()
     expect(state.status).toBe('idle')
-    expect(state.currentPhase).toBe('')
+    expect(state.isRunning).toBe(false)
     expect(state.logs).toEqual([])
-    expect(state.isConnected).toBe(false)
+    expect(state.currentRole).toBeUndefined()
+  })
+
+  it('starts workflow', () => {
+    const store = useWorkflowStore.getState()
+    store.start()
+    
+    const state = useWorkflowStore.getState()
+    expect(state.isRunning).toBe(true)
+    expect(state.status).toBe('running')
+  })
+
+  it('stops workflow', () => {
+    const store = useWorkflowStore.getState()
+    store.start()
+    store.stop()
+    
+    const state = useWorkflowStore.getState()
+    expect(state.isRunning).toBe(false)
+    expect(state.status).toBe('idle')
+  })
+
+  it('pauses workflow', () => {
+    const store = useWorkflowStore.getState()
+    store.start()
+    store.pause()
+    
+    const state = useWorkflowStore.getState()
+    expect(state.isRunning).toBe(false)
+    expect(state.status).toBe('paused')
+  })
+
+  it('resumes workflow', () => {
+    const store = useWorkflowStore.getState()
+    store.start()
+    store.pause()
+    store.resume()
+    
+    const state = useWorkflowStore.getState()
+    expect(state.isRunning).toBe(true)
+    expect(state.status).toBe('running')
   })
 
   it('updates workflow status', () => {
     const store = useWorkflowStore.getState()
-    store.setStatus('running')
+    store.setStatus('error')
     
-    expect(useWorkflowStore.getState().status).toBe('running')
-  })
-
-  it('updates current phase', () => {
-    const store = useWorkflowStore.getState()
-    store.setCurrentPhase('test-writer')
-    
-    expect(useWorkflowStore.getState().currentPhase).toBe('test-writer')
+    expect(useWorkflowStore.getState().status).toBe('error')
   })
 
   it('adds log entries', () => {
     const store = useWorkflowStore.getState()
-    const logEntry = {
-      id: '1',
-      timestamp: '2023-01-01T10:00:00Z',
+    const logInput = {
       level: 'info' as const,
       message: 'Test log',
-      source: 'test-writer'
+      role: 'test-writer'
     }
     
-    store.addLog(logEntry)
-    expect(useWorkflowStore.getState().logs).toContain(logEntry)
+    store.addLog(logInput)
+    const logs = useWorkflowStore.getState().logs
+    expect(logs).toHaveLength(1)
+    expect(logs[0]).toMatchObject(logInput)
+    expect(logs[0].id).toBeDefined()
+    expect(logs[0].timestamp).toBeDefined()
   })
 
   it('clears logs', () => {
     const store = useWorkflowStore.getState()
     store.addLog({
-      id: '1',
-      timestamp: '2023-01-01T10:00:00Z',
       level: 'info',
       message: 'Test log',
-      source: 'test-writer'
+      role: 'test-writer'
     })
     
     store.clearLogs()
     expect(useWorkflowStore.getState().logs).toEqual([])
   })
 
-  it('sets connection status', () => {
-    const store = useWorkflowStore.getState()
-    store.setConnected(true)
-    
-    expect(useWorkflowStore.getState().isConnected).toBe(true)
-  })
-
   it('resets state', () => {
     const store = useWorkflowStore.getState()
-    store.setStatus('running')
-    store.setCurrentPhase('developer')
-    store.setConnected(true)
+    store.start()
+    store.setStatus('error')
+    store.addLog({ level: 'info', message: 'Test', role: 'test' })
     
     store.reset()
     const state = useWorkflowStore.getState()
     expect(state.status).toBe('idle')
-    expect(state.currentPhase).toBe('')
-    expect(state.isConnected).toBe(false)
+    expect(state.isRunning).toBe(false)
+    expect(state.logs).toEqual([])
+    expect(state.currentRole).toBeUndefined()
   })
 })

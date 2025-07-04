@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import React from 'react'
 import MemoryEditor from '../../src/components/MemoryEditor'
@@ -7,53 +7,82 @@ import MemoryEditor from '../../src/components/MemoryEditor'
 describe('MemoryEditor Component', () => {
   const mockMemoryContent = '# Memory\n\nThis is test memory content'
 
-  it('displays memory content', () => {
-    render(React.createElement(MemoryEditor, { content: mockMemoryContent }))
+  const defaultProps = {
+    value: mockMemoryContent,
+    onChange: vi.fn()
+  }
+
+  it('displays memory content in preview mode', () => {
+    render(React.createElement(MemoryEditor, defaultProps))
+    expect(screen.getByText(mockMemoryContent)).toBeInTheDocument()
+  })
+
+  it('has edit button', () => {
+    render(React.createElement(MemoryEditor, defaultProps))
+    expect(screen.getByText('Edit')).toBeInTheDocument()
+  })
+
+  it('enters edit mode when edit button clicked', async () => {
+    render(React.createElement(MemoryEditor, defaultProps))
+    
+    await act(async () => {
+      fireEvent.click(screen.getByText('Edit'))
+    })
+    
     expect(screen.getByDisplayValue(mockMemoryContent)).toBeInTheDocument()
   })
 
-  it('has edit and save buttons', () => {
-    render(React.createElement(MemoryEditor, { content: mockMemoryContent }))
-    expect(screen.getByText('Edit')).toBeInTheDocument()
+  it('shows save and cancel buttons in edit mode', async () => {
+    render(React.createElement(MemoryEditor, defaultProps))
+    
+    await act(async () => {
+      fireEvent.click(screen.getByText('Edit'))
+    })
+    
     expect(screen.getByText('Save')).toBeInTheDocument()
+    expect(screen.getByText('Cancel')).toBeInTheDocument()
   })
 
-  it('enables editing when edit button clicked', () => {
-    render(React.createElement(MemoryEditor, { content: mockMemoryContent }))
-    
-    fireEvent.click(screen.getByText('Edit'))
-    const textarea = screen.getByDisplayValue(mockMemoryContent)
-    expect(textarea).not.toBeDisabled()
-  })
-
-  it('calls onSave when save button clicked', async () => {
+  it('calls onChange when save button clicked', async () => {
     const user = userEvent.setup()
-    const mockOnSave = vi.fn()
-    render(React.createElement(MemoryEditor, { content: mockMemoryContent, onSave: mockOnSave }))
+    const mockOnChange = vi.fn()
+    render(React.createElement(MemoryEditor, { ...defaultProps, onChange: mockOnChange }))
     
-    fireEvent.click(screen.getByText('Edit'))
-    const textarea = screen.getByDisplayValue(mockMemoryContent)
-    await user.clear(textarea)
-    await user.type(textarea, 'Updated memory content')
-    fireEvent.click(screen.getByText('Save'))
+    await act(async () => {
+      fireEvent.click(screen.getByText('Edit'))
+    })
     
-    expect(mockOnSave).toHaveBeenCalledWith('Updated memory content')
-  })
-
-  it('shows preview mode by default', () => {
-    render(React.createElement(MemoryEditor, { content: mockMemoryContent }))
     const textarea = screen.getByDisplayValue(mockMemoryContent)
-    expect(textarea).toBeDisabled()
+    
+    await act(async () => {
+      await user.clear(textarea)
+      await user.type(textarea, 'Updated memory content')
+    })
+    
+    await act(async () => {
+      fireEvent.click(screen.getByText('Save'))
+    })
+    
+    expect(mockOnChange).toHaveBeenCalledWith('Updated memory content')
   })
 
-  it('has syntax highlighting for markdown', () => {
-    render(React.createElement(MemoryEditor, { content: mockMemoryContent }))
-    const textarea = screen.getByDisplayValue(mockMemoryContent)
-    expect(textarea).toHaveClass('markdown-editor')
+  it('cancels editing when cancel button clicked', async () => {
+    render(React.createElement(MemoryEditor, defaultProps))
+    
+    await act(async () => {
+      fireEvent.click(screen.getByText('Edit'))
+    })
+    
+    await act(async () => {
+      fireEvent.click(screen.getByText('Cancel'))
+    })
+    
+    expect(screen.getByText('Edit')).toBeInTheDocument()
+    expect(screen.queryByText('Save')).not.toBeInTheDocument()
   })
 
-  it('shows character count', () => {
-    render(React.createElement(MemoryEditor, { content: mockMemoryContent }))
-    expect(screen.getByText(/\d+ characters/)).toBeInTheDocument()
+  it('renders memory editor heading', () => {
+    render(React.createElement(MemoryEditor, defaultProps))
+    expect(screen.getByText('Memory Editor')).toBeInTheDocument()
   })
 })

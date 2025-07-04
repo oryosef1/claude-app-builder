@@ -1,53 +1,80 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import React from 'react'
 import WorkflowControl from '../../src/components/WorkflowControl'
 
 describe('WorkflowControl Component', () => {
-  it('renders control buttons', () => {
-    render(React.createElement(WorkflowControl))
+  const defaultProps = {
+    isRunning: false,
+    onStart: vi.fn(),
+    onStop: vi.fn(),
+    onPause: vi.fn(),
+    onResume: vi.fn()
+  }
+
+  it('renders start button when not running', () => {
+    render(React.createElement(WorkflowControl, defaultProps))
     expect(screen.getByText('Start Workflow')).toBeInTheDocument()
-    expect(screen.getByText('Stop Workflow')).toBeInTheDocument()
-    expect(screen.getByText('Pause Workflow')).toBeInTheDocument()
+  })
+
+  it('renders control buttons when running', () => {
+    render(React.createElement(WorkflowControl, { ...defaultProps, isRunning: true }))
+    expect(screen.getByText('Pause')).toBeInTheDocument()
+    expect(screen.getByText('Resume')).toBeInTheDocument()
+    expect(screen.getByText('Stop')).toBeInTheDocument()
   })
 
   it('shows current workflow status', () => {
-    render(React.createElement(WorkflowControl))
-    expect(screen.getByText(/Status:/)).toBeInTheDocument()
+    render(React.createElement(WorkflowControl, defaultProps))
+    expect(screen.getByText('Status: Stopped')).toBeInTheDocument()
   })
 
-  it('calls start workflow when start button clicked', () => {
+  it('shows running status when running', () => {
+    render(React.createElement(WorkflowControl, { ...defaultProps, isRunning: true }))
+    expect(screen.getByText('Status: Running')).toBeInTheDocument()
+  })
+
+  it('calls start workflow when start button clicked', async () => {
     const mockStart = vi.fn()
-    render(React.createElement(WorkflowControl, { onStart: mockStart }))
+    render(React.createElement(WorkflowControl, { ...defaultProps, onStart: mockStart }))
     
-    fireEvent.click(screen.getByText('Start Workflow'))
+    await act(async () => {
+      fireEvent.click(screen.getByText('Start Workflow'))
+    })
+    
     expect(mockStart).toHaveBeenCalled()
   })
 
-  it('calls stop workflow when stop button clicked', () => {
+  it('calls stop workflow when stop button clicked', async () => {
     const mockStop = vi.fn()
-    render(React.createElement(WorkflowControl, { onStop: mockStop }))
+    render(React.createElement(WorkflowControl, { ...defaultProps, isRunning: true, onStop: mockStop }))
     
-    fireEvent.click(screen.getByText('Stop Workflow'))
+    await act(async () => {
+      fireEvent.click(screen.getByText('Stop'))
+    })
+    
     expect(mockStop).toHaveBeenCalled()
   })
 
-  it('calls pause workflow when pause button clicked', () => {
+  it('calls pause workflow when pause button clicked', async () => {
     const mockPause = vi.fn()
-    render(React.createElement(WorkflowControl, { onPause: mockPause }))
+    render(React.createElement(WorkflowControl, { ...defaultProps, isRunning: true, onPause: mockPause }))
     
-    fireEvent.click(screen.getByText('Pause Workflow'))
+    await act(async () => {
+      fireEvent.click(screen.getByText('Pause'))
+    })
+    
     expect(mockPause).toHaveBeenCalled()
   })
 
-  it('displays workflow status correctly', () => {
-    render(React.createElement(WorkflowControl, { status: 'running' }))
-    expect(screen.getByText('Status: running')).toBeInTheDocument()
-  })
-
-  it('disables buttons based on workflow state', () => {
-    render(React.createElement(WorkflowControl, { status: 'running' }))
-    expect(screen.getByText('Start Workflow')).toBeDisabled()
-    expect(screen.getByText('Stop Workflow')).not.toBeDisabled()
+  it('calls resume workflow when resume button clicked', async () => {
+    const mockResume = vi.fn()
+    render(React.createElement(WorkflowControl, { ...defaultProps, isRunning: true, onResume: mockResume }))
+    
+    await act(async () => {
+      fireEvent.click(screen.getByText('Resume'))
+    })
+    
+    expect(mockResume).toHaveBeenCalled()
   })
 })

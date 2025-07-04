@@ -12,7 +12,12 @@
       "Bash(claude config list)",
       "Bash(git config:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(grep:*)",
+      "Bash(npm run dev:*)",
+      "Bash(pkill:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run preview:*)"
     ],
     "deny": []
   }

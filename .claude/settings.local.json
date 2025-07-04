@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod:*)",
+      "Bash(rm:*)",
+      "Bash(claude --version)",
+      "Bash(bash:*)",
+      "Bash(./test-claude.sh:*)",
+      "Bash(./test-workflow.sh)",
+      "Bash(./automated-workflow.sh)",
+      "Bash(claude config get model)",
+      "Bash(claude config list)",
+      "Bash(git config:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ],
+    "deny": []
+  }
+}

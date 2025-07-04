@@ -27,7 +27,7 @@ describe('WebSocketService', () => {
       shouldHandle: jest.fn()
     } as any;
 
-    (WebSocket.Server as jest.Mock).mockImplementation(() => mockWebSocketServer);
+    (WebSocket.Server as any).mockImplementation(() => mockWebSocketServer);
     
     service = new WebSocketService(8080);
   });
@@ -118,7 +118,10 @@ describe('WebSocketService', () => {
     });
 
     it('should not send to closed client', () => {
-      mockWebSocket.readyState = WebSocket.CLOSED;
+      Object.defineProperty(mockWebSocket, 'readyState', {
+        writable: true,
+        value: WebSocket.CLOSED
+      });
 
       const message: WebSocketMessage = {
         type: 'log_entry',

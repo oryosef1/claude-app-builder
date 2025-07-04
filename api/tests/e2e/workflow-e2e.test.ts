@@ -14,8 +14,8 @@ describe('Workflow E2E Tests', () => {
   let workflowService: WorkflowService;
   let fileService: FileService;
   let webSocketService: WebSocketService;
-  let serverProcess: ChildProcess;
-  let wsClient: WebSocket;
+  let serverProcess: ChildProcess | undefined;
+  let wsClient: WebSocket | undefined;
 
   const testWorkspace = path.join(__dirname, '..', '..', 'test-workspace');
   const testPort = 3001;

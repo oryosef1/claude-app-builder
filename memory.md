@@ -66,8 +66,17 @@ Claude App Builder is an automated TDD workflow system that uses Claude Code CLI
 
 ### How It Works
 - **WSL2 Workaround** - Uses `powershell.exe` for git commands due to library issues
+- **Environment Configuration** - Loads GitHub settings from `.env` file
 - **Auto-commits** - Workflow automatically commits after each successful phase
-- **Push integration** - Can push to GitHub at completion or manually
+- **Auto-push** - Automatically pushes to GitHub after each phase when `GIT_AUTO_PUSH=true`
+- **Release Management** - Creates tagged releases and pushes them to GitHub
 - **Token management** - Uses GitHub personal access token for authentication
+
+### Workflow Features
+- ✅ **Automatic GitHub push after each successful phase**
+- ✅ **Environment-driven configuration via .env file**
+- ✅ **PowerShell git execution for WSL2 compatibility**
+- ✅ **Release tagging and pushing**
+- ✅ **Configurable auto-push (can be disabled)**
 
 System is ready for development with full GitHub integration!

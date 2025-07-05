@@ -227,26 +227,37 @@ CRITICAL REQUIREMENTS:
 
 TEST_REVIEWER_SYSTEM="You are a Test Reviewer for the Claude App Builder project.
 
-MANDATORY VALIDATION STEPS:
-1. EXECUTE 'npm test' to verify ALL tests run successfully
-2. If tests fail to execute, IMMEDIATELY REJECT with specific error details
-3. Check that all imports resolve to existing files
-4. Verify all dependencies exist in package.json
-5. Confirm test syntax is valid TypeScript/JavaScript
+🚨 CRITICAL REQUIREMENT: YOU MUST ACTUALLY RUN THE TESTS! 🚨
 
-ONLY APPROVE IF:
-- ALL tests execute without errors
-- All imports and dependencies are valid
-- Tests check actual functionality, not failures
-- Test logic is achievable with current implementation
+MANDATORY STEPS - DO THESE IN ORDER:
+1. **FIRST**: Navigate to the project directory (dashboard/, api/, etc.)
+2. **SECOND**: Run 'npm test' using the Bash tool - DO NOT SKIP THIS STEP
+3. **THIRD**: If npm test fails, IMMEDIATELY REJECT with exact error output
+4. **FOURTH**: Only if tests run successfully, then review test quality
 
-IF TESTS FAIL:
-- Create test-feedback.md with EXACT error messages
-- Specify which imports/dependencies are missing
-- List which service interfaces need to be created
-- Demand fixes before re-review
+STEP-BY-STEP PROCESS:
+Step 1: Use Bash tool: cd [project-directory] && npm test
+Step 2: If ANY test fails or doesn't run, create test-feedback.md with:
+   - EXACT error messages from npm test output
+   - Which dependencies are missing
+   - Which imports are broken
+   - Specific fixes needed
+Step 3: If ALL tests pass, then review for quality and coverage
 
-ZERO TOLERANCE for non-executable tests. Be thorough but constructive in feedback."
+REJECTION CRITERIA (MUST create test-feedback.md):
+- npm test command fails to execute
+- ANY test fails when run
+- Missing dependencies in package.json
+- Broken imports or file paths
+- Tests that expect failures instead of success
+
+APPROVAL CRITERIA (ONLY approve if ALL are true):
+- npm test runs successfully with 0 failures
+- All tests pass
+- Good test coverage and quality
+- Tests validate working functionality
+
+ZERO TOLERANCE: Never approve without running npm test successfully."
 
 DEVELOPER_SYSTEM="You are a Developer for the Claude App Builder project.
 
@@ -278,28 +289,37 @@ CRITICAL REQUIREMENTS:
 
 CODE_REVIEWER_SYSTEM="You are a Code Reviewer for the Claude App Builder project.
 
-MANDATORY VALIDATION PROCESS:
-1. EXECUTE 'npm test' and verify ALL tests pass with 100% success rate
-2. If ANY test fails, IMMEDIATELY REJECT with exact error messages
-3. Check code quality, structure, and adherence to standards
-4. Verify project structure follows @ARCHITECTURE.md (separate directories)
-5. Ensure implementation matches test expectations exactly
+🚨 CRITICAL REQUIREMENT: YOU MUST ACTUALLY RUN ALL TESTS! 🚨
 
-STRICT PASS REQUIREMENTS:
-- ALL tests must execute successfully
-- ALL tests must pass (0 failures, 0 errors)
-- Code must follow established patterns
-- TypeScript must compile without errors
-- All imports must resolve correctly
+MANDATORY STEPS - DO THESE IN ORDER:
+1. **FIRST**: Navigate to the project directory (dashboard/, api/, etc.)
+2. **SECOND**: Run 'npm test' using the Bash tool - DO NOT SKIP THIS STEP
+3. **THIRD**: If ANY test fails, IMMEDIATELY REJECT with exact error output
+4. **FOURTH**: Only if ALL tests pass, then review code quality
 
-IF TESTS FAIL:
-- Create code-feedback.md with EXACT test failure output
-- Copy/paste actual error messages
-- Specify which tests are failing and why
-- Demand specific fixes to make tests pass
-- NO approval until 100% test success rate
+STEP-BY-STEP PROCESS:
+Step 1: Use Bash tool: cd [project-directory] && npm test
+Step 2: If ANY test fails, create code-feedback.md with:
+   - EXACT error messages from npm test output
+   - Which specific tests are failing
+   - What the implementation is missing
+   - Specific code fixes needed to make tests pass
+Step 3: If ALL tests pass (0 failures, 0 errors), then review code quality
 
-ZERO TOLERANCE for failing tests. Provide specific, actionable feedback based on actual test results."
+REJECTION CRITERIA (MUST create code-feedback.md):
+- npm test command fails to execute
+- ANY test fails when run (even 1 failure = rejection)
+- Build/compilation errors
+- Missing implementations that tests expect
+- Code doesn't match test expectations
+
+APPROVAL CRITERIA (ONLY approve if ALL are true):
+- npm test runs successfully with 0 failures, 0 errors
+- ALL tests pass (100% success rate)
+- Code follows project standards
+- Implementation matches test expectations exactly
+
+ZERO TOLERANCE: Never approve if any test fails. Always run npm test first."
 
 COORDINATOR_SYSTEM="You are the Workflow Coordinator for the Claude App Builder project.
 
@@ -667,6 +687,46 @@ validate_quality_gate() {
     return 0
 }
 
+# Validate that tests were actually executed
+validate_test_execution() {
+    local project_dir="$1"
+    local reviewer_type="$2"  # "test" or "code"
+    
+    if [ ! -d "$project_dir" ]; then
+        echo -e "${RED}ERROR: Project directory $project_dir not found${NC}"
+        return 1
+    fi
+    
+    echo -e "${BLUE}Validating that $reviewer_type reviewer actually ran tests...${NC}"
+    
+    # Check if package.json exists
+    if [ ! -f "$project_dir/package.json" ]; then
+        echo -e "${RED}ERROR: No package.json found in $project_dir${NC}"
+        return 1
+    fi
+    
+    # Actually run the tests to verify they work
+    cd "$project_dir"
+    if npm test 2>&1 | tee /tmp/validation_test_output.log; then
+        local test_result=$(grep -E "(passing|failing|failing|error)" /tmp/validation_test_output.log || echo "")
+        if echo "$test_result" | grep -qi "failing\|error\|failed"; then
+            echo -e "${RED}ERROR: Tests are failing! $reviewer_type reviewer should have caught this.${NC}"
+            echo -e "${YELLOW}Test output:${NC}"
+            cat /tmp/validation_test_output.log
+            cd - > /dev/null
+            return 1
+        else
+            echo -e "${GREEN}✓ Tests are actually passing${NC}"
+            cd - > /dev/null
+            return 0
+        fi
+    else
+        echo -e "${RED}ERROR: Tests failed to execute! $reviewer_type reviewer should have caught this.${NC}"
+        cd - > /dev/null
+        return 1
+    fi
+}
+
 # Validate phase completion - ensures phases only proceed if prior phases succeeded
 validate_phase_completion() {
     local phase="$1"
@@ -688,6 +748,16 @@ validate_phase_completion() {
                 echo -e "${RED}ERROR: Cannot run Developer - tests not approved (test-feedback.md exists)${NC}"
                 return 1
             fi
+            
+            # Validate that tests were actually executed by Test Reviewer
+            for project_dir in dashboard api cli; do
+                if [ -d "$project_dir" ] && [ -f "$project_dir/package.json" ]; then
+                    if ! validate_test_execution "$project_dir" "test"; then
+                        echo -e "${RED}ERROR: Test Reviewer failed to properly validate tests${NC}"
+                        return 1
+                    fi
+                fi
+            done
             ;;
         "code_reviewer")
             # Developer must have created implementation files
@@ -702,6 +772,16 @@ validate_phase_completion() {
                 echo -e "${RED}ERROR: Cannot run Coordinator - code not approved (code-feedback.md exists)${NC}"
                 return 1
             fi
+            
+            # Validate that tests were actually executed by Code Reviewer
+            for project_dir in dashboard api cli; do
+                if [ -d "$project_dir" ] && [ -f "$project_dir/package.json" ]; then
+                    if ! validate_test_execution "$project_dir" "code"; then
+                        echo -e "${RED}ERROR: Code Reviewer failed to properly validate tests${NC}"
+                        return 1
+                    fi
+                fi
+            done
             ;;
     esac
     
@@ -802,11 +882,25 @@ Follow the project structure in ARCHITECTURE.md - create projects in separate di
         
         if [ $review_attempt -eq 1 ]; then
             run_claude "TEST REVIEWER" \
-                "Review the tests that were just written. Check for completeness, edge cases, and proper structure. Run the tests with 'npm test' to verify they fail correctly. If improvements needed, create a file called 'test-feedback.md' with specific issues. If approved, update memory.md with approval." \
+                "🚨 MANDATORY: You MUST run 'npm test' using the Bash tool before making any decisions!
+
+STEP 1: Navigate to project directory (dashboard/, api/, etc.) 
+STEP 2: Use Bash tool to run: npm test
+STEP 3: If ANY test fails or npm test doesn't work, create test-feedback.md with EXACT error messages
+STEP 4: Only if ALL tests run successfully, then approve and update memory.md
+
+DO NOT approve without running npm test successfully. Zero tolerance for broken tests." \
                 "$TEST_REVIEWER_SYSTEM"
         else
             run_claude "TEST REVIEWER (RE-REVIEW $review_attempt)" \
-                "Re-review the revised tests. If approved, update memory.md. If still needs work, update test-feedback.md." \
+                "🚨 MANDATORY: Run 'npm test' again to verify the fixes work!
+
+STEP 1: Navigate to project directory
+STEP 2: Use Bash tool to run: npm test  
+STEP 3: If tests still fail, update test-feedback.md with remaining issues
+STEP 4: Only approve if ALL tests pass (0 failures)
+
+DO NOT approve without running npm test successfully." \
                 "$TEST_REVIEWER_SYSTEM"
         fi
         
@@ -860,11 +954,25 @@ Follow the project structure in ARCHITECTURE.md - create projects in separate di
         
         if [ $code_review_attempt -eq 1 ]; then
             run_claude "CODE REVIEWER" \
-                "Review the implementation. Run 'npm test' to verify all tests pass. Check code quality and standards. If improvements needed, create 'code-feedback.md' with specific issues. If approved, update memory.md." \
+                "🚨 MANDATORY: You MUST run 'npm test' using the Bash tool before making any decisions!
+
+STEP 1: Navigate to project directory (dashboard/, api/, etc.)
+STEP 2: Use Bash tool to run: npm test
+STEP 3: If ANY test fails (even 1 failure), create code-feedback.md with EXACT error messages  
+STEP 4: Only if ALL tests pass (0 failures, 0 errors), then approve and update memory.md
+
+DO NOT approve if any test fails. Zero tolerance for failing tests." \
                 "$CODE_REVIEWER_SYSTEM"
         else
             run_claude "CODE REVIEWER (RE-REVIEW $code_review_attempt)" \
-                "Re-review the revised code. Run tests again. If approved, update memory.md. If still needs work, update code-feedback.md." \
+                "🚨 MANDATORY: Run 'npm test' again to verify all fixes work!
+
+STEP 1: Navigate to project directory
+STEP 2: Use Bash tool to run: npm test
+STEP 3: If tests still fail, update code-feedback.md with remaining issues
+STEP 4: Only approve if ALL tests pass (100% success rate)
+
+DO NOT approve if any test fails. Zero tolerance for failing tests." \
                 "$CODE_REVIEWER_SYSTEM"
         fi
         

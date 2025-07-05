@@ -79,4 +79,30 @@ Claude App Builder is an automated TDD workflow system that uses Claude Code CLI
 - ✅ **Release tagging and pushing**
 - ✅ **Configurable auto-push (can be disabled)**
 
+## Critical Test Execution Fixes
+
+### Problem Solved
+- **Issue**: Test Reviewer and Code Reviewer were approving without actually running tests
+- **Impact**: Broken TDD workflow, tests never validated
+- **Solution**: Mandatory test execution with zero tolerance policy
+
+### Enhanced Reviewer Roles
+- ✅ **Test Reviewer MUST run `npm test` using Bash tool**
+- ✅ **Code Reviewer MUST run `npm test` using Bash tool**
+- ✅ **Step-by-step prompts force test execution**
+- ✅ **Zero tolerance - no approval without running tests**
+- ✅ **Exact error messages required in feedback**
+
+### Safety Mechanisms
+- ✅ **Validation functions verify tests actually work**
+- ✅ **Workflow blocks progression if tests fail**
+- ✅ **Double-check test execution between phases**
+- ✅ **Clear error messages when reviewers fail**
+
+### Test Execution Requirements
+- **Test Reviewer**: Must run `npm test` and verify tests fail correctly (without implementation)
+- **Code Reviewer**: Must run `npm test` and verify ALL tests pass (100% success rate)
+- **Validation**: Workflow automatically re-runs tests to confirm reviewer did their job
+- **Feedback**: Exact error messages required, no generic responses allowed
+
 System is ready for development with full GitHub integration!

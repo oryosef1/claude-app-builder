@@ -41,7 +41,16 @@
       "Bash(timeout 60s npx jest:*)",
       "Bash(docker:*)",
       "Bash(cmd.exe /c \"node --version\")",
-      "Bash(cmd.exe /c \"npm test -- --forceExit --runInBand tests/unit/file-service.test.ts\")"
+      "Bash(cmd.exe /c \"npm test -- --forceExit --runInBand tests/unit/file-service.test.ts\")",
+      "Bash(git push:*)",
+      "Bash(ldd:*)",
+      "Bash(git --version)",
+      "Bash(sudo apt:*)",
+      "Bash(sudo apt install:*)",
+      "Bash(dpkg:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(export:*)",
+      "Bash(powershell.exe:*)"
     ],
     "deny": []
   }

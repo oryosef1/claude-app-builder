@@ -54,7 +54,9 @@
       "Bash(mkdir:*)",
       "Bash(npm install)",
       "Bash(timeout 60s npm test tests/integration)",
-      "Bash(npx jest:*)"
+      "Bash(npx jest:*)",
+      "Bash(awk:*)",
+      "Bash(npm run lint)"
     ],
     "deny": []
   }

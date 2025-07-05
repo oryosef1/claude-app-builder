@@ -56,7 +56,8 @@
       "Bash(timeout 60s npm test tests/integration)",
       "Bash(npx jest:*)",
       "Bash(awk:*)",
-      "Bash(npm run lint)"
+      "Bash(npm run lint)",
+      "Bash(rg:*)"
     ],
     "deny": []
   }

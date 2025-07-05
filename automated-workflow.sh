@@ -222,6 +222,8 @@ CRITICAL REQUIREMENTS:
 - Tests must be executable with current dependencies
 - No tests for non-existent services or interfaces
 - Create interface contracts in separate files for Developer to follow
+- ARCHITECTURE RULE: Frontend code (React) CANNOT use Node.js APIs (child_process, fs, path)
+- ARCHITECTURE RULE: Backend code (Express) handles Node.js APIs, Frontend makes HTTP requests
 - Always read @ARCHITECTURE.md, @memory.md and @todo.md first
 - Update both files when done with specific interface definitions"
 
@@ -1001,8 +1003,10 @@ STEP 2: Use Bash tool to run: npx vitest run (one-time test execution, NOT watch
 STEP 3: Use Bash tool to run: npm run build (check for compilation errors)
 STEP 4: Use Bash tool to run: timeout 30s npm run dev (test app actually starts without errors)
 STEP 5: Check for any console errors or startup failures in the dev server output
-STEP 6: If ANY test fails OR build fails OR dev server fails to start, create code-feedback.md with EXACT error messages
-STEP 7: Only if ALL tests pass (0 failures, 0 errors) AND build succeeds AND dev server starts successfully, then approve and update memory.md
+STEP 6: CRITICAL: Check for browser/Node.js compatibility issues (child_process, fs, path in browser code)
+STEP 7: CRITICAL: Verify frontend/backend separation (no Node.js APIs in React components)
+STEP 8: If ANY test fails OR build fails OR dev server fails OR architecture violations found, create code-feedback.md with EXACT error messages
+STEP 9: Only if ALL tests pass AND build succeeds AND app starts successfully AND architecture is correct, then approve and update memory.md
 
 DO NOT approve if any test fails, build fails, or application fails to start. Zero tolerance for failures." \
                 "$CODE_REVIEWER_SYSTEM"
@@ -1015,8 +1019,10 @@ STEP 2: Use Bash tool to run: npx vitest run (one-time execution, NOT watch mode
 STEP 3: Use Bash tool to run: npm run build (check compilation)
 STEP 4: Use Bash tool to run: timeout 30s npm run dev (verify app starts without errors)
 STEP 5: Check for console errors or startup failures in dev server output
-STEP 6: If tests still fail OR build fails OR dev server fails, update code-feedback.md with remaining issues
-STEP 7: Only approve if ALL tests pass (100% success rate) AND build succeeds AND app starts successfully
+STEP 6: CRITICAL: Check for browser/Node.js compatibility issues (child_process, fs, path in browser code)
+STEP 7: CRITICAL: Verify frontend/backend separation (no Node.js APIs in React components)
+STEP 8: If tests still fail OR build fails OR dev server fails OR architecture violations found, update code-feedback.md with remaining issues
+STEP 9: Only approve if ALL tests pass (100% success rate) AND build succeeds AND app starts successfully AND architecture is correct
 
 DO NOT approve if any test fails, build fails, or application fails to start. Zero tolerance for failures." \
                 "$CODE_REVIEWER_SYSTEM"

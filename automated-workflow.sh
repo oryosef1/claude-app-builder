@@ -152,7 +152,7 @@ run_claude() {
             ;;
         "TEST REVIEWER"*)
             echo -e "${YELLOW}🔍 Reviewing tests and running validation...${NC}"
-            log_verbose "Test Reviewer: Executing npm test and validating test quality"
+            log_verbose "Test Reviewer: Executing npx vitest run and validating test quality"
             ;;
         "DEVELOPER"*)
             echo -e "${YELLOW}⚙️  Implementing features to pass tests...${NC}"
@@ -231,33 +231,33 @@ TEST_REVIEWER_SYSTEM="You are a Test Reviewer for the Claude App Builder project
 
 MANDATORY STEPS - DO THESE IN ORDER:
 1. **FIRST**: Navigate to the project directory (dashboard/, api/, etc.)
-2. **SECOND**: Run 'npm test' using the Bash tool - DO NOT SKIP THIS STEP
-3. **THIRD**: If npm test fails, IMMEDIATELY REJECT with exact error output
+2. **SECOND**: Run 'npx vitest run' using the Bash tool - DO NOT SKIP THIS STEP
+3. **THIRD**: If npx vitest run fails, IMMEDIATELY REJECT with exact error output
 4. **FOURTH**: Only if tests run successfully, then review test quality
 
 STEP-BY-STEP PROCESS:
-Step 1: Use Bash tool: cd [project-directory] && npm test
+Step 1: Use Bash tool: cd [project-directory] && npx vitest run
 Step 2: If ANY test fails or doesn't run, create test-feedback.md with:
-   - EXACT error messages from npm test output
+   - EXACT error messages from npx vitest run output
    - Which dependencies are missing
    - Which imports are broken
    - Specific fixes needed
 Step 3: If ALL tests pass, then review for quality and coverage
 
 REJECTION CRITERIA (MUST create test-feedback.md):
-- npm test command fails to execute
+- npx vitest run command fails to execute
 - ANY test fails when run
 - Missing dependencies in package.json
 - Broken imports or file paths
 - Tests that expect failures instead of success
 
 APPROVAL CRITERIA (ONLY approve if ALL are true):
-- npm test runs successfully with 0 failures
+- npx vitest run executes successfully with 0 failures
 - All tests pass
 - Good test coverage and quality
 - Tests validate working functionality
 
-ZERO TOLERANCE: Never approve without running npm test successfully."
+ZERO TOLERANCE: Never approve without running npx vitest run successfully."
 
 DEVELOPER_SYSTEM="You are a Developer for the Claude App Builder project.
 
@@ -298,28 +298,28 @@ MANDATORY STEPS - DO THESE IN ORDER:
 4. **FOURTH**: Only if ALL tests pass, then review code quality
 
 STEP-BY-STEP PROCESS:
-Step 1: Use Bash tool: cd [project-directory] && npm test
+Step 1: Use Bash tool: cd [project-directory] && npx vitest run
 Step 2: If ANY test fails, create code-feedback.md with:
-   - EXACT error messages from npm test output
+   - EXACT error messages from npx vitest run output
    - Which specific tests are failing
    - What the implementation is missing
    - Specific code fixes needed to make tests pass
 Step 3: If ALL tests pass (0 failures, 0 errors), then review code quality
 
 REJECTION CRITERIA (MUST create code-feedback.md):
-- npm test command fails to execute
+- npx vitest run command fails to execute
 - ANY test fails when run (even 1 failure = rejection)
 - Build/compilation errors
 - Missing implementations that tests expect
 - Code doesn't match test expectations
 
 APPROVAL CRITERIA (ONLY approve if ALL are true):
-- npm test runs successfully with 0 failures, 0 errors
+- npx vitest run executes successfully with 0 failures, 0 errors
 - ALL tests pass (100% success rate)
 - Code follows project standards
 - Implementation matches test expectations exactly
 
-ZERO TOLERANCE: Never approve if any test fails. Always run npm test first."
+ZERO TOLERANCE: Never approve if any test fails. Always run npx vitest run first."
 
 COORDINATOR_SYSTEM="You are the Workflow Coordinator for the Claude App Builder project.
 
@@ -560,9 +560,9 @@ validate_development_checkpoint() {
     if [ -d "$project_dir" ]; then
         cd "$project_dir"
         
-        # Run tests to verify implementation
+        # Run tests to verify implementation (one-time execution, no watch mode)
         echo -e "${BLUE}Running tests to validate implementation...${NC}"
-        if npm test 2>&1 | tee /tmp/test_output.log; then
+        if npx vitest run 2>&1 | tee /tmp/test_output.log; then
             echo -e "${GREEN}✓ All tests passed${NC}"
             cd - > /dev/null
             return 0
@@ -707,9 +707,9 @@ validate_test_execution() {
         return 1
     fi
     
-    # Actually run the tests to verify they work
+    # Actually run the tests to verify they work (one-time execution, no watch mode)
     cd "$project_dir"
-    if npm test 2>&1 | tee /tmp/validation_test_output.log; then
+    if npx vitest run 2>&1 | tee /tmp/validation_test_output.log; then
         local test_result=$(grep -E "(passing|failing|failing|error)" /tmp/validation_test_output.log || echo "")
         if echo "$test_result" | grep -qi "failing\|error\|failed"; then
             echo -e "${RED}ERROR: Tests are failing! $reviewer_type reviewer should have caught this.${NC}"

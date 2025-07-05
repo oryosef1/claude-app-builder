@@ -21,6 +21,13 @@ MAX_TASKS_PER_BATCH=${MAX_TASKS_PER_BATCH:-10}  # Maximum tasks to process in ba
 VERBOSE=${VERBOSE:-false}  # Enable verbose logging
 WORKFLOW_STATE_FILE=${WORKFLOW_STATE_FILE:-".workflow-state.json"}  # Workflow state file
 
+# Verbose logging function
+log_verbose() {
+    if [ "$VERBOSE" = "true" ]; then
+        echo -e "${BLUE}[VERBOSE]${NC} $1"
+    fi
+}
+
 # Load environment variables from .env file
 load_env() {
     if [ -f ".env" ]; then
@@ -39,13 +46,6 @@ GITHUB_REPO=${GITHUB_REPO:-""}
 GITHUB_REMOTE_URL=${GITHUB_REMOTE_URL:-""}
 GIT_AUTO_PUSH=${GIT_AUTO_PUSH:-"false"}
 GIT_USE_POWERSHELL=${GIT_USE_POWERSHELL:-"false"}
-
-# Verbose logging function
-log_verbose() {
-    if [ "$VERBOSE" = "true" ]; then
-        echo -e "${BLUE}[VERBOSE]${NC} $1"
-    fi
-}
 
 # Enhanced error handling with context
 handle_error() {
@@ -828,9 +828,9 @@ while true; do
     iteration=$((iteration + 1))
     
     # Calculate progress and estimated time
-    local current_time=$(date +%s)
-    local elapsed_time=$((current_time - workflow_start_time))
-    local task_count=$(count_incomplete_tasks)
+    current_time=$(date +%s)
+    elapsed_time=$((current_time - workflow_start_time))
+    task_count=$(count_incomplete_tasks)
     
     echo -e "${YELLOW}=== Iteration $iteration ===${NC}"
     echo -e "${BLUE}📊 Progress: $elapsed_time seconds elapsed | $task_count tasks remaining${NC}"

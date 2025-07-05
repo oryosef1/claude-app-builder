@@ -873,7 +873,8 @@ Follow the project structure in ARCHITECTURE.md - create projects in separate di
         echo -e "${RED}Test writing failed after retries. Stopping workflow.${NC}"
         break
     fi
-    auto_commit "Test Writer" $iteration
+    # Don't commit after individual phases - only after complete task approval
+    # auto_commit "Test Writer" $iteration
     
     # Phase 2: Test Reviewer with proper rejection loop
     max_review_attempts=3
@@ -884,25 +885,25 @@ Follow the project structure in ARCHITECTURE.md - create projects in separate di
         
         if [ $review_attempt -eq 1 ]; then
             run_claude "TEST REVIEWER" \
-                "🚨 MANDATORY: You MUST run 'npm test' using the Bash tool before making any decisions!
+                "🚨 MANDATORY: You MUST run tests using the Bash tool before making any decisions!
 
 STEP 1: Navigate to project directory (dashboard/, api/, etc.) 
-STEP 2: Use Bash tool to run: npm test
-STEP 3: If ANY test fails or npm test doesn't work, create test-feedback.md with EXACT error messages
+STEP 2: Use Bash tool to run: npx vitest run (one-time execution, NOT watch mode)
+STEP 3: If ANY test fails or command doesn't work, create test-feedback.md with EXACT error messages
 STEP 4: Only if ALL tests run successfully, then approve and update memory.md
 
-DO NOT approve without running npm test successfully. Zero tolerance for broken tests." \
+DO NOT approve without running npx vitest run successfully. Zero tolerance for broken tests." \
                 "$TEST_REVIEWER_SYSTEM"
         else
             run_claude "TEST REVIEWER (RE-REVIEW $review_attempt)" \
-                "🚨 MANDATORY: Run 'npm test' again to verify the fixes work!
+                "🚨 MANDATORY: Run tests again to verify the fixes work!
 
 STEP 1: Navigate to project directory
-STEP 2: Use Bash tool to run: npm test  
+STEP 2: Use Bash tool to run: npx vitest run (one-time execution, NOT watch mode)
 STEP 3: If tests still fail, update test-feedback.md with remaining issues
 STEP 4: Only approve if ALL tests pass (0 failures)
 
-DO NOT approve without running npm test successfully." \
+DO NOT approve without running npx vitest run successfully." \
                 "$TEST_REVIEWER_SYSTEM"
         fi
         
@@ -956,25 +957,27 @@ DO NOT approve without running npm test successfully." \
         
         if [ $code_review_attempt -eq 1 ]; then
             run_claude "CODE REVIEWER" \
-                "🚨 MANDATORY: You MUST run 'npm test' using the Bash tool before making any decisions!
+                "🚨 MANDATORY: You MUST run tests AND build validation using the Bash tool before making any decisions!
 
 STEP 1: Navigate to project directory (dashboard/, api/, etc.)
-STEP 2: Use Bash tool to run: npm test
-STEP 3: If ANY test fails (even 1 failure), create code-feedback.md with EXACT error messages  
-STEP 4: Only if ALL tests pass (0 failures, 0 errors), then approve and update memory.md
+STEP 2: Use Bash tool to run: npx vitest run (one-time test execution, NOT watch mode)
+STEP 3: Use Bash tool to run: npm run build (check for compilation errors)
+STEP 4: If ANY test fails OR build fails, create code-feedback.md with EXACT error messages  
+STEP 5: Only if ALL tests pass (0 failures, 0 errors) AND build succeeds, then approve and update memory.md
 
-DO NOT approve if any test fails. Zero tolerance for failing tests." \
+DO NOT approve if any test fails or build fails. Zero tolerance for failures." \
                 "$CODE_REVIEWER_SYSTEM"
         else
             run_claude "CODE REVIEWER (RE-REVIEW $code_review_attempt)" \
-                "🚨 MANDATORY: Run 'npm test' again to verify all fixes work!
+                "🚨 MANDATORY: Run tests AND build validation again to verify all fixes work!
 
 STEP 1: Navigate to project directory
-STEP 2: Use Bash tool to run: npm test
-STEP 3: If tests still fail, update code-feedback.md with remaining issues
-STEP 4: Only approve if ALL tests pass (100% success rate)
+STEP 2: Use Bash tool to run: npx vitest run (one-time execution, NOT watch mode)
+STEP 3: Use Bash tool to run: npm run build (check compilation)
+STEP 4: If tests still fail OR build fails, update code-feedback.md with remaining issues
+STEP 5: Only approve if ALL tests pass (100% success rate) AND build succeeds
 
-DO NOT approve if any test fails. Zero tolerance for failing tests." \
+DO NOT approve if any test fails or build fails. Zero tolerance for failures." \
                 "$CODE_REVIEWER_SYSTEM"
         fi
         
@@ -1006,6 +1009,10 @@ DO NOT approve if any test fails. Zero tolerance for failing tests." \
         run_claude "COORDINATOR" \
             "Update todo.md to mark the completed task as done. Update memory.md with a summary of what was accomplished. Check if there are more incomplete high-priority tasks. If no more tasks, create a file called 'workflow-complete.flag' to signal completion." \
             "$COORDINATOR_SYSTEM"
+        
+        # Commit only after complete task is approved and coordinated
+        echo -e "${BLUE}Task completed successfully! Committing changes...${NC}"
+        auto_commit "Task Completed" $iteration
     else
         echo -e "${RED}Coordinator phase skipped - previous phases did not complete successfully${NC}"
         break

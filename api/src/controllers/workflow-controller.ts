@@ -8,9 +8,9 @@ export class WorkflowController {
   async getStatus(req: Request, res: Response): Promise<void> {
     try {
       const status = await this.workflowService.getStatus();
-      const response: ApiResponse<WorkflowStatus> = {
+      const response: ApiResponse<{ status: WorkflowStatus }> = {
         success: true,
-        data: status,
+        data: { status },
         timestamp: new Date()
       };
       res.json(response);
@@ -52,9 +52,9 @@ export class WorkflowController {
       }
 
       const status = await this.workflowService.executeCommand(command);
-      const response: ApiResponse<WorkflowStatus> = {
+      const response: ApiResponse<{ status: WorkflowStatus }> = {
         success: true,
-        data: status,
+        data: { status },
         timestamp: new Date()
       };
       res.json(response);
@@ -91,9 +91,9 @@ export class WorkflowController {
         level: level as 'info' | 'warn' | 'error' | 'debug'
       });
 
-      const response: ApiResponse<LogEntry[]> = {
+      const response: ApiResponse<{ logs: LogEntry[] }> = {
         success: true,
-        data: logs,
+        data: { logs },
         timestamp: new Date()
       };
       res.json(response);

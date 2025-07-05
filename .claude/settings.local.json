@@ -30,7 +30,18 @@
       "Bash(timeout 30 npx jest --testNamePattern=\"should create WebSocket server on specified port\" --detectOpenHandles --forceExit)",
       "Bash(timeout 20 npx jest --testNamePattern=\"should read and parse todos from todo.md\" --detectOpenHandles --verbose)",
       "Bash(find:*)",
-      "Bash(node test-runner.js)"
+      "Bash(node test-runner.js)",
+      "Bash(cp:*)",
+      "Bash(./verify-rejection-fixes.sh:*)",
+      "Bash(timeout 30s npm test -- --listTests)",
+      "Bash(./node_modules/.bin/jest:*)",
+      "Bash(npx tsc:*)",
+      "Bash(node:*)",
+      "Bash(./test-workflow-logic.sh:*)",
+      "Bash(timeout 60s npx jest:*)",
+      "Bash(docker:*)",
+      "Bash(cmd.exe /c \"node --version\")",
+      "Bash(cmd.exe /c \"npm test -- --forceExit --runInBand tests/unit/file-service.test.ts\")"
     ],
     "deny": []
   }

@@ -8,9 +8,40 @@ export class FileController {
   async getTodos(req: Request, res: Response): Promise<void> {
     try {
       const todos = await this.fileService.readTodoFile();
-      const response: ApiResponse<TodoItem[]> = {
+      const response: ApiResponse<{ todos: TodoItem[] }> = {
         success: true,
-        data: todos,
+        data: { todos },
+        timestamp: new Date()
+      };
+      res.json(response);
+    } catch (error) {
+      const response: ApiResponse = {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date()
+      };
+      res.status(500).json(response);
+    }
+  }
+
+  async saveTodos(req: Request, res: Response): Promise<void> {
+    try {
+      const { todos } = req.body;
+      
+      if (!Array.isArray(todos)) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Todos must be an array',
+          timestamp: new Date()
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      await this.fileService.writeTodoFile(todos);
+      const response: ApiResponse<{ saved: boolean }> = {
+        success: true,
+        data: { saved: true },
         timestamp: new Date()
       };
       res.json(response);
@@ -39,9 +70,9 @@ export class FileController {
       }
 
       const todo = await this.fileService.addTodo(content, priority);
-      const response: ApiResponse<TodoItem> = {
+      const response: ApiResponse<{ todo: TodoItem }> = {
         success: true,
-        data: todo,
+        data: { todo },
         timestamp: new Date()
       };
       res.json(response);
@@ -61,9 +92,9 @@ export class FileController {
       const updates = req.body;
       
       const todo = await this.fileService.updateTodo(id, updates);
-      const response: ApiResponse<TodoItem> = {
+      const response: ApiResponse<{ todo: TodoItem }> = {
         success: true,
-        data: todo,
+        data: { todo },
         timestamp: new Date()
       };
       res.json(response);

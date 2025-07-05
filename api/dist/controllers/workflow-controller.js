@@ -10,7 +10,7 @@ class WorkflowController {
             const status = await this.workflowService.getStatus();
             const response = {
                 success: true,
-                data: status,
+                data: { status },
                 timestamp: new Date()
             };
             res.json(response);
@@ -51,7 +51,7 @@ class WorkflowController {
             const status = await this.workflowService.executeCommand(command);
             const response = {
                 success: true,
-                data: status,
+                data: { status },
                 timestamp: new Date()
             };
             res.json(response);
@@ -87,7 +87,7 @@ class WorkflowController {
             });
             const response = {
                 success: true,
-                data: logs,
+                data: { logs },
                 timestamp: new Date()
             };
             res.json(response);

@@ -10,7 +10,36 @@ class FileController {
             const todos = await this.fileService.readTodoFile();
             const response = {
                 success: true,
-                data: todos,
+                data: { todos },
+                timestamp: new Date()
+            };
+            res.json(response);
+        }
+        catch (error) {
+            const response = {
+                success: false,
+                error: error instanceof Error ? error.message : 'Unknown error',
+                timestamp: new Date()
+            };
+            res.status(500).json(response);
+        }
+    }
+    async saveTodos(req, res) {
+        try {
+            const { todos } = req.body;
+            if (!Array.isArray(todos)) {
+                const response = {
+                    success: false,
+                    error: 'Todos must be an array',
+                    timestamp: new Date()
+                };
+                res.status(400).json(response);
+                return;
+            }
+            await this.fileService.writeTodoFile(todos);
+            const response = {
+                success: true,
+                data: { saved: true },
                 timestamp: new Date()
             };
             res.json(response);
@@ -39,7 +68,7 @@ class FileController {
             const todo = await this.fileService.addTodo(content, priority);
             const response = {
                 success: true,
-                data: todo,
+                data: { todo },
                 timestamp: new Date()
             };
             res.json(response);
@@ -60,7 +89,7 @@ class FileController {
             const todo = await this.fileService.updateTodo(id, updates);
             const response = {
                 success: true,
-                data: todo,
+                data: { todo },
                 timestamp: new Date()
             };
             res.json(response);

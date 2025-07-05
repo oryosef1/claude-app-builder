@@ -22,6 +22,12 @@
 - [ ] **Test with intentionally broken code** - Verify rejection loops work
 - [ ] **Test with good code** - Verify success path still works
 
+### WORKFLOW REJECTION TEST TASK (For Testing Only)
+- [ ] **Create calculateBrokenSum function** - Function that takes two numbers but MUST throw error (intentionally broken to test rejection loops)
+
+### WORKFLOW SUCCESS PATH TEST TASK (For Testing Only)  
+- [ ] **Create calculateGoodSum function** - Simple function that takes two numbers and returns their sum (should pass all reviews on first attempt)
+
 ### Task 3: Add Workflow Safety Mechanisms
 - [ ] **Add test execution validation** - Check npm test passes before proceeding
 - [ ] **Add build validation** - Check npm run build succeeds before proceeding  

@@ -384,7 +384,7 @@ run_claude_with_retry() {
     local role="$1"
     local prompt="$2"
     local system_prompt="$3"
-    local max_retries=3
+    local max_retries=2
     local retry=0
     
     while [ $retry -le $max_retries ]; do
@@ -608,48 +608,6 @@ validate_quality_gate() {
     return 0
 }
 
-# Validate phase completion - ensures phases only proceed if prior phases succeeded
-validate_phase_completion() {
-    local phase="$1"
-    local iteration="$2"
-    
-    log_verbose "Validating phase completion requirements for $phase"
-    
-    case "$phase" in
-        "test_reviewer")
-            # Test Writer must have completed successfully
-            if ! find . -name "*.test.ts" -o -name "*.test.tsx" | grep -q .; then
-                echo -e "${RED}ERROR: Cannot run Test Reviewer - no test files found${NC}"
-                return 1
-            fi
-            ;;
-        "developer")
-            # Test Reviewer must have approved (no feedback file)
-            if [ -f "test-feedback.md" ]; then
-                echo -e "${RED}ERROR: Cannot run Developer - tests not approved (test-feedback.md exists)${NC}"
-                return 1
-            fi
-            ;;
-        "code_reviewer")
-            # Developer must have created implementation files
-            if ! find . -path "*/src/*" -name "*.ts" -o -name "*.tsx" | grep -q .; then
-                echo -e "${RED}ERROR: Cannot run Code Reviewer - no implementation files found${NC}"
-                return 1
-            fi
-            ;;
-        "coordinator")
-            # Code Reviewer must have approved (no feedback file)
-            if [ -f "code-feedback.md" ]; then
-                echo -e "${RED}ERROR: Cannot run Coordinator - code not approved (code-feedback.md exists)${NC}"
-                return 1
-            fi
-            ;;
-    esac
-    
-    log_verbose "Phase completion validation passed for $phase"
-    return 0
-}
-
 # Main workflow loop
 echo -e "${YELLOW}=== Starting Automated Claude App Builder TDD Workflow ===${NC}"
 echo "This workflow will automatically run Claude Code in different roles."
@@ -734,44 +692,23 @@ Follow the project structure in ARCHITECTURE.md - create projects in separate di
     fi
     auto_commit "Test Writer" $iteration
     
-    # Phase 2: Test Reviewer with proper rejection loop
-    max_review_attempts=3
-    review_attempt=0
+    # Phase 2: Test Reviewer
+    run_claude "TEST REVIEWER" \
+        "Review the tests that were just written. Check for completeness, edge cases, and proper structure. Run the tests with 'npm test' to verify they fail correctly. If improvements needed, create a file called 'test-feedback.md' with specific issues. If approved, update memory.md with approval." \
+        "$TEST_REVIEWER_SYSTEM"
     
-    while [ $review_attempt -lt $max_review_attempts ]; do
-        review_attempt=$((review_attempt + 1))
+    # Check if feedback file exists
+    if [ -f "test-feedback.md" ]; then
+        echo -e "${YELLOW}Test review feedback found. Re-running test writer...${NC}"
         
-        if [ $review_attempt -eq 1 ]; then
-            run_claude "TEST REVIEWER" \
-                "Review the tests that were just written. Check for completeness, edge cases, and proper structure. Run the tests with 'npm test' to verify they fail correctly. If improvements needed, create a file called 'test-feedback.md' with specific issues. If approved, update memory.md with approval." \
-                "$TEST_REVIEWER_SYSTEM"
-        else
-            run_claude "TEST REVIEWER (RE-REVIEW $review_attempt)" \
-                "Re-review the revised tests. If approved, update memory.md. If still needs work, update test-feedback.md." \
-                "$TEST_REVIEWER_SYSTEM"
-        fi
+        run_claude "TEST WRITER (REVISION)" \
+            "Read test-feedback.md and revise the tests based on the feedback. Update the test files and remove test-feedback.md when done." \
+            "$TEST_WRITER_SYSTEM"
         
-        # Check if feedback file exists (tests rejected)
-        if [ -f "test-feedback.md" ]; then
-            echo -e "${YELLOW}Test review feedback found (attempt $review_attempt). Re-running test writer...${NC}"
-            
-            run_claude "TEST WRITER (REVISION $review_attempt)" \
-                "Read test-feedback.md and revise the tests based on the feedback. Update the test files and remove test-feedback.md when done." \
-                "$TEST_WRITER_SYSTEM"
-            
-            # Continue loop for next review attempt
-            continue
-        else
-            # Tests approved, break out of loop
-            echo -e "${GREEN}Tests approved after $review_attempt attempt(s)${NC}"
-            break
-        fi
-    done
-    
-    # Check if we exceeded max attempts
-    if [ $review_attempt -eq $max_review_attempts ] && [ -f "test-feedback.md" ]; then
-        echo -e "${RED}Test review failed after $max_review_attempts attempts. Stopping workflow.${NC}"
-        break
+        # Re-run reviewer
+        run_claude "TEST REVIEWER (RE-REVIEW)" \
+            "Re-review the revised tests. If approved, update memory.md. If still needs work, update test-feedback.md." \
+            "$TEST_REVIEWER_SYSTEM"
     fi
     
     # Phase 3: Developer
@@ -792,55 +729,29 @@ Follow the project structure in ARCHITECTURE.md - create projects in separate di
         fi
     done
     
-    # Phase 4: Code Reviewer with proper rejection loop
-    max_code_review_attempts=3
-    code_review_attempt=0
+    # Phase 4: Code Reviewer
+    run_claude "CODE REVIEWER" \
+        "Review the implementation. Run 'npm test' to verify all tests pass. Check code quality and standards. If improvements needed, create 'code-feedback.md' with specific issues. If approved, update memory.md." \
+        "$CODE_REVIEWER_SYSTEM"
     
-    while [ $code_review_attempt -lt $max_code_review_attempts ]; do
-        code_review_attempt=$((code_review_attempt + 1))
+    # Check if feedback file exists
+    if [ -f "code-feedback.md" ]; then
+        echo -e "${YELLOW}Code review feedback found. Re-running developer...${NC}"
         
-        if [ $code_review_attempt -eq 1 ]; then
-            run_claude "CODE REVIEWER" \
-                "Review the implementation. Run 'npm test' to verify all tests pass. Check code quality and standards. If improvements needed, create 'code-feedback.md' with specific issues. If approved, update memory.md." \
-                "$CODE_REVIEWER_SYSTEM"
-        else
-            run_claude "CODE REVIEWER (RE-REVIEW $code_review_attempt)" \
-                "Re-review the revised code. Run tests again. If approved, update memory.md. If still needs work, update code-feedback.md." \
-                "$CODE_REVIEWER_SYSTEM"
-        fi
+        run_claude "DEVELOPER (REVISION)" \
+            "Read code-feedback.md and revise the implementation based on feedback. Update code and remove code-feedback.md when done." \
+            "$DEVELOPER_SYSTEM"
         
-        # Check if feedback file exists (code rejected)
-        if [ -f "code-feedback.md" ]; then
-            echo -e "${YELLOW}Code review feedback found (attempt $code_review_attempt). Re-running developer...${NC}"
-            
-            run_claude "DEVELOPER (REVISION $code_review_attempt)" \
-                "Read code-feedback.md and revise the implementation based on feedback. Update code and remove code-feedback.md when done." \
-                "$DEVELOPER_SYSTEM"
-            
-            # Continue loop for next review attempt
-            continue
-        else
-            # Code approved, break out of loop
-            echo -e "${GREEN}Code approved after $code_review_attempt attempt(s)${NC}"
-            break
-        fi
-    done
-    
-    # Check if we exceeded max attempts
-    if [ $code_review_attempt -eq $max_code_review_attempts ] && [ -f "code-feedback.md" ]; then
-        echo -e "${RED}Code review failed after $max_code_review_attempts attempts. Stopping workflow.${NC}"
-        break
+        # Re-run code reviewer
+        run_claude "CODE REVIEWER (RE-REVIEW)" \
+            "Re-review the revised code. Run tests again. If approved, update memory.md. If still needs work, update code-feedback.md." \
+            "$CODE_REVIEWER_SYSTEM"
     fi
     
-    # Phase 5: Coordinator - only run if all phases succeeded
-    if validate_phase_completion "coordinator" $iteration; then
-        run_claude "COORDINATOR" \
-            "Update todo.md to mark the completed task as done. Update memory.md with a summary of what was accomplished. Check if there are more incomplete high-priority tasks. If no more tasks, create a file called 'workflow-complete.flag' to signal completion." \
-            "$COORDINATOR_SYSTEM"
-    else
-        echo -e "${RED}Coordinator phase skipped - previous phases did not complete successfully${NC}"
-        break
-    fi
+    # Phase 5: Coordinator
+    run_claude "COORDINATOR" \
+        "Update todo.md to mark the completed task as done. Update memory.md with a summary of what was accomplished. Check if there are more incomplete high-priority tasks. If no more tasks, create a file called 'workflow-complete.flag' to signal completion." \
+        "$COORDINATOR_SYSTEM"
     
     # Check if workflow is complete
     if [ -f "workflow-complete.flag" ]; then

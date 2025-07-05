@@ -11,16 +11,18 @@ exports.fileService = fileService;
 const fileController = new file_controller_1.FileController(fileService);
 // GET /api/files/todos - Get all todos
 router.get('/todos', (req, res) => fileController.getTodos(req, res));
-// POST /api/files/todos - Add new todo
-router.post('/todos', (req, res) => fileController.addTodo(req, res));
+// POST /api/files/todos - Save todos array (matches dashboard API calls)
+router.post('/todos', (req, res) => fileController.saveTodos(req, res));
+// POST /api/files/todos/add - Add new todo (matches dashboard API calls)
+router.post('/todos/add', (req, res) => fileController.addTodo(req, res));
 // PUT /api/files/todos/:id - Update todo
 router.put('/todos/:id', (req, res) => fileController.updateTodo(req, res));
 // DELETE /api/files/todos/:id - Delete todo
 router.delete('/todos/:id', (req, res) => fileController.deleteTodo(req, res));
 // GET /api/files/memory - Get memory content
 router.get('/memory', (req, res) => fileController.getMemory(req, res));
-// PUT /api/files/memory - Update memory content
-router.put('/memory', (req, res) => fileController.updateMemory(req, res));
+// POST /api/files/memory - Update memory content (matches dashboard API calls)
+router.post('/memory', (req, res) => fileController.updateMemory(req, res));
 // POST /api/files/backup - Backup files
 router.post('/backup', (req, res) => fileController.backupFiles(req, res));
 //# sourceMappingURL=files.js.map

@@ -4,6 +4,7 @@ export declare class FileController {
     private fileService;
     constructor(fileService: FileService);
     getTodos(req: Request, res: Response): Promise<void>;
+    saveTodos(req: Request, res: Response): Promise<void>;
     addTodo(req: Request, res: Response): Promise<void>;
     updateTodo(req: Request, res: Response): Promise<void>;
     deleteTodo(req: Request, res: Response): Promise<void>;

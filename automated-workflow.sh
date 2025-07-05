@@ -359,7 +359,9 @@ execute_git() {
     local git_command="$1"
     
     if [ "$GIT_USE_POWERSHELL" = "true" ]; then
-        powershell.exe -Command "cd '$(pwd)'; $git_command"
+        # Convert WSL path to Windows path for PowerShell
+        local windows_path=$(wslpath -w "$(pwd)")
+        powershell.exe -Command "cd '$windows_path'; $git_command"
     else
         eval "$git_command"
     fi

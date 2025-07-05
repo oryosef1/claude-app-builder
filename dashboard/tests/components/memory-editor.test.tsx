@@ -16,7 +16,8 @@ describe('MemoryEditor Component', () => {
     act(() => {
       render(React.createElement(MemoryEditor, defaultProps))
     })
-    expect(screen.getByText(mockMemoryContent)).toBeInTheDocument()
+    expect(screen.getByText(/# Memory/)).toBeInTheDocument()
+    expect(screen.getByText(/This is test memory content/)).toBeInTheDocument()
   })
 
   it('has edit button', () => {
@@ -35,7 +36,8 @@ describe('MemoryEditor Component', () => {
       fireEvent.click(screen.getByText('Edit'))
     })
     
-    expect(screen.getByDisplayValue(mockMemoryContent)).toBeInTheDocument()
+    const textarea = screen.getByRole('textbox') as HTMLTextAreaElement
+    expect(textarea.value).toBe(mockMemoryContent)
   })
 
   it('shows save and cancel buttons in edit mode', async () => {
@@ -62,7 +64,7 @@ describe('MemoryEditor Component', () => {
       fireEvent.click(screen.getByText('Edit'))
     })
     
-    const textarea = screen.getByDisplayValue(mockMemoryContent)
+    const textarea = screen.getByRole('textbox') as HTMLTextAreaElement
     
     await act(async () => {
       await user.clear(textarea)

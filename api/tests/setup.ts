@@ -41,4 +41,32 @@ beforeEach(() => {
 
 afterEach(() => {
   jest.restoreAllMocks();
+  // Clear any hanging timers
+  jest.clearAllTimers();
+});
+
+// Global test timeout and resource management
+beforeAll(() => {
+  // Set stricter timeouts for better test failure detection
+  jest.setTimeout(10000);
+  
+  // Track open handles for debugging
+  if (process.env.NODE_ENV === 'test') {
+    process.on('warning', (warning) => {
+      if (warning.name === 'MaxListenersExceededWarning') {
+        console.warn('MaxListenersExceededWarning detected:', warning.message);
+      }
+    });
+  }
+});
+
+// Force cleanup of any remaining handles
+afterAll(() => {
+  // Force close any remaining connections
+  if (process.listenerCount('uncaughtException') > 0) {
+    process.removeAllListeners('uncaughtException');
+  }
+  if (process.listenerCount('unhandledRejection') > 0) {
+    process.removeAllListeners('unhandledRejection');
+  }
 });

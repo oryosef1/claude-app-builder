@@ -45,6 +45,18 @@ describe('API Integration Tests', () => {
     app = createApp(mockWorkflowService, mockFileService, mockWebSocketService);
   });
 
+  afterEach(() => {
+    // Clean up WebSocket service
+    if (mockWebSocketService && mockWebSocketService.close) {
+      mockWebSocketService.close();
+    }
+    // Clean up any event listeners
+    if (mockWorkflowService && typeof mockWorkflowService.removeAllListeners === 'function') {
+      mockWorkflowService.removeAllListeners();
+    }
+    jest.clearAllMocks();
+  });
+
   describe('GET /api/workflow/status', () => {
     it('should return workflow status', async () => {
       const mockStatus = {

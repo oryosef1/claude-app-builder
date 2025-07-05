@@ -65,15 +65,39 @@ describe('Workflow E2E Tests', () => {
   });
 
   afterAll(async () => {
-    // Cleanup
-    if (serverProcess) {
-      serverProcess.kill();
-    }
-    if (wsClient) {
-      wsClient.close();
-    }
+    // Cleanup WebSocket service first
     if (webSocketService) {
-      webSocketService.close();
+      try {
+        await new Promise<void>((resolve) => {
+          webSocketService.close(() => {
+            resolve();
+          });
+        });
+      } catch (error) {
+        console.warn('Failed to close WebSocket service:', error);
+      }
+    }
+    
+    // Cleanup server process
+    if (serverProcess) {
+      serverProcess.kill('SIGKILL');
+      // Wait for process to die
+      await new Promise((resolve) => {
+        serverProcess!.on('exit', resolve);
+        setTimeout(resolve, 1000); // Fallback timeout
+      });
+    }
+    
+    // Cleanup WebSocket client
+    if (wsClient) {
+      if (wsClient.readyState === WebSocket.OPEN) {
+        wsClient.close();
+      }
+    }
+    
+    // Clean up workflow service
+    if (workflowService) {
+      workflowService.removeAllListeners();
     }
     
     // Clean up test workspace
@@ -82,25 +106,70 @@ describe('Workflow E2E Tests', () => {
     } catch (error) {
       console.warn('Failed to clean up test workspace:', error);
     }
-  });
+    
+    // Force garbage collection
+    if (global.gc) {
+      global.gc();
+    }
+  }, 30000); // 30 second timeout for cleanup
 
   beforeEach(async () => {
     // Reset test state
     jest.clearAllMocks();
   });
 
+  afterEach(async () => {
+    // Clean up WebSocket connections created in individual tests
+    if (wsClient) {
+      if (wsClient.readyState === WebSocket.OPEN) {
+        wsClient.close();
+      }
+      wsClient = undefined;
+    }
+    
+    // Clean up any server processes created in tests
+    if (serverProcess) {
+      serverProcess.kill('SIGTERM');
+      serverProcess = undefined;
+    }
+    
+    // Clear any hanging timers
+    jest.clearAllTimers();
+  });
+
   describe('Complete Workflow Automation', () => {
     it('should start workflow and receive real-time updates', async () => {
-      // Start WebSocket connection
+      // Start WebSocket connection with timeout and error handling
       wsClient = new WebSocket(`ws://localhost:${testWsPort}`);
       
       const wsMessages: any[] = [];
       wsClient.on('message', (data) => {
-        wsMessages.push(JSON.parse(data.toString()));
+        try {
+          wsMessages.push(JSON.parse(data.toString()));
+        } catch (error) {
+          console.warn('Failed to parse WebSocket message:', error);
+        }
       });
 
-      await new Promise((resolve) => {
-        wsClient!.on('open', resolve);
+      wsClient.on('error', (error) => {
+        console.warn('WebSocket error:', error);
+      });
+
+      // Wait for connection with timeout
+      await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('WebSocket connection timeout'));
+        }, 5000);
+        
+        wsClient!.on('open', () => {
+          clearTimeout(timeout);
+          resolve(void 0);
+        });
+        
+        wsClient!.on('error', (error) => {
+          clearTimeout(timeout);
+          reject(error);
+        });
       });
 
       // Start workflow

@@ -2,7 +2,7 @@ import { WorkflowService } from '@/services/workflow-service';
 import { ProcessManager } from '@/services/process-manager';
 import { FileService } from '@/services/file-service';
 import { LogService } from '@/services/log-service';
-import { WorkflowCommand, WorkflowStatus } from '@/types';
+import { WorkflowCommand, WorkflowStatus, TodoItem } from '@/types';
 
 jest.mock('@/services/process-manager');
 jest.mock('@/services/file-service');
@@ -20,6 +20,14 @@ describe('WorkflowService', () => {
     mockLogService = new LogService() as jest.Mocked<LogService>;
     
     service = new WorkflowService(mockProcessManager, mockFileService, mockLogService);
+  });
+
+  afterEach(() => {
+    // Clean up any hanging processes or resources
+    if (service) {
+      service.removeAllListeners();
+    }
+    jest.clearAllMocks();
   });
 
   describe('getStatus', () => {
@@ -56,12 +64,12 @@ describe('WorkflowService', () => {
         todoId: 'test-todo-1'
       };
 
-      const mockTodos = [
+      const mockTodos: TodoItem[] = [
         { 
           id: 'test-todo-1', 
           content: 'Test task', 
-          status: 'pending',
-          priority: 'high',
+          status: 'pending' as const,
+          priority: 'high' as const,
           createdAt: new Date('2023-01-01'),
           updatedAt: new Date('2023-01-01')
         }

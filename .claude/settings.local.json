@@ -20,7 +20,17 @@
       "Bash(npm run preview:*)",
       "Bash(npm test)",
       "Bash(ls:*)",
-      "Bash(kill:*)"
+      "Bash(kill:*)",
+      "Bash(npm test:*)",
+      "Bash(timeout 60 npm test)",
+      "Bash(timeout 30 npx vitest run tests/components/memory-editor.test.tsx)",
+      "Bash(npx vitest run:*)",
+      "Bash(cd:*)",
+      "Bash(cd:*)",
+      "Bash(timeout 30 npx jest --testNamePattern=\"should create WebSocket server on specified port\" --detectOpenHandles --forceExit)",
+      "Bash(timeout 20 npx jest --testNamePattern=\"should read and parse todos from todo.md\" --detectOpenHandles --verbose)",
+      "Bash(find:*)",
+      "Bash(node test-runner.js)"
     ],
     "deny": []
   }

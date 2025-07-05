@@ -22,6 +22,14 @@ describe('WorkflowController', () => {
     controller = new WorkflowController(mockWorkflowService);
   });
 
+  afterEach(() => {
+    // Clean up any hanging resources
+    if (mockWorkflowService && typeof mockWorkflowService.removeAllListeners === 'function') {
+      mockWorkflowService.removeAllListeners();
+    }
+    jest.clearAllMocks();
+  });
+
   describe('getStatus', () => {
     it('should return current workflow status', async () => {
       const mockStatus: WorkflowStatus = {

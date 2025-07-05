@@ -2,7 +2,21 @@ import { WebSocketService } from '@/services/websocket-service';
 import { WebSocketMessage } from '@/types';
 import WebSocket from 'ws';
 
-jest.mock('ws');
+jest.mock('ws', () => {
+  const mockServer = {
+    clients: new Set(),
+    on: jest.fn(),
+    close: jest.fn(),
+    handleUpgrade: jest.fn(),
+    shouldHandle: jest.fn()
+  };
+  
+  return {
+    Server: jest.fn().mockImplementation(() => mockServer),
+    OPEN: 1,
+    CLOSED: 3
+  };
+});
 
 describe('WebSocketService', () => {
   let service: WebSocketService;
@@ -30,6 +44,13 @@ describe('WebSocketService', () => {
     (WebSocket.Server as any).mockImplementation(() => mockWebSocketServer);
     
     service = new WebSocketService(8080);
+  });
+
+  afterEach(() => {
+    if (service) {
+      service.close();
+    }
+    jest.clearAllMocks();
   });
 
   describe('constructor', () => {

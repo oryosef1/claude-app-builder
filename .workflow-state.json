@@ -1,0 +1,9 @@
+{
+    "status": "interrupted",
+    "current_phase": "unknown",
+    "iteration": 1,
+    "timestamp": "2025-07-05T02:05:48+03:00",
+    "processing_mode": "sequential",
+    "context": "User interrupted workflow",
+    "incomplete_tasks": 0
+}

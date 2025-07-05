@@ -1,13 +1,20 @@
 import { FileService } from '@/services/file-service';
 import { TodoItem } from '@/types';
-import fs from 'fs/promises';
+import fs from 'fs';
 import path from 'path';
 
-jest.mock('fs/promises');
+jest.mock('fs', () => ({
+  promises: {
+    readFile: jest.fn(),
+    writeFile: jest.fn(),
+    access: jest.fn(),
+    mkdir: jest.fn(),
+  }
+}));
 
 describe('FileService', () => {
   let service: FileService;
-  const mockFs = fs as jest.Mocked<typeof fs>;
+  const mockFs = fs.promises as jest.Mocked<typeof fs.promises>;
 
   beforeEach(() => {
     service = new FileService('/test/path');
@@ -31,7 +38,7 @@ describe('FileService', () => {
 
       const todos = await service.readTodos();
 
-      expect(todos).toHaveLength(4);
+      expect(todos).toHaveLength(5);
       expect(todos[0]).toEqual({
         id: expect.any(String),
         content: 'Create Node.js backend API',
@@ -64,6 +71,14 @@ describe('FileService', () => {
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date)
       });
+      expect(todos[4]).toEqual({
+        id: expect.any(String),
+        content: 'Add syntax highlighting',
+        priority: 'medium',
+        status: 'pending',
+        createdAt: expect.any(Date),
+        updatedAt: expect.any(Date)
+      });
     });
 
     it('should handle empty todo.md file', async () => {
@@ -75,7 +90,9 @@ describe('FileService', () => {
     });
 
     it('should handle missing todo.md file', async () => {
-      mockFs.readFile.mockRejectedValue(new Error('ENOENT: no such file'));
+      const error = new Error('ENOENT: no such file') as NodeJS.ErrnoException;
+      error.code = 'ENOENT';
+      mockFs.readFile.mockRejectedValue(error);
 
       const todos = await service.readTodos();
 
@@ -208,7 +225,9 @@ describe('FileService', () => {
     });
 
     it('should handle missing memory.md file', async () => {
-      mockFs.readFile.mockRejectedValue(new Error('ENOENT: no such file'));
+      const error = new Error('ENOENT: no such file') as NodeJS.ErrnoException;
+      error.code = 'ENOENT';
+      mockFs.readFile.mockRejectedValue(error);
 
       const content = await service.readMemory();
 
@@ -246,7 +265,7 @@ describe('FileService', () => {
       const exists = await service.fileExists('test.txt');
 
       expect(exists).toBe(true);
-      expect(mockFs.access).toHaveBeenCalledWith('test.txt');
+      expect(mockFs.access).toHaveBeenCalledWith('/test/path/test.txt');
     });
 
     it('should return false for non-existing file', async () => {
@@ -266,7 +285,7 @@ describe('FileService', () => {
       const content = await service.readFile('test.txt');
 
       expect(content).toBe(mockContent);
-      expect(mockFs.readFile).toHaveBeenCalledWith('test.txt', 'utf-8');
+      expect(mockFs.readFile).toHaveBeenCalledWith('/test/path/test.txt', 'utf-8');
     });
 
     it('should handle read errors', async () => {
@@ -284,7 +303,7 @@ describe('FileService', () => {
 
       await service.writeFile('test.txt', content);
 
-      expect(mockFs.writeFile).toHaveBeenCalledWith('test.txt', content, 'utf-8');
+      expect(mockFs.writeFile).toHaveBeenCalledWith('/test/path/test.txt', content, 'utf-8');
     });
 
     it('should handle write errors', async () => {

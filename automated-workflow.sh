@@ -21,6 +21,25 @@ MAX_TASKS_PER_BATCH=${MAX_TASKS_PER_BATCH:-10}  # Maximum tasks to process in ba
 VERBOSE=${VERBOSE:-false}  # Enable verbose logging
 WORKFLOW_STATE_FILE=${WORKFLOW_STATE_FILE:-".workflow-state.json"}  # Workflow state file
 
+# Load environment variables from .env file
+load_env() {
+    if [ -f ".env" ]; then
+        log_verbose "Loading environment variables from .env"
+        export $(grep -v '^#' .env | xargs)
+    fi
+}
+
+# Load environment variables
+load_env
+
+# GitHub configuration from environment
+GITHUB_TOKEN=${GITHUB_TOKEN:-""}
+GITHUB_USER=${GITHUB_USER:-""}
+GITHUB_REPO=${GITHUB_REPO:-""}
+GITHUB_REMOTE_URL=${GITHUB_REMOTE_URL:-""}
+GIT_AUTO_PUSH=${GIT_AUTO_PUSH:-"false"}
+GIT_USE_POWERSHELL=${GIT_USE_POWERSHELL:-"false"}
+
 # Verbose logging function
 log_verbose() {
     if [ "$VERBOSE" = "true" ]; then
@@ -315,17 +334,57 @@ initialize_git() {
     fi
 }
 
+# Execute git command with PowerShell if needed
+execute_git() {
+    local git_command="$1"
+    
+    if [ "$GIT_USE_POWERSHELL" = "true" ]; then
+        powershell.exe -Command "cd '$(pwd)'; $git_command"
+    else
+        eval "$git_command"
+    fi
+}
+
+# Push to GitHub
+push_to_github() {
+    local message="$1"
+    
+    if [ "$GIT_AUTO_PUSH" = "true" ] && [ -n "$GITHUB_TOKEN" ]; then
+        echo -e "${BLUE}Pushing to GitHub...${NC}"
+        
+        # Update remote URL with token if needed
+        if [ -n "$GITHUB_REMOTE_URL" ]; then
+            execute_git "git remote set-url origin $GITHUB_REMOTE_URL"
+        fi
+        
+        # Push to GitHub
+        if execute_git "git push origin master"; then
+            echo -e "${GREEN}✓ Successfully pushed to GitHub${NC}"
+            return 0
+        else
+            echo -e "${RED}✗ Failed to push to GitHub${NC}"
+            return 1
+        fi
+    else
+        log_verbose "Auto-push disabled or GitHub token not configured"
+        return 0
+    fi
+}
+
 # Auto-commit progress after successful phases
 auto_commit() {
     local phase="$1"
     local iteration="$2"
     
     echo -e "${BLUE}Auto-committing progress...${NC}"
-    git add .
-    git commit -m "Iteration $iteration: $phase completed successfully
+    execute_git "git add ."
+    execute_git "git commit -m \"Iteration $iteration: $phase completed successfully
 
 🤖 Generated with Claude App Builder
-Co-Authored-By: Claude <noreply@anthropic.com>" || true
+Co-Authored-By: Claude <noreply@anthropic.com>\"" || true
+    
+    # Auto-push if enabled
+    push_to_github "Auto-push after $phase completion"
 }
 
 # Auto-install dependencies when package.json is created/updated
@@ -856,15 +915,26 @@ Follow the project structure in ARCHITECTURE.md - create projects in separate di
         done
         
         # Create final release commit
-        git add .
-        git commit -m "🎉 Project completed successfully
+        execute_git "git add ."
+        execute_git "git commit -m \"🎉 Project completed successfully
 
 All features implemented and verified.
 
 🤖 Generated with Claude App Builder
-Co-Authored-By: Claude <noreply@anthropic.com>" || true
+Co-Authored-By: Claude <noreply@anthropic.com>\"" || true
         
-        git tag "release-$(date +%Y%m%d-%H%M%S)" -m "Completed project release"
+        local release_tag="release-$(date +%Y%m%d-%H%M%S)"
+        execute_git "git tag \"$release_tag\" -m \"Completed project release\""
+        
+        # Push final release to GitHub
+        echo -e "${GREEN}🎉 Project completed! Pushing final release to GitHub...${NC}"
+        push_to_github "Final project release"
+        
+        # Push tags to GitHub
+        if [ "$GIT_AUTO_PUSH" = "true" ] && [ -n "$GITHUB_TOKEN" ]; then
+            execute_git "git push origin --tags"
+            echo -e "${GREEN}✓ Release tags pushed to GitHub${NC}"
+        fi
         
         rm workflow-complete.flag
         break

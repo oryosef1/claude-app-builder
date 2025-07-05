@@ -50,7 +50,11 @@
       "Bash(dpkg:*)",
       "Bash(git remote set-url:*)",
       "Bash(export:*)",
-      "Bash(powershell.exe:*)"
+      "Bash(powershell.exe:*)",
+      "Bash(mkdir:*)",
+      "Bash(npm install)",
+      "Bash(timeout 60s npm test tests/integration)",
+      "Bash(npx jest:*)"
     ],
     "deny": []
   }

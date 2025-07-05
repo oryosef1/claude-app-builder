@@ -564,8 +564,45 @@ validate_development_checkpoint() {
         echo -e "${BLUE}Running tests to validate implementation...${NC}"
         if npx vitest run 2>&1 | tee /tmp/test_output.log; then
             echo -e "${GREEN}✓ All tests passed${NC}"
-            cd - > /dev/null
-            return 0
+            
+            # Verify build succeeds
+            echo -e "${BLUE}Verifying build process...${NC}"
+            if npm run build 2>&1 | tee /tmp/build_output.log; then
+                echo -e "${GREEN}✓ Build successful${NC}"
+                
+                # Test application startup (if it's a web project)
+                if [ -f "package.json" ] && grep -q "\"dev\":" package.json; then
+                    echo -e "${BLUE}Testing application startup...${NC}"
+                    if timeout 30s npm run dev 2>&1 | tee /tmp/dev_output.log &
+                    then
+                        DEV_PID=$!
+                        sleep 10  # Give time for startup
+                        if kill -0 $DEV_PID 2>/dev/null; then
+                            echo -e "${GREEN}✓ Application starts successfully${NC}"
+                            kill $DEV_PID 2>/dev/null
+                            wait $DEV_PID 2>/dev/null
+                        else
+                            echo -e "${RED}✗ Application failed to start${NC}"
+                            cat /tmp/dev_output.log
+                            cd - > /dev/null
+                            return 1
+                        fi
+                    else
+                        echo -e "${RED}✗ Failed to start dev server${NC}"
+                        cd - > /dev/null
+                        return 1
+                    fi
+                fi
+                
+                cd - > /dev/null
+                return 0
+            else
+                echo -e "${RED}✗ Build failed${NC}"
+                echo -e "${YELLOW}Build output:${NC}"
+                cat /tmp/build_output.log
+                cd - > /dev/null
+                return 1
+            fi
         else
             echo -e "${RED}✗ Tests failed${NC}"
             echo -e "${YELLOW}Test output:${NC}"
@@ -962,10 +999,12 @@ DO NOT approve without running npx vitest run successfully." \
 STEP 1: Navigate to project directory (dashboard/, api/, etc.)
 STEP 2: Use Bash tool to run: npx vitest run (one-time test execution, NOT watch mode)
 STEP 3: Use Bash tool to run: npm run build (check for compilation errors)
-STEP 4: If ANY test fails OR build fails, create code-feedback.md with EXACT error messages  
-STEP 5: Only if ALL tests pass (0 failures, 0 errors) AND build succeeds, then approve and update memory.md
+STEP 4: Use Bash tool to run: timeout 30s npm run dev (test app actually starts without errors)
+STEP 5: Check for any console errors or startup failures in the dev server output
+STEP 6: If ANY test fails OR build fails OR dev server fails to start, create code-feedback.md with EXACT error messages
+STEP 7: Only if ALL tests pass (0 failures, 0 errors) AND build succeeds AND dev server starts successfully, then approve and update memory.md
 
-DO NOT approve if any test fails or build fails. Zero tolerance for failures." \
+DO NOT approve if any test fails, build fails, or application fails to start. Zero tolerance for failures." \
                 "$CODE_REVIEWER_SYSTEM"
         else
             run_claude "CODE REVIEWER (RE-REVIEW $code_review_attempt)" \
@@ -974,10 +1013,12 @@ DO NOT approve if any test fails or build fails. Zero tolerance for failures." \
 STEP 1: Navigate to project directory
 STEP 2: Use Bash tool to run: npx vitest run (one-time execution, NOT watch mode)
 STEP 3: Use Bash tool to run: npm run build (check compilation)
-STEP 4: If tests still fail OR build fails, update code-feedback.md with remaining issues
-STEP 5: Only approve if ALL tests pass (100% success rate) AND build succeeds
+STEP 4: Use Bash tool to run: timeout 30s npm run dev (verify app starts without errors)
+STEP 5: Check for console errors or startup failures in dev server output
+STEP 6: If tests still fail OR build fails OR dev server fails, update code-feedback.md with remaining issues
+STEP 7: Only approve if ALL tests pass (100% success rate) AND build succeeds AND app starts successfully
 
-DO NOT approve if any test fails or build fails. Zero tolerance for failures." \
+DO NOT approve if any test fails, build fails, or application fails to start. Zero tolerance for failures." \
                 "$CODE_REVIEWER_SYSTEM"
         fi
         

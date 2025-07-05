@@ -918,10 +918,12 @@ Follow the project structure in ARCHITECTURE.md - create projects in separate di
     # Phase 2: Test Reviewer with proper rejection loop
     max_review_attempts=3
     review_attempt=0
+    tests_approved=false
     
-    while [ $review_attempt -lt $max_review_attempts ]; do
+    while [ $review_attempt -lt $max_review_attempts ] && [ "$tests_approved" = false ]; do
         review_attempt=$((review_attempt + 1))
         
+        # Always run Test Reviewer first
         if [ $review_attempt -eq 1 ]; then
             run_claude "TEST REVIEWER" \
                 "🚨 MANDATORY: You MUST run tests using the Bash tool before making any decisions!
@@ -946,7 +948,7 @@ DO NOT approve without running npx vitest run successfully." \
                 "$TEST_REVIEWER_SYSTEM"
         fi
         
-        # Check if feedback file exists (tests rejected)
+        # Check if Test Reviewer rejected tests (created feedback file)
         if [ -f "test-feedback.md" ]; then
             echo -e "${YELLOW}Test review feedback found (attempt $review_attempt). Re-running test writer...${NC}"
             
@@ -957,14 +959,15 @@ DO NOT approve without running npx vitest run successfully." \
             # Continue loop for next review attempt
             continue
         else
-            # Tests approved, break out of loop
-            echo -e "${GREEN}Tests approved after $review_attempt attempt(s)${NC}"
+            # No feedback file means Test Reviewer approved the tests
+            echo -e "${GREEN}Tests approved by Test Reviewer after $review_attempt attempt(s)${NC}"
+            tests_approved=true
             break
         fi
     done
     
-    # Check if we exceeded max attempts
-    if [ $review_attempt -eq $max_review_attempts ] && [ -f "test-feedback.md" ]; then
+    # Check if tests were never approved
+    if [ "$tests_approved" = false ]; then
         echo -e "${RED}Test review failed after $max_review_attempts attempts. Stopping workflow.${NC}"
         break
     fi

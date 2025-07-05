@@ -26,8 +26,8 @@ describe('API Integration Tests', () => {
     mockFileService = {
       readTodos: jest.fn(),
       writeTodos: jest.fn(),
-      readMemory: jest.fn(),
-      writeMemory: jest.fn(),
+      readMemoryFile: jest.fn(),
+      writeMemoryFile: jest.fn(),
       fileExists: jest.fn(),
       readFile: jest.fn(),
       writeFile: jest.fn()
@@ -42,7 +42,10 @@ describe('API Integration Tests', () => {
       close: jest.fn()
     } as any;
 
-    app = createApp(mockWorkflowService, mockFileService, mockWebSocketService);
+    // Note: For integration tests, we would need to mock the createApp function or its dependencies
+    // For now, create app without mocked services and test the real API
+    const appResult = createApp();
+    app = appResult.app;
   });
 
   afterEach(() => {

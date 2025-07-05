@@ -82,9 +82,9 @@ export class ProcessManager extends EventEmitter {
   }
 
   killAllProcesses(): void {
-    for (const [pid, process] of this.processes) {
+    Array.from(this.processes.entries()).forEach(([pid, process]) => {
       process.kill();
-    }
+    });
     this.processes.clear();
   }
 }

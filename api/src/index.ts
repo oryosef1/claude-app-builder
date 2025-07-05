@@ -2,7 +2,7 @@ import { createApp } from './app';
 import { WorkflowIntegration } from './services/WorkflowIntegration';
 import { logger } from './utils/logger';
 
-const PORT = process.env.PORT || 3001;
+const PORT = Number(process.env.PORT) || 3001;
 
 async function startServer() {
   try {
@@ -13,8 +13,8 @@ async function startServer() {
     // Create and start the Express app
     const app = createApp(workflowIntegration);
     
-    const server = app.listen(PORT, () => {
-      logger.info(`Claude App Builder API server running on port ${PORT}`);
+    const server = app.listen(PORT, '0.0.0.0', () => {
+      logger.info(`Claude App Builder API server running on http://0.0.0.0:${PORT}`);
     });
     
     // Graceful shutdown

@@ -57,7 +57,10 @@
       "Bash(npx jest:*)",
       "Bash(awk:*)",
       "Bash(npm run lint)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(npm install:*)",
+      "Bash(curl:*)",
+      "Bash(timeout 15s npm run dev)"
     ],
     "deny": []
   }

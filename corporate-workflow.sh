@@ -124,6 +124,13 @@ get_employee_info() {
     node "$TASK_ASSIGNMENT" status 2>/dev/null | /tmp/jq -r ".[] | select(.id == \"$employee_id\")" 2>/dev/null
 }
 
+# Get employee department
+get_employee_department() {
+    local employee_id="$1"
+    local employee_info=$(get_employee_info "$employee_id")
+    echo "$employee_info" | /tmp/jq -r '.department' 2>/dev/null || echo "Unknown"
+}
+
 # Load employee system prompt
 load_employee_prompt() {
     local employee_id="$1"
@@ -140,6 +147,104 @@ load_employee_prompt() {
     else
         echo "You are a professional AI employee at $COMPANY_NAME. Work collaboratively and maintain high standards."
     fi
+}
+
+# Load relevant memory context for AI employee task execution
+load_employee_context() {
+    local employee_id="$1"
+    local task_description="$2"
+    local start_time=$(date +%s%3N)  # milliseconds for performance tracking
+    
+    # Check if Memory API is available
+    if ! nc -z localhost 3333 2>/dev/null; then
+        echo "# Memory service not available - proceeding without context"
+        return 0
+    fi
+    
+    # Create context request payload
+    local context_request=$(cat << EOF
+{
+    "employeeId": "$employee_id",
+    "taskDescription": "$task_description",
+    "options": {
+        "maxResults": 5,
+        "includeTypes": ["experience", "knowledge", "decision"],
+        "timeRange": "last_30_days",
+        "relevanceThreshold": 0.7
+    }
+}
+EOF
+)
+    
+    # Try to load curl function or use alternative HTTP client
+    local http_client="curl"
+    if ! command -v curl >/dev/null 2>&1; then
+        # Try wget as fallback
+        if command -v wget >/dev/null 2>&1; then
+            http_client="wget"
+        else
+            echo "# No HTTP client available - proceeding without context"
+            return 0
+        fi
+    fi
+    
+    # Make HTTP request to Memory API with timeout
+    local context_response=""
+    local temp_response_file="/tmp/memory_context_$$"
+    
+    if [ "$http_client" = "curl" ]; then
+        # Use curl if available
+        if timeout 5 bash -c "echo '$context_request' | curl -s -X POST 'http://localhost:3333/api/memory/context' \
+            -H 'Content-Type: application/json' \
+            -d @- \
+            --max-time 5" > "$temp_response_file" 2>/dev/null; then
+            context_response=$(cat "$temp_response_file")
+        fi
+    elif [ "$http_client" = "wget" ]; then
+        # Use wget as fallback
+        echo "$context_request" > "/tmp/context_request_$$"
+        if timeout 5 wget -q -O "$temp_response_file" \
+            --header="Content-Type: application/json" \
+            --post-file="/tmp/context_request_$$" \
+            "http://localhost:3333/api/memory/context" 2>/dev/null; then
+            context_response=$(cat "$temp_response_file")
+        fi
+        rm -f "/tmp/context_request_$$"
+    fi
+    
+    # Parse and format context for prompt injection
+    local formatted_context="# No relevant context found"
+    if [ -n "$context_response" ] && echo "$context_response" | grep -q '"success":true' 2>/dev/null; then
+        # Try to use jq for JSON parsing, fallback to basic parsing
+        if command -v jq >/dev/null 2>&1; then
+            formatted_context=$(echo "$context_response" | jq -r '
+                if .context and .context.memories and (.context.memories | length > 0) then
+                    "RELEVANT MEMORY CONTEXT:\n" + 
+                    (.context.memories[] | "• \(.content) (Type: \(.type), Relevance: \(.relevance_score // "N/A"))")
+                else
+                    "# No relevant context found"
+                end
+            ' 2>/dev/null || echo "# Context parsing failed")
+        else
+            # Basic parsing without jq
+            if echo "$context_response" | grep -q '"content"' 2>/dev/null; then
+                formatted_context="RELEVANT MEMORY CONTEXT:\n• Context available but parsing limited without jq"
+            fi
+        fi
+    fi
+    
+    # Performance tracking
+    local end_time=$(date +%s%3N)
+    local duration=$((end_time - start_time))
+    if [ "$VERBOSE" = "true" ]; then
+        log_corporate "INFO" "Memory" "ContextLoader" "Context loading completed in ${duration}ms"
+    fi
+    
+    # Clean up temporary files
+    rm -f "$temp_response_file"
+    
+    # Return formatted context
+    echo -e "$formatted_context"
 }
 
 # Create corporate project assignment
@@ -201,14 +306,19 @@ execute_employee_task() {
     # Load employee's system prompt
     local system_prompt=$(load_employee_prompt "$employee_id")
     
+    # NEW: Load relevant memory context for enhanced task execution
+    local memory_context=$(load_employee_context "$employee_id" "$task_description")
+    
     # Record start time for performance tracking
     local start_time=$(date +%s)
     
-    # Create comprehensive prompt with corporate context
+    # Create comprehensive prompt with corporate context and memory
     local full_prompt="CORPORATE CONTEXT:
 You are $employee_name, a $employee_role at $COMPANY_NAME.
 Department: $department
 Task: $task_description
+
+$memory_context
 
 CORPORATE STANDARDS:
 - Follow company coding standards and architectural guidelines

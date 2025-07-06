@@ -202,6 +202,116 @@ Claude App Builder is an automated TDD workflow system that uses Claude Code CLI
 ### System Status - DOUBLE VERIFIED
 **PRODUCTION READY** - Anti-mocking system now prevents fake implementations at both Test Writer and Test Reviewer levels
 
+## Critical TDD Logic Fix Applied ✅
+
+### Major Issue Discovered and Fixed
+**Date**: 2025-07-06
+**Issue**: Test Reviewer was rejecting valid TDD tests
+**Problem**: Test Reviewer expected tests to pass before implementation (backwards TDD logic)
+
+### What Happened
+1. **Test Writer created proper interface-based tests** - Imported from real implementation files
+2. **Tests correctly failed** - Missing implementation files (this is correct TDD!)
+3. **Test Reviewer incorrectly rejected tests** - Thought failing tests = bad tests
+4. **TDD workflow broken** - Could never proceed past test review phase
+
+### Root Cause
+Test Reviewer was configured to expect ALL tests to pass during review phase, but in proper TDD:
+- Tests SHOULD fail initially (no implementation yet)
+- Tests pass AFTER Developer implements code
+- "Good failure" vs "Bad failure" distinction missing
+
+### TDD Logic Fix Applied
+
+#### 1. Test Reviewer Logic Updated
+- **APPROVE**: Tests that fail due to missing implementation files
+- **APPROVE**: Import errors for src/*.js files that don't exist yet
+- **APPROVE**: "Failed to load url" errors for our own implementation files
+- **REJECT**: Only actual test problems (syntax errors, wrong dependencies, mocking)
+
+#### 2. Updated Approval Criteria
+- **OLD**: "All tests must pass" (wrong for TDD)
+- **NEW**: "Tests can fail if implementation missing" (correct TDD)
+- **Distinction**: Good TDD failure vs Bad test failure
+
+#### 3. Enhanced Both Files
+- **automated-workflow.sh**: Updated Test Reviewer system prompt with TDD logic
+- **CLAUDE.md**: Added TDD failure approval criteria
+
+### TDD Workflow Now Correct
+1. ✅ **Test Writer**: Creates interface-based tests that import real files
+2. ✅ **Test Reviewer**: Approves tests that fail due to missing implementation
+3. ✅ **Developer**: Implements code to make tests pass
+4. ✅ **Code Reviewer**: Verifies all tests pass with implementation
+
+### Final System Status
+**PRODUCTION READY** - Complete TDD workflow with proper test failure logic
+
+## Comprehensive Documentation System Created ✅
+
+### New Documentation Architecture
+**Date**: 2025-07-06
+**Enhancement**: Created PROJECT-DOCS.md for comprehensive project documentation
+**Need**: User requested central documentation for completed work, decisions, and insights
+
+### Documentation System Design
+
+#### 1. Three-Tier Documentation Structure
+- **todo.md**: Active tasks and requirements (working document)
+- **memory.md**: Current work context and active decisions (limited size)
+- **PROJECT-DOCS.md**: Comprehensive archive and project history (unlimited)
+
+#### 2. PROJECT-DOCS.md Features
+- **Completed Tasks Archive**: Full implementation details moved from todo.md
+- **Architecture Decisions**: Design choices with rationale and outcomes
+- **Technical Solutions**: Complex implementations and problem-solving records
+- **Testing Documentation**: Strategies, frameworks, and coverage reports
+- **Integration Records**: Service connections and API implementation details
+- **Lessons Learned**: Critical insights and best practices established
+
+#### 3. Content Management Rules
+- **When memory.md exceeds 2000 lines**: Archive content to PROJECT-DOCS.md
+- **When tasks complete**: Move from todo.md to PROJECT-DOCS.md with full context
+- **Preserve all content**: Never delete, only archive with proper organization
+- **Maintain searchability**: Clear headers, dates, and cross-references
+
+#### 4. Documentation Standards
+Each archived entry includes:
+- **Date**: When work was completed
+- **What**: Task or feature implemented
+- **Why**: Business rationale and requirements
+- **How**: Technical approach and implementation details
+- **Challenges**: Problems encountered and solutions applied
+- **Outcomes**: Results, learnings, and insights gained
+- **References**: Related files, commits, and external resources
+
+#### 5. Role Integration
+- **All Roles**: Reference PROJECT-DOCS.md for historical context before starting work
+- **All Roles**: Document insights and learnings in memory.md during work
+- **Coordinator**: Manages archival process and maintains documentation quality
+- **Workflow**: Automatic integration with existing workflow processes
+
+#### 6. System Files Updated
+- **CLAUDE.md**: Added PROJECT-DOCS.md to required reading and documentation responsibilities
+- **automated-workflow.sh**: Enhanced Coordinator system prompt with archival management
+- **File structure**: PROJECT-DOCS.md added as core project management file
+
+### Benefits Delivered
+- ✅ **Comprehensive project history** - Nothing gets lost over time
+- ✅ **Searchable knowledge base** - Easy to find past decisions and solutions
+- ✅ **Learning preservation** - Technical insights maintained for future reference
+- ✅ **Context continuity** - New work builds on documented previous work
+- ✅ **Clean active workspace** - memory.md stays focused on current tasks
+- ✅ **Scalable documentation** - System grows with project complexity
+
+### Usage Guidelines
+- **Before starting work**: Check PROJECT-DOCS.md for relevant past implementations
+- **During work**: Document insights and challenges in memory.md
+- **Task completion**: Coordinator archives completed work with full context
+- **Problem solving**: Reference previous solutions and architectural decisions
+
+**FINAL STATUS**: PRODUCTION READY - Complete workflow with comprehensive documentation system
+
 ## Usage
 1. Add requirements to todo.md
 2. Run `./automated-workflow.sh`

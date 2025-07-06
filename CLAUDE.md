@@ -24,6 +24,7 @@ Before starting any task, ALWAYS read these files:
 - **@memory.md** - Current project context and decisions
 - **@todo.md** - Task requirements and priorities
 - **@workflow.md** - Detailed workflow documentation
+- **@PROJECT-DOCS.md** - Comprehensive project history and completed work (for reference)
 
 ## Development Workflow Roles
 
@@ -53,8 +54,11 @@ Before starting any task, ALWAYS read these files:
 - **🚨 CRITICAL: REJECT MOCKED TESTS**: 
   - Check for vi.mock() or jest.mock() on our own code
   - Verify tests import from real implementation files
-  - Ensure tests FAIL without implementation
   - Reject fake implementations (vi.fn().mockReturnValue)
+- **✅ APPROVE TDD FAILURES**:
+  - Tests that fail due to missing implementation files (correct TDD)
+  - Import errors for src/*.js files that don't exist yet
+  - "Failed to load url" errors for our own implementation files
 - **Output**: Approval or test-feedback.md with specific issues
 - **Final Action**: Update @memory.md with review notes
 
@@ -114,6 +118,11 @@ Before starting any task, ALWAYS read these files:
   - Report overall project progress and status
 - **Responsibility**: Manage workflow progress and documentation
 - **Tasks**: Mark todos complete, add new discovered tasks
+- **Documentation Management**:
+  - When memory.md exceeds 2000 lines, archive content to PROJECT-DOCS.md
+  - Move completed tasks from todo.md to PROJECT-DOCS.md with full details
+  - Document lessons learned, challenges, and solutions
+  - Maintain clean, current memory.md for active work
 - **Output**: Updated @todo.md and @memory.md
 - **Decision**: Determine next task or signal completion
 
@@ -127,7 +136,8 @@ Before starting any task, ALWAYS read these files:
 
 ### Project Management Files (ROOT LEVEL ONLY)
 - **@todo.md** - Task definitions and progress tracking
-- **@memory.md** - System knowledge and decisions
+- **@memory.md** - System knowledge and decisions (current work)
+- **@PROJECT-DOCS.md** - Comprehensive project documentation and archive
 - **test-feedback.md** - Test improvement feedback (temporary)
 - **code-feedback.md** - Code improvement feedback (temporary)
 - **workflow-complete.flag** - Completion signal (temporary)
@@ -276,5 +286,25 @@ The workflow uses Sonnet model by default. If you need a different model, it can
 2. **ENSURE REAL INTEGRATION**: All services must actually connect
 3. **TEST ACTUAL FUNCTIONALITY**: Verify it works beyond just passing tests
 4. **PROVIDE WORKING SYSTEM**: Deliverable must function for real users
+
+## Documentation System Usage
+
+### When to Reference PROJECT-DOCS.md
+- **Before starting work**: Check for previous implementations of similar features
+- **During problem-solving**: Look for documented solutions to similar challenges
+- **For architectural decisions**: Review past design choices and rationale
+- **When encountering issues**: Check if similar problems were solved before
+
+### How to Contribute to Documentation
+- **All Roles**: Add insights and learnings to memory.md during work
+- **Coordinator**: Manages archival to PROJECT-DOCS.md when memory.md gets large
+- **Include context**: Always document WHY decisions were made, not just what
+- **Reference connections**: Link related tasks, files, and architectural decisions
+
+### Documentation Best Practices
+- **Be specific**: Include exact error messages, file paths, and solution steps
+- **Explain rationale**: Document why an approach was chosen over alternatives
+- **Include outcomes**: Note what worked, what didn't, and lessons learned
+- **Cross-reference**: Connect related work and mention dependencies
 
 ALWAYS update @memory.md and @todo.md after completing your assigned role!

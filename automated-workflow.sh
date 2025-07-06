@@ -262,23 +262,26 @@ MANDATORY STEPS - DO THESE IN ORDER:
 
 STEP-BY-STEP PROCESS:
 Step 1: Use Bash tool: cd [project-directory] && npx vitest run
-Step 2: If ANY test fails or doesn't run, create test-feedback.md with:
-   - EXACT error messages from npx vitest run output
-   - Which dependencies are missing
-   - Which imports are broken
-   - Specific fixes needed
-Step 3: If ALL tests pass, then review for quality and coverage
+Step 2: Analyze test failure types:
+   - ✅ EXPECTED TDD FAILURES: Missing implementation files (src/*.js, src/*.ts) - APPROVE THESE
+   - ❌ ACTUAL TEST PROBLEMS: Syntax errors, wrong dependencies, broken imports - REJECT THESE
+Step 3: If failures are due to missing implementation files, APPROVE and proceed
+Step 4: If failures are due to test problems, create test-feedback.md with specific fixes needed
 
 REJECTION CRITERIA (MUST create test-feedback.md):
-- npx vitest run command fails to execute
-- ANY test fails when run
+- npx vitest run command fails to execute (framework/config issues)
+- Test syntax errors or compilation problems
 - Missing dependencies in package.json
-- Broken imports or file paths
+- Broken imports to external libraries
 - Tests that expect failures instead of success
 - 🚨 CRITICAL: Tests that use mocking for core functionality
 - Tests that create fake implementations (vi.fn().mockReturnValue, etc.)
 - Tests that pass without real implementation files
-- Tests that don't import from actual src/ files
+
+✅ DO NOT REJECT FOR THESE (Expected in TDD):
+- Missing implementation files (src/*.js, src/*.ts) 
+- Import errors for files that don't exist yet
+- "Failed to load url" for our own implementation files
 
 🚨 MOCKING DETECTION - IMMEDIATELY REJECT IF FOUND:
 - vi.mock() or jest.mock() on our own code (src/*)
@@ -287,14 +290,17 @@ REJECTION CRITERIA (MUST create test-feedback.md):
 - Mock implementations instead of real imports
 
 APPROVAL CRITERIA (ONLY approve if ALL are true):
-- npx vitest run executes successfully with 0 failures
-- All tests pass
+- npx vitest run executes (framework works, even if tests fail)
 - Good test coverage and quality
 - Tests validate working functionality
 - 🚨 CRITICAL: Tests import from REAL implementation files (src/*)
 - NO mocking of our own code - only external dependencies mocked
-- Tests FAIL without implementation (verified by checking src/ directory)
 - Tests use interface contracts, not fake implementations
+
+✅ APPROVE EVEN IF:
+- Tests fail due to missing implementation files (this is correct TDD)
+- Import errors for src/*.js files that don't exist yet
+- "Failed to load url" errors for our own implementation files
 
 ZERO TOLERANCE: Never approve without running npx vitest run successfully."
 
@@ -441,19 +447,41 @@ Report progress throughout your work:
 - Explain your decision process for next task selection
 - Show overall project progress and status
 
-DOCUMENTATION PRESERVATION RULES:
-1. NEVER delete or clear todo.md content - only mark items as [x] complete
-2. NEVER overwrite memory.md - always APPEND new sections to existing content
+DOCUMENTATION MANAGEMENT RESPONSIBILITIES:
+
+1. **Archive Management**: When memory.md exceeds 2000 lines:
+   - Move completed sections to PROJECT-DOCS.md under appropriate headers
+   - Preserve all context, dates, and technical details
+   - Keep memory.md focused on current active work
+   - Reference archived content with clear pointers
+
+2. **Completed Task Documentation**: When marking tasks complete:
+   - Move completed todo items to PROJECT-DOCS.md with full implementation details
+   - Include: What was done, Why, How, Challenges faced, Solutions used
+   - Document lessons learned and technical insights
+   - Add references to related files and commits
+
+3. **Documentation Standards**: All archived content must include:
+   - Date of completion
+   - Technical approach and rationale
+   - Problems encountered and solutions
+   - Learning outcomes and insights
+   - References to related work
+
+PRESERVATION RULES:
+1. NEVER delete content - only move to PROJECT-DOCS.md
+2. NEVER overwrite memory.md - always APPEND or archive sections
 3. Preserve ALL project history and context
-4. Keep complete audit trail of all work done
+4. Maintain searchable documentation structure
 
 TASKS:
-- Mark completed todo items as [x] but preserve all tasks in todo.md
+- Mark completed todo items as [x] and document in PROJECT-DOCS.md
 - APPEND progress summaries to memory.md with clear section headers
+- Archive content when memory.md becomes too large
 - Determine if more tasks exist or if workflow should complete
 - Create workflow-complete.flag only when ALL tasks marked [x]
 
-CRITICAL: User controls when to clear documentation files, not the system."
+CRITICAL: Maintain comprehensive project documentation for future reference."
 
 # Initialize Git if not already done
 initialize_git() {

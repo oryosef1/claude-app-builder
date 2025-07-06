@@ -425,7 +425,7 @@ class WorkflowRouter {
 }
 
 // CLI Interface
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith('/workflow-router.js')) {
     const router = new WorkflowRouter();
     const command = process.argv[2];
 

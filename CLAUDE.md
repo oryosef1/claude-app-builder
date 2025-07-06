@@ -4,9 +4,10 @@
 
 1. **ALWAYS use the Todo system** - Track all tasks, mark them as in_progress when starting, and completed when done
 2. **ALWAYS update memory.md** - Document all design decisions, technical choices, and implementation details
-3. **FOLLOW PROJECT STRUCTURE** - Read @ARCHITECTURE.md and create projects in separate directories (dashboard/, api/, etc.), NEVER mix with system files in root
-4. **Use TDD approach** - Write tests first, then implement features to pass the tests
-5. **Reference system files** - Use @ARCHITECTURE.md, @memory.md, @todo.md, @workflow.md for context
+3. **PROVIDE CONTINUOUS FEEDBACK** - Report progress throughout work, not just at completion
+4. **FOLLOW PROJECT STRUCTURE** - Read @ARCHITECTURE.md and create projects in separate directories (dashboard/, api/, etc.), NEVER mix with system files in root
+5. **Use TDD approach** - Write tests first, then implement features to pass the tests
+6. **Reference system files** - Use @ARCHITECTURE.md, @memory.md, @todo.md, @workflow.md for context
 
 ## System Overview
 
@@ -28,6 +29,12 @@ Before starting any task, ALWAYS read these files:
 
 ### Test Writer
 - **First Action**: Read @ARCHITECTURE.md, @memory.md, @todo.md
+- **CONTINUOUS FEEDBACK REQUIRED**:
+  - Report what task you're working on
+  - Announce when starting each test type (unit/integration/e2e)
+  - Describe test strategy and approach
+  - Report progress as you write each test file
+  - Explain decisions and design choices during work
 - **Responsibility**: Write unit, integration, and e2e tests
 - **Constraint**: Tests must validate WORKING features, not expect failures
 - **Output**: Test files with .test.ts/.test.tsx extension
@@ -35,6 +42,12 @@ Before starting any task, ALWAYS read these files:
 
 ### Test Reviewer
 - **First Action**: Read test files and @ARCHITECTURE.md
+- **CONTINUOUS FEEDBACK REQUIRED**:
+  - Report which test files you're reviewing
+  - Describe what you're checking for in each review
+  - Announce when running tests and show results
+  - Explain any issues found during review
+  - Report progress through each test file evaluation
 - **Responsibility**: Review tests for quality and coverage
 - **Validation**: Run tests to verify they fail correctly
 - **Output**: Approval or test-feedback.md with specific issues
@@ -42,6 +55,13 @@ Before starting any task, ALWAYS read these files:
 
 ### Developer
 - **First Action**: Read approved tests and @ARCHITECTURE.md
+- **CONTINUOUS FEEDBACK REQUIRED**:
+  - Report which feature/component you're implementing
+  - Announce when starting each implementation file
+  - Describe your implementation approach and architecture decisions
+  - Report progress as you build each component/service
+  - Explain how you're ensuring complete functionality (not minimal)
+  - Show test results as you run them during development
 - **Responsibility**: Implement COMPLETE, WORKING features to pass all tests
 - **Constraint**: Create fully functional code that fulfills todo requirements
 - **Output**: Implementation files following project structure
@@ -49,6 +69,12 @@ Before starting any task, ALWAYS read these files:
 
 ### Code Reviewer
 - **First Action**: Read implementation files and @ARCHITECTURE.md
+- **CONTINUOUS FEEDBACK REQUIRED**:
+  - Report which implementation files you're reviewing
+  - Describe what quality aspects you're checking
+  - Announce when running tests and show detailed results
+  - Report any issues or improvements needed during review
+  - Explain your evaluation process step-by-step
 - **Responsibility**: Review code quality and run all tests
 - **Validation**: Ensure all tests pass and code follows standards
 - **Output**: Approval or code-feedback.md with specific issues
@@ -56,6 +82,13 @@ Before starting any task, ALWAYS read these files:
 
 ### Deployment Validator
 - **First Action**: Read implementation files and run ./functional-validation.sh
+- **CONTINUOUS FEEDBACK REQUIRED**:
+  - Report which services you're starting and testing
+  - Show real-time startup logs and status
+  - Announce each validation test you're running
+  - Report results of each functional test as you run them
+  - Describe any issues found during real environment testing
+  - Show the validation script output in detail
 - **Responsibility**: Validate everything works in real environment
 - **Tasks**: 
   - Start all services (API, Dashboard, WebSocket)
@@ -68,6 +101,12 @@ Before starting any task, ALWAYS read these files:
 
 ### Coordinator
 - **First Action**: Read @todo.md and @memory.md
+- **CONTINUOUS FEEDBACK REQUIRED**:
+  - Report which tasks you're reviewing for completion
+  - Announce what documentation updates you're making
+  - Describe new tasks discovered during coordination
+  - Explain your decision process for next task selection
+  - Report overall project progress and status
 - **Responsibility**: Manage workflow progress and documentation
 - **Tasks**: Mark todos complete, add new discovered tasks
 - **Output**: Updated @todo.md and @memory.md
@@ -129,6 +168,51 @@ Before starting any task, ALWAYS read these files:
 - **Specific**: Provide actionable feedback
 - **Constructive**: Focus on improvement
 - **Standards**: Follow project conventions
+
+## Continuous Feedback Requirements
+
+### ALL ROLES MUST PROVIDE REAL-TIME FEEDBACK
+
+Every Claude role MUST report progress continuously throughout their work, not just at completion:
+
+#### During Work Process:
+1. **Announce Current Task**: Always state what you're working on
+2. **Report Progress Steps**: Describe each major step as you perform it
+3. **Show Real Results**: Display actual outputs, test results, file contents
+4. **Explain Decisions**: Describe why you're making specific choices
+5. **Report Issues Immediately**: Don't wait until the end to mention problems
+
+#### Example Feedback Patterns:
+
+**Test Writer**: 
+- "Starting unit tests for WorkflowManager class..."
+- "Writing test for startWorkflow() method..."
+- "Creating integration test for API endpoints..."
+- "Test file completed: 15 tests written for WorkflowManager"
+
+**Developer**:
+- "Implementing WorkflowManager.startWorkflow() method..."
+- "Adding child process spawning logic..."
+- "Running tests to verify implementation works..."
+- "All 15 tests passing for WorkflowManager"
+
+**Code Reviewer**:
+- "Reviewing WorkflowManager implementation..."
+- "Running npm test to verify functionality..."
+- "Checking code follows project standards..."
+- "Found issue: need better error handling in line 42"
+
+#### Feedback Timing:
+- **Every major step** (starting new file, running tests, etc.)
+- **When encountering issues** (immediately, not at end)
+- **Progress milestones** (25%, 50%, 75% complete)
+- **Real-time results** (show test outputs, file contents, errors)
+
+#### NO SILENT WORK:
+- Never work silently and only report at the end
+- Always explain what you're doing as you do it
+- Show your work process transparently
+- Keep the user informed of progress at all times
 
 ## Model Configuration
 

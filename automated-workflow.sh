@@ -263,6 +263,14 @@ ZERO TOLERANCE: Never approve without running npx vitest run successfully."
 
 DEVELOPER_SYSTEM="You are a Developer for the Claude App Builder project.
 
+CRITICAL: You must implement COMPLETE, FUNCTIONAL, END-TO-END working systems.
+
+REQUIREMENTS:
+- **COMPLETE**: Implement FULL, WORKING, END-TO-END functionality
+- **FUNCTIONAL**: Feature must actually work for real users
+- **INTEGRATED**: All components must connect and communicate
+- **PRODUCTION-READY**: Real processes, real connections, real data flow
+
 BEFORE IMPLEMENTING:
 1. READ all test files to understand EXACT expectations
 2. IDENTIFY required service interfaces from test imports
@@ -270,12 +278,18 @@ BEFORE IMPLEMENTING:
 4. REVIEW test method calls to understand required functionality
 5. CHECK test dependencies and package.json requirements
 
-IMPLEMENT EXACTLY:
+IMPLEMENT FULLY:
+- COMPLETE working services that actually function in production
+- REAL integration between all components
+- ACTUAL startup and connection logic
+- FUNCTIONAL end-to-end user workflows
 - Service interfaces that match test expectations PRECISELY
 - Constructor signatures exactly as tests expect them
 - Method names and return types exactly as tests call them
 - Dependencies exactly as listed in test imports
 - File structure exactly as tests import from
+
+NO SIMULATION ALLOWED: All core functionality must be real and working.
 
 ZERO DEVIATION RULE:
 - If tests expect ProcessManager, create ProcessManager
@@ -322,6 +336,38 @@ APPROVAL CRITERIA (ONLY approve if ALL are true):
 - Implementation matches test expectations exactly
 
 ZERO TOLERANCE: Never approve if any test fails. Always run npx vitest run first."
+
+DEPLOYMENT_VALIDATOR_SYSTEM="You are a Deployment Validator for the Claude App Builder project.
+
+CRITICAL ROLE: Validate everything works in REAL environment before marking complete.
+
+RESPONSIBILITIES:
+1. **START ALL SERVICES**: Actually run the application (API, Dashboard, WebSocket)
+2. **TEST REAL FUNCTIONALITY**: Use the feature as a real user would
+3. **VERIFY INTEGRATION**: Confirm all components work together
+4. **RUN VALIDATION SCRIPT**: Execute ./functional-validation.sh
+5. **REJECT IF SIMULATED**: Do not approve mocked/fake functionality
+
+VALIDATION PROCESS:
+1. First Action: Read implementation files and run ./functional-validation.sh
+2. Start all required services (API server, Dashboard, WebSocket if applicable)
+3. Test real functionality end-to-end
+4. Verify all components communicate correctly
+5. Only approve if ./functional-validation.sh passes with 0 exit code
+
+OUTPUT REQUIREMENTS:
+- Approval only if everything actually works
+- Specific error details if validation fails
+- Update @memory.md with validation results
+
+REQUIREMENT: Must demonstrate working system before marking complete.
+
+You must REJECT the implementation if:
+- Services don't start
+- Endpoints don't respond
+- WebSocket doesn't connect (if implemented)
+- functional-validation.sh fails
+- Any core functionality is simulated/mocked"
 
 COORDINATOR_SYSTEM="You are the Workflow Coordinator for the Claude App Builder project.
 
@@ -867,7 +913,7 @@ while true; do
     max_attempts_per_task=3
     
     # Estimate phases per iteration
-    phases_per_iteration=5  # Test Writer, Test Reviewer, Developer, Code Reviewer, Coordinator
+    phases_per_iteration=6  # Test Writer, Test Reviewer, Developer, Code Reviewer, Deployment Validator, Coordinator
     
     while [ $iteration -lt $max_iterations ] && has_incomplete_tasks; do
     iteration=$((iteration + 1))
@@ -1131,7 +1177,60 @@ This prevents infinite loops while preserving information about what failed." \
         continue  # Try next task instead of breaking completely
     fi
     
-    # Phase 5: Coordinator - only run if all phases succeeded
+    # Phase 5: Deployment Validator - CRITICAL FUNCTIONAL VALIDATION
+    echo -e "${BLUE}=== Running Claude as: DEPLOYMENT VALIDATOR ===${NC}"
+    echo -e "${YELLOW}🔍 Validating functional implementation...$NC"
+    
+    run_claude "DEPLOYMENT VALIDATOR" \
+        "🚨 CRITICAL: You must validate that everything actually WORKS in real environment!
+
+MANDATORY VALIDATION STEPS:
+1. Use Bash tool to run: ./functional-validation.sh
+2. Start all required services (API, Dashboard, WebSocket if applicable) 
+3. Test real functionality end-to-end as a user would
+4. Verify all components communicate correctly
+5. Check that endpoints respond correctly
+6. Verify WebSocket connections work (if implemented)
+
+VALIDATION REQUIREMENTS:
+- functional-validation.sh MUST pass with 0 exit code
+- All services must start successfully  
+- All endpoints must respond correctly
+- All integration must work end-to-end
+- NO simulation/mocking allowed for core functionality
+
+REJECTION CRITERIA (MUST create deployment-feedback.md):
+- functional-validation.sh fails
+- Services don't start properly
+- Endpoints don't respond
+- WebSocket doesn't connect (if implemented)  
+- Any core functionality is simulated/fake
+
+APPROVAL CRITERIA (ONLY approve if ALL are true):
+- functional-validation.sh passes (0 exit code)
+- All services running and accessible
+- Real end-to-end functionality works
+- All integration verified and functional
+
+You must REJECT if implementation is not fully functional!" \
+        "$DEPLOYMENT_VALIDATOR_SYSTEM"
+    
+    # Check if deployment validation failed
+    if [ -f "deployment-feedback.md" ]; then
+        echo -e "${RED}Deployment validation failed. Implementation is not functional.${NC}"
+        echo -e "${YELLOW}Sending back to developer for functional fixes...${NC}"
+        
+        run_claude "DEVELOPER (DEPLOYMENT FIXES)" \
+            "Read deployment-feedback.md and fix the functional issues. Ensure all services actually work and integration is complete. Remove deployment-feedback.md when done." \
+            "$DEVELOPER_SYSTEM"
+        
+        # Continue to retry deployment validation
+        continue
+    else
+        echo -e "${GREEN}✅ Deployment validation passed - implementation is functional!${NC}"
+    fi
+    
+    # Phase 6: Coordinator - only run if all phases succeeded
     if validate_phase_completion "coordinator" $iteration; then
         # Store task count BEFORE Coordinator runs
         tasks_before_coordinator=$(count_incomplete_tasks)

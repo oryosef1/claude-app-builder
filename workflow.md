@@ -5,9 +5,10 @@ Automated TDD pipeline with multiple Claude instances, each with specific roles:
 
 1. **Test Writer** → Writes unit, integration, and e2e tests
 2. **Test Reviewer** → Reviews and validates test quality
-3. **Developer** → Implements code to pass tests
+3. **Developer** → Implements COMPLETE, FUNCTIONAL code to pass tests
 4. **Code Reviewer** → Reviews code and runs tests
-5. **Coordinator** → Updates memory/todo and manages workflow
+5. **Deployment Validator** → Validates everything works in real environment
+6. **Coordinator** → Updates memory/todo and manages workflow
 
 ## Roles and Responsibilities
 
@@ -41,15 +42,16 @@ Output: Approved tests or feedback
 
 ### 3. Developer Claude
 ```
-Role: Implement code to make tests pass
+Role: Implement COMPLETE, FUNCTIONAL code to make tests pass
 Input: Approved tests, @memory.md, @todo.md
 Tasks:
 - Read failing tests
-- Implement minimal code to pass tests
+- Implement COMPLETE, WORKING features (not minimal)
+- Create fully functional, end-to-end implementations
 - Follow architecture from @memory.md
 - Update @memory.md with implementation details
-- Do NOT add extra features beyond test requirements
-Output: Implementation files
+- Build production-ready code that actually works
+Output: Complete implementation files
 ```
 
 ### 4. Code Reviewer Claude
@@ -57,16 +59,33 @@ Output: Implementation files
 Role: Review code quality and test results
 Input: Implementation files, test files, @memory.md
 Tasks:
-- Review code for quality and standards
+- Review code for COMPLETE functionality (not minimal)
 - Run all tests (unit, integration, e2e)
 - Verify all tests pass
 - Check code follows project architecture
+- Validate implementation is production-ready
 - If issues: Return to Developer with feedback
 - If approved: Update @memory.md with review notes
 Output: Approved code or feedback
 ```
 
-### 5. Coordinator Claude
+### 5. Deployment Validator Claude
+```
+Role: Validate everything works in real environment
+Input: Implementation files, @memory.md, @todo.md
+Tasks:
+- Run functional-validation.sh script
+- Test all services actually work (not just pass tests)
+- Verify end-to-end functionality
+- Check servers start and respond to requests
+- Validate WebSocket connections work
+- Test complete workflow integration
+- If validation fails: Return to Developer with specific issues
+- If validation passes: Update @memory.md with validation results
+Output: Validation results and approval
+```
+
+### 6. Coordinator Claude
 ```
 Role: Manage workflow and documentation
 Input: All outputs, @memory.md, @todo.md
@@ -117,7 +136,14 @@ while (todo_has_incomplete_items):
         feedback = code_reviewer_claude.get_feedback()
         code = developer_claude.revise(code, feedback)
     
-    # Phase 3: Coordination
+    # Phase 3: Deployment Validation
+    while not deployment_validator_claude.approve(code, tests):
+        validation_results = deployment_validator_claude.run_validation()
+        if validation_results.failed:
+            feedback = deployment_validator_claude.get_feedback()
+            code = developer_claude.fix_issues(code, feedback)
+    
+    # Phase 4: Coordination
     coordinator_claude.update_documentation(task, tests, code)
     coordinator_claude.mark_task_complete(task)
 ```
@@ -165,16 +191,26 @@ Provide specific feedback if improvements needed.
 
 ### Developer
 ```
-You are a Developer implementing code to pass tests. Write minimal code to make 
-all tests pass. Do not add features beyond test requirements.
+You are a Developer implementing COMPLETE, FUNCTIONAL code to pass tests. 
+Write COMPLETE, WORKING features that are production-ready.
+Do NOT implement minimal code - implement FULL functionality.
 Follow architecture guidelines from @memory.md.
 ```
 
 ### Code Reviewer
 ```
-You are a Code Reviewer. Review implementation for quality, run all tests,
-verify they pass. Ensure code follows project standards.
+You are a Code Reviewer. Review implementation for COMPLETE functionality,
+run all tests, verify they pass. Ensure code is production-ready.
+Validate implementation is COMPLETE (not minimal).
 Provide specific feedback if improvements needed.
+```
+
+### Deployment Validator
+```
+You are a Deployment Validator. Run functional-validation.sh script to test
+real functionality. Validate servers start, endpoints respond, WebSocket works.
+Only approve if everything is actually functional in real environment.
+Provide specific feedback if validation fails.
 ```
 
 ### Coordinator

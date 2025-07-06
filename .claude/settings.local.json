@@ -64,7 +64,10 @@
       "Bash(ip route:*)",
       "Bash(hostname:*)",
       "Bash(ss:*)",
-      "Bash(ps:*)"
+      "Bash(ps:*)",
+      "Bash(true)",
+      "Bash(wget:*)",
+      "Bash(./functional-validation.sh:*)"
     ],
     "deny": []
   }

@@ -54,6 +54,18 @@ Before starting any task, ALWAYS read these files:
 - **Output**: Approval or code-feedback.md with specific issues
 - **Final Action**: Update @memory.md with review notes
 
+### Deployment Validator
+- **First Action**: Read implementation files and run ./functional-validation.sh
+- **Responsibility**: Validate everything works in real environment
+- **Tasks**: 
+  - Start all services (API, Dashboard, WebSocket)
+  - Test real functionality end-to-end
+  - Verify all components communicate correctly
+  - Run functional validation script
+- **Output**: Approval only if everything actually works
+- **Requirement**: Must demonstrate working system before marking complete
+- **Final Action**: Update @memory.md with validation results
+
 ### Coordinator
 - **First Action**: Read @todo.md and @memory.md
 - **Responsibility**: Manage workflow progress and documentation
@@ -89,19 +101,30 @@ Before starting any task, ALWAYS read these files:
 
 ### Test Requirements
 - **Unit Tests**: Test individual functions/methods
-- **Integration Tests**: Test module interactions
-- **E2E Tests**: Test complete user workflows
+- **REAL INTEGRATION TESTS**: Must test actual connections (real servers, real ports)
+- **LIVE SERVICE TESTS**: Must validate services actually start and communicate
+- **USER WORKFLOW TESTS**: Must test complete user journeys end-to-end
+- **NO MOCKING CRITICAL PATHS**: Core functionality must use real implementations
+- **STARTUP VALIDATION**: Must test that services actually start and are accessible
 - **Coverage**: All functionality must be tested
 - **Failure**: Tests must fail without implementation
 
 ### Code Requirements
-- **Minimal**: Only implement what tests require
+- **COMPLETE**: Implement FULL, WORKING, END-TO-END functionality
+- **FUNCTIONAL**: Feature must actually work for real users
+- **INTEGRATED**: All components must connect and communicate
+- **PRODUCTION-READY**: Real processes, real connections, real data flow
 - **Clean**: Follow established patterns from @ARCHITECTURE.md
 - **Typed**: Use TypeScript for type safety
 - **Tested**: All tests must pass
 - **Documented**: Update @memory.md with decisions
 
 ### Review Standards
+- **FUNCTIONAL TESTING**: Manually test the actual feature works
+- **END-TO-END VALIDATION**: Verify real user workflows function
+- **INTEGRATION CHECK**: Confirm all services actually connect
+- **PRODUCTION VALIDATION**: Test in real environment, not just mocks
+- **LIVE DEMONSTRATION**: Must show working feature before approval
 - **Thorough**: Check all aspects of quality
 - **Specific**: Provide actionable feedback
 - **Constructive**: Focus on improvement
@@ -130,7 +153,31 @@ The workflow uses Sonnet model by default. If you need a different model, it can
 - All tests pass
 - Code follows project standards
 - Documentation is updated
-- Todo items are marked complete
+- **FEATURE ACTUALLY WORKS**: Real functionality demonstrated
+- **SERVICES RUNNING**: All required services start and operate
+- **END-TO-END VALIDATION**: Complete user workflows function
+- **INTEGRATION VERIFIED**: All components communicate correctly
+- Todo items are marked complete ONLY after functional validation
 - No feedback files remain
+
+## CRITICAL: FUNCTIONAL VALIDATION REQUIRED
+
+### Before Marking Any Task Complete:
+1. **DEMONSTRATE WORKING FUNCTIONALITY**: Show the feature actually works
+2. **VALIDATE REAL INTEGRATION**: Confirm all services connect and communicate
+3. **TEST USER WORKFLOWS**: Verify end-to-end user journeys function
+4. **NO SIMULATION ALLOWED**: Core functionality must be real, not mocked
+
+### Code Reviewer MUST:
+1. **START ALL SERVICES**: Actually run the application
+2. **TEST REAL FUNCTIONALITY**: Use the feature as a real user would
+3. **VERIFY INTEGRATION**: Confirm all components work together
+4. **REJECT IF SIMULATED**: Do not approve mocked/fake functionality
+
+### Developer MUST:
+1. **IMPLEMENT COMPLETE FEATURES**: Not just code that compiles
+2. **ENSURE REAL INTEGRATION**: All services must actually connect
+3. **TEST ACTUAL FUNCTIONALITY**: Verify it works beyond just passing tests
+4. **PROVIDE WORKING SYSTEM**: Deliverable must function for real users
 
 ALWAYS update @memory.md and @todo.md after completing your assigned role!

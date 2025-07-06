@@ -1,106 +1,97 @@
-# Claude App Builder Dashboard - Development Plan
+# Claude App Builder Dashboard - Development Tasks
 
 ## 🎯 PROJECT GOAL
 Build a web dashboard to monitor and control the Claude automated workflow system. Transform the command-line tool into a visual, real-time management interface.
 
-## 🏗️ PHASE 1: Backend API Server (Week 1)
+## 📋 TASK QUEUE - Ready for AI Implementation
 
-### Backend Infrastructure 
-- [x] **Create Express.js API server** - Separate backend project in `api/` directory (FAILED - needs manual fix)
-- [x] **Set up TypeScript configuration** - Backend-only TypeScript setup
-- [x] **Configure basic middleware** - CORS, body parsing, error handling
-- [x] **Add structured logging** - Winston logger for API operations
-- [x] **Create health check endpoint** - GET /api/health for monitoring
+### Backend API Foundation
+- [ ] **Task 1.1**: Create basic Express.js server structure with TypeScript
+- [ ] **Task 1.2**: Add CORS middleware and basic error handling
+- [ ] **Task 1.3**: Create health check endpoint (GET /api/health)
+- [ ] **Task 1.4**: Add Winston logger configuration
+- [ ] **Task 1.5**: Create basic server startup script
 
-### Process Management Service
-- [ ] **Implement WorkflowManager class** - Spawn and control `automated-workflow.sh` process (SIMULATION ONLY - NEEDS REAL PROCESS)
-- [x] **Add process lifecycle methods** - Start/stop/pause/resume workflow
-- [ ] **Set up stdout/stderr streaming** - Capture live Claude output (NOT IMPLEMENTED - USES FAKE OUTPUT)
-- [ ] **Create process signal handling** - Graceful shutdown and cleanup (NOT IMPLEMENTED)
-- [x] **Add process state tracking** - Monitor workflow phases and progress (SIMULATION ONLY)
+### Workflow Manager Service
+- [ ] **Task 2.1**: Create WorkflowManager interface definition
+- [ ] **Task 2.2**: Implement process spawning for automated-workflow.sh
+- [ ] **Task 2.3**: Add process lifecycle methods (start/stop/pause/resume)
+- [ ] **Task 2.4**: Implement stdout/stderr capture and streaming
+- [ ] **Task 2.5**: Add process signal handling for graceful shutdown
 
 ### File System Integration
-- [x] **Implement file watcher service** - Monitor todo.md, memory.md, .workflow-state.json
-- [x] **Build file parser utilities** - Parse workflow state and task progress  
-- [x] **Create file update APIs** - Programmatic todo.md and memory.md updates
-- [x] **Set up change event system** - Emit events on file modifications
+- [ ] **Task 3.1**: Create FileWatcher service interface
+- [ ] **Task 3.2**: Implement file monitoring for todo.md and memory.md
+- [ ] **Task 3.3**: Add file parser for workflow state JSON
+- [ ] **Task 3.4**: Create file update utilities
+- [ ] **Task 3.5**: Implement change event emission system
 
 ### REST API Endpoints
-- [x] **Workflow control endpoints** - POST /api/workflow/start, stop, pause, resume
-- [x] **Status monitoring endpoints** - GET /api/workflow/status, logs, history
-- [x] **Task management endpoints** - CRUD operations for todo.md tasks
-- [x] **File operations endpoints** - Read/write memory.md, todo.md
-- [ ] **Configuration endpoints** - GET/PUT /api/config for system settings
+- [ ] **Task 4.1**: Create workflow control routes (start/stop/pause/resume)
+- [ ] **Task 4.2**: Add status monitoring endpoint (GET /api/workflow/status)
+- [ ] **Task 4.3**: Implement task management CRUD endpoints
+- [ ] **Task 4.4**: Create file operations endpoints (read/write memory.md, todo.md)
+- [ ] **Task 4.5**: Add input validation middleware
 
-## 📡 PHASE 2: Frontend Dashboard (Week 2)
+### WebSocket Real-time Communication
+- [ ] **Task 5.1**: Set up Socket.io server integration
+- [ ] **Task 5.2**: Implement workflow status broadcasting
+- [ ] **Task 5.3**: Add live output streaming events
+- [ ] **Task 5.4**: Create file change notification events
+- [ ] **Task 5.5**: Add connection management and error handling
 
-### React Application Setup
-- [x] **Create React application** - Separate frontend project in `dashboard/` directory
-- [x] **Configure Vite + TypeScript** - Frontend-only build configuration
-- [x] **Set up Material-UI** - UI component library and theming
-- [x] **Configure HTTP client** - Axios for API communication with backend
-- [ ] **Set up routing** - React Router for SPA navigation (NOT IMPLEMENTED)
+### Frontend React Application
+- [ ] **Task 6.1**: Create React app with Vite and TypeScript setup
+- [ ] **Task 6.2**: Configure Material-UI theme and components
+- [ ] **Task 6.3**: Set up Axios HTTP client with API base configuration
+- [ ] **Task 6.4**: Create basic app layout and routing structure
+- [ ] **Task 6.5**: Add error boundary and loading states
 
-### Dashboard Components
-- [x] **Build workflow status component** - Real-time phase display (Test Writer → Developer → etc.)
-- [x] **Create workflow control panel** - Start/stop/pause buttons with confirmation
-- [x] **Implement task management interface** - Add/edit/complete tasks in todo.md
-- [x] **Build live output viewer** - Terminal-like interface for Claude output
-- [x] **Add progress visualization** - Progress bars and phase indicators
+### Dashboard Core Components
+- [ ] **Task 7.1**: Build workflow status display component
+- [ ] **Task 7.2**: Create workflow control panel with buttons
+- [ ] **Task 7.3**: Implement task list management interface
+- [ ] **Task 7.4**: Add live output viewer with terminal styling
+- [ ] **Task 7.5**: Create progress visualization with phase indicators
 
-### Real-time Updates
-- [ ] **Set up WebSocket client** - Connect to backend WebSocket server (WEBSOCKET SERVER EXISTS BUT CLIENT NOT CONNECTED)
-- [ ] **Implement live output streaming** - Stream Claude's stdout to frontend (POLLING INSTEAD OF WEBSOCKETS)
-- [x] **Create status update system** - Real-time workflow state broadcasting (USING HTTP POLLING)
-- [x] **Handle connection management** - Reconnection logic and error handling
-- [ ] **Build file change notifications** - Notify dashboard of file updates (NOT IMPLEMENTED)
+### WebSocket Client Integration
+- [ ] **Task 8.1**: Set up Socket.io client with reconnection logic
+- [ ] **Task 8.2**: Create useWebSocket React hook
+- [ ] **Task 8.3**: Implement real-time status updates
+- [ ] **Task 8.4**: Add live output streaming to UI
+- [ ] **Task 8.5**: Handle file change notifications
 
-### Dashboard Features
-- [ ] **Task kanban board** - Visual task management with drag-and-drop (BASIC LIST VIEW ONLY)
-- [ ] **Configuration editor** - Update system settings through UI (NOT IMPLEMENTED)
-- [x] **Error handling UI** - Display errors and retry options
-- [x] **System metrics display** - CPU, memory, process health monitoring
+### System Integration & Testing
+- [ ] **Task 9.1**: Write unit tests for all backend services
+- [ ] **Task 9.2**: Create integration tests for API endpoints
+- [ ] **Task 9.3**: Add React component tests with Testing Library
+- [ ] **Task 9.4**: Implement end-to-end workflow tests
+- [ ] **Task 9.5**: Run functional validation script and fix issues
 
-## 🔧 PHASE 3: Integration & Testing (Week 3)
+### Production Features
+- [ ] **Task 10.1**: Add system metrics monitoring (CPU, memory)
+- [ ] **Task 10.2**: Implement configuration management
+- [ ] **Task 10.3**: Create error handling and retry mechanisms
+- [ ] **Task 10.4**: Add basic authentication and security headers
+- [ ] **Task 10.5**: Setup development and production environment configs
 
-### WebSocket Integration
-- [x] **Set up WebSocket server** - Real-time communication in backend (IMPLEMENTED BUT NOT USED)
-- [x] **Implement message broadcasting** - Send updates to connected clients
-- [ ] **Add authentication** - Secure WebSocket connections (NOT IMPLEMENTED)
-- [x] **Create event handling** - Process incoming status updates
-- [ ] **Build message queuing** - Handle offline/online synchronization (NOT IMPLEMENTED)
+---
 
-### Data Persistence
-- [ ] **Initialize SQLite database** - Store workflow runs, task history, metrics (NOT IMPLEMENTED)
-- [ ] **Create database models** - WorkflowRun, TaskHistory, SystemMetrics tables (NOT IMPLEMENTED)
-- [ ] **Implement data access layer** - Repository pattern for database operations (NOT IMPLEMENTED)
-- [ ] **Add database migrations** - Version control for schema changes (NOT IMPLEMENTED)
+## 🔧 TASK REQUIREMENTS
 
-### Testing & Quality
-- [x] **Backend API tests** - Unit and integration tests for Express.js endpoints (78% PASS RATE)
-- [x] **Frontend component tests** - React Testing Library for UI components (100% PASS RATE)
-- [x] **E2E workflow tests** - Test complete dashboard workflow scenarios
-- [ ] **API documentation** - OpenAPI/Swagger documentation for endpoints (NOT IMPLEMENTED)
+### For Each Task:
+1. **Write tests first** - Comprehensive unit, integration, and e2e tests
+2. **Implement complete functionality** - No minimal implementations
+3. **Validate real functionality** - Must pass functional-validation.sh
+4. **Update documentation** - Update memory.md with implementation details
+5. **Follow architecture** - Maintain clean separation between frontend/backend
 
-## 🚀 PHASE 4: Production Features (Week 4)
-
-### Advanced Features
-- [ ] **Granular phase control** - Skip to specific phases, restart individual roles
-- [ ] **Workflow scheduling** - Queue and schedule workflow runs
-- [ ] **GitHub integration monitoring** - Track commits, pushes, PR creation
-- [ ] **Notification system** - Email/webhook notifications for workflow events
-
-### Security & Authentication
-- [ ] **JWT authentication** - Secure API access with token-based auth
-- [ ] **Input validation** - Sanitize all user inputs
-- [ ] **Rate limiting** - Prevent abuse of API endpoints
-- [ ] **HTTPS configuration** - Secure communication
-
-### Performance & Deployment
-- [ ] **Docker containerization** - Backend and frontend containers
-- [ ] **Environment configuration** - Production, staging, development configs
-- [ ] **Performance optimization** - Caching, compression, optimization
-- [ ] **Monitoring setup** - Health checks, metrics collection
+### Task Completion Criteria:
+- ✅ All tests pass (100% success rate)
+- ✅ Functional validation passes
+- ✅ Code follows project standards
+- ✅ Documentation is updated
+- ✅ No breaking changes to existing functionality
 
 ---
 
@@ -108,7 +99,7 @@ Build a web dashboard to monitor and control the Claude automated workflow syste
 
 ### Frontend/Backend Separation
 - **Frontend (React)**: Browser-only code, HTTP requests to backend, no Node.js APIs
-- **Backend (Express)**: Node.js APIs, process management, file operations, database
+- **Backend (Express)**: Node.js APIs, process management, file operations
 - **Communication**: REST APIs + WebSocket for real-time updates
 
 ### Project Structure
@@ -116,28 +107,34 @@ Build a web dashboard to monitor and control the Claude automated workflow syste
 claude-app-builder/
 ├── api/                    # Backend Express.js server
 │   ├── src/
-│   │   ├── controllers/    # API route handlers
 │   │   ├── services/       # Business logic
-│   │   ├── models/         # Database models  
+│   │   ├── routes/         # API route handlers
+│   │   ├── middleware/     # Express middleware
 │   │   └── server.ts       # Express.js app
+│   ├── tests/              # Backend tests
 │   ├── package.json        # Backend dependencies
 │   └── tsconfig.json       # Backend TypeScript config
 ├── dashboard/              # Frontend React application
 │   ├── src/
 │   │   ├── components/     # React components
 │   │   ├── services/       # HTTP API clients
+│   │   ├── hooks/          # Custom React hooks
 │   │   └── App.tsx         # Main dashboard
+│   ├── tests/              # Frontend tests
 │   ├── package.json        # Frontend dependencies
 │   └── vite.config.ts      # Frontend build config
 └── system files...        # Workflow automation (root)
 ```
 
 ### Key Technologies
-- **Backend**: Node.js + Express.js + TypeScript + SQLite + Socket.io + child_process
+- **Backend**: Node.js + Express.js + TypeScript + Socket.io + child_process + chokidar
 - **Frontend**: React + TypeScript + Vite + Material-UI + Axios + Socket.io-client
+- **Testing**: Vitest + Jest + React Testing Library + Supertest
 
 ---
 
-## 🚀 READY TO START
+## 🚀 READY FOR AI IMPLEMENTATION
 
-**Next Step**: Begin with "Create Express.js API server" - Build the backend foundation first, then add the frontend dashboard that communicates with it via HTTP APIs.
+**Status**: Clean slate - All previous AI work removed, tasks broken down into manageable pieces
+
+**Next Action**: AI workflow should start with Task 1.1 and proceed sequentially through the task queue

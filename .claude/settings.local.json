@@ -77,7 +77,13 @@
       "Bash(mv:*)",
       "Bash(time node:*)",
       "Bash(source:*)",
-      "Bash(detect_project_type:*)"
+      "Bash(detect_project_type:*)",
+      "Bash(git rm:*)",
+      "Bash(npm run test:vector-db:*)",
+      "Bash(redis-cli:*)",
+      "Bash(timeout:*)",
+      "Bash(timeout:*)",
+      "Bash(cat:*)"
     ],
     "deny": []
   }

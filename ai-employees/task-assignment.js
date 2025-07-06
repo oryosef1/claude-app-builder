@@ -5,8 +5,12 @@
  * Manages task assignment and routing to AI employees
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 class AIEmployeeManager {
     constructor() {
@@ -253,7 +257,7 @@ Provide high-quality work that reflects well on the company.
 }
 
 // CLI Interface
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
     const manager = new AIEmployeeManager();
     const command = process.argv[2];
 
@@ -342,4 +346,4 @@ Examples:
     }
 }
 
-module.exports = AIEmployeeManager;
+export default AIEmployeeManager;

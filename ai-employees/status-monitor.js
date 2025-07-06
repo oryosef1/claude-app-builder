@@ -5,8 +5,12 @@
  * Real-time monitoring and alerting for AI employee status and workload
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 class StatusMonitor {
     constructor() {
@@ -440,7 +444,7 @@ class StatusMonitor {
 }
 
 // CLI Interface
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
     const monitor = new StatusMonitor();
     const command = process.argv[2];
 
@@ -498,4 +502,4 @@ Examples:
     }
 }
 
-module.exports = StatusMonitor;
+export default StatusMonitor;

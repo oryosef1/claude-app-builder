@@ -5,8 +5,12 @@
  * Routes tasks through appropriate AI employees based on project type and phase
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 class WorkflowRouter {
     constructor() {
@@ -421,7 +425,7 @@ class WorkflowRouter {
 }
 
 // CLI Interface
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
     const router = new WorkflowRouter();
     const command = process.argv[2];
 
@@ -479,4 +483,4 @@ Examples:
     }
 }
 
-module.exports = WorkflowRouter;
+export default WorkflowRouter;

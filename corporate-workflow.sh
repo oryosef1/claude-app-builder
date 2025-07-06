@@ -435,6 +435,7 @@ main_corporate_workflow() {
     echo -e "${PURPLE}===============================================${NC}"
     echo -e "${PURPLE}   Welcome to $COMPANY_NAME${NC}"
     echo -e "${PURPLE}   AI-Powered Software Development Platform${NC}"
+    echo -e "${PURPLE}   AUTONOMOUS CONTINUOUS OPERATION MODE${NC}"
     echo -e "${PURPLE}===============================================${NC}"
     echo ""
     
@@ -442,41 +443,52 @@ main_corporate_workflow() {
     initialize_corporate_infrastructure
     echo ""
     
-    # Check for current tasks
-    local current_task=$(get_corporate_task_from_todo)
-    if [ -z "$current_task" ]; then
-        echo -e "${YELLOW}No incomplete tasks found in todo.md${NC}"
-        echo -e "${BLUE}Please add tasks to todo.md to begin corporate workflow${NC}"
-        return 0
-    fi
-    
-    echo -e "${BLUE}Current Task: $current_task${NC}"
-    
-    # Detect project type and create assignment
-    local project_type=$(detect_project_type)
-    echo -e "${BLUE}Detected Project Type: $project_type${NC}"
-    
-    # Create project assignment
-    create_project_assignment "$current_task" "$project_type"
-    
-    # Route project through corporate workflow
-    if route_corporate_project "current-project.json"; then
-        # Execute corporate workflow
-        execute_corporate_workflow "current-project.json"
+    # Continuous autonomous loop
+    local iteration=1
+    while true; do
+        echo -e "${BLUE}=== AUTONOMOUS ITERATION $iteration ===${NC}"
         
-        # Monitor progress
-        echo ""
-        monitor_corporate_workflow
+        # Check for current tasks
+        local current_task=$(get_corporate_task_from_todo)
+        if [ -z "$current_task" ]; then
+            echo -e "${GREEN}🎉 ALL TASKS COMPLETE! AI COMPANY HAS FINISHED THE ENTIRE TODO LIST! 🎉${NC}"
+            echo -e "${YELLOW}No more incomplete tasks found in todo.md${NC}"
+            echo -e "${BLUE}Add more tasks to todo.md to continue autonomous operation${NC}"
+            return 0
+        fi
         
-        # Cleanup
-        rm -f "current-project.json" "project-routing.json"
+        echo -e "${BLUE}Current Task: $current_task${NC}"
         
-        echo -e "\n${GREEN}Corporate workflow iteration complete!${NC}"
-        return 0
-    else
-        echo -e "${RED}Failed to route project through corporate workflow${NC}"
-        return 1
-    fi
+        # Detect project type and create assignment
+        local project_type=$(detect_project_type)
+        echo -e "${BLUE}Detected Project Type: $project_type${NC}"
+        
+        # Create project assignment
+        create_project_assignment "$current_task" "$project_type"
+        
+        # Route project through corporate workflow
+        if route_corporate_project "current-project.json"; then
+            # Execute corporate workflow
+            execute_corporate_workflow "current-project.json"
+            
+            # Monitor progress
+            echo ""
+            monitor_corporate_workflow
+            
+            # Cleanup
+            rm -f "current-project.json" "project-routing.json"
+            
+            echo -e "\n${GREEN}✅ Task completed! Moving to next task...${NC}"
+            echo ""
+            
+            # Brief pause before next iteration
+            sleep 2
+            iteration=$((iteration + 1))
+        else
+            echo -e "${RED}Failed to route project through corporate workflow${NC}"
+            return 1
+        fi
+    done
 }
 
 # Error handling

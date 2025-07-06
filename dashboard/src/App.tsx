@@ -70,8 +70,8 @@ const App: React.FC = () => {
   // Fetch initial data
   useEffect(() => {
     fetchData();
-    // Set up polling for real-time updates
-    const interval = setInterval(fetchData, 2000);
+    // Set up polling for real-time updates  
+    const interval = setInterval(fetchData, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -83,9 +83,15 @@ const App: React.FC = () => {
         apiService.getMemory(),
       ]);
 
-      setWorkflowState(statusResponse.state);
-      setTasks(tasksResponse.tasks);
-      setMemory(memoryResponse.content);
+      if (statusResponse?.state) {
+        setWorkflowState(statusResponse.state);
+      }
+      if (tasksResponse?.tasks) {
+        setTasks(tasksResponse.tasks);
+      }
+      if (memoryResponse?.content !== undefined) {
+        setMemory(memoryResponse.content);
+      }
       setError(null);
     } catch (err) {
       console.error('Failed to fetch data:', err);
@@ -184,30 +190,30 @@ const App: React.FC = () => {
                     Workflow Status
                   </Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    {getPhaseIcon(workflowState.phase)}
+                    {getPhaseIcon(workflowState?.phase || 'idle')}
                     <Typography variant="h6" sx={{ ml: 1, mr: 2 }}>
-                      {workflowState.phase.replace('-', ' ').toUpperCase()}
+                      {(workflowState?.phase || 'idle').replace('-', ' ').toUpperCase()}
                     </Typography>
                     <Chip
-                      label={workflowState.status.toUpperCase()}
-                      color={getStatusColor(workflowState.status) as any}
+                      label={(workflowState?.status || 'stopped').toUpperCase()}
+                      color={getStatusColor(workflowState?.status || 'stopped') as any}
                       size="small"
                     />
                   </Box>
                   <LinearProgress 
                     variant="determinate" 
-                    value={workflowState.progress} 
+                    value={workflowState?.progress || 0} 
                     sx={{ mb: 2 }}
                   />
                   <Typography variant="body2" color="text.secondary">
-                    Progress: {workflowState.progress}%
+                    Progress: {workflowState?.progress || 0}%
                   </Typography>
                 </CardContent>
                 <CardActions>
                   <Button
                     startIcon={<PlayArrow />}
                     onClick={() => handleWorkflowAction('start')}
-                    disabled={loading || workflowState.status === 'running'}
+                    disabled={loading || workflowState?.status === 'running'}
                     variant="contained"
                     color="primary"
                   >
@@ -216,7 +222,7 @@ const App: React.FC = () => {
                   <Button
                     startIcon={<Stop />}
                     onClick={() => handleWorkflowAction('stop')}
-                    disabled={loading || workflowState.status === 'stopped'}
+                    disabled={loading || workflowState?.status === 'stopped'}
                     variant="outlined"
                     color="secondary"
                   >
@@ -225,14 +231,14 @@ const App: React.FC = () => {
                   <Button
                     startIcon={<Pause />}
                     onClick={() => handleWorkflowAction('pause')}
-                    disabled={loading || workflowState.status !== 'running'}
+                    disabled={loading || workflowState?.status !== 'running'}
                     variant="outlined"
                   >
                     Pause
                   </Button>
                   <Button
                     onClick={() => handleWorkflowAction('resume')}
-                    disabled={loading || workflowState.status !== 'paused'}
+                    disabled={loading || workflowState?.status !== 'paused'}
                     variant="outlined"
                   >
                     Resume
@@ -289,8 +295,8 @@ const App: React.FC = () => {
                       overflowY: 'auto'
                     }}
                   >
-                    {workflowState.output.length > 0 ? (
-                      workflowState.output.map((line, index) => (
+                    {(workflowState?.output || []).length > 0 ? (
+                      (workflowState?.output || []).map((line, index) => (
                         <div key={index}>{line}</div>
                       ))
                     ) : (

@@ -60,7 +60,10 @@
       "Bash(rg:*)",
       "Bash(npm install:*)",
       "Bash(curl:*)",
-      "Bash(timeout 15s npm run dev)"
+      "Bash(timeout 15s npm run dev)",
+      "Bash(ip route:*)",
+      "Bash(hostname:*)",
+      "Bash(ss:*)"
     ],
     "deny": []
   }

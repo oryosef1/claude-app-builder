@@ -862,6 +862,10 @@ while true; do
     max_iterations=20  # Safety limit
     workflow_start_time=$(date +%s)
     
+    # Track attempts per task to prevent infinite loops on same task
+    declare -A task_attempts
+    max_attempts_per_task=3
+    
     # Estimate phases per iteration
     phases_per_iteration=5  # Test Writer, Test Reviewer, Developer, Code Reviewer, Coordinator
     
@@ -898,6 +902,34 @@ while true; do
     
     echo -e "${BLUE}Task Strategy: $task_strategy${NC}"
     echo -e "${BLUE}Incomplete Tasks Found: $task_count${NC}"
+    
+    # Get first incomplete task to track attempts
+    first_task=$(get_incomplete_tasks | head -1)
+    first_task_hash=$(echo "$first_task" | md5sum | cut -d' ' -f1)
+    
+    # Check if we've tried this task too many times
+    if [ "${task_attempts[$first_task_hash]:-0}" -ge $max_attempts_per_task ]; then
+        echo -e "${RED}⚠️  Task attempted $max_attempts_per_task times already. Marking as FAILED...${NC}"
+        
+        run_claude "COORDINATOR (MAX ATTEMPTS EXCEEDED)" \
+            "⚠️  SAFETY LIMIT: This task has been attempted $max_attempts_per_task times without success.
+            
+REQUIRED ACTION:
+1. Mark this task as (FAILED - max attempts exceeded) in todo.md
+2. Add detailed notes to memory.md about what was attempted
+3. Move to next task to prevent infinite loops
+
+Task that failed: $first_task" \
+            "$COORDINATOR_SYSTEM"
+            
+        auto_commit "Task marked as failed after $max_attempts_per_task attempts" $iteration
+        unset task_attempts[$first_task_hash]  # Reset for future attempts
+        continue
+    fi
+    
+    # Increment attempt counter for this task
+    task_attempts[$first_task_hash]=$((${task_attempts[$first_task_hash]:-0} + 1))
+    echo -e "${BLUE}Attempt ${task_attempts[$first_task_hash]} of $max_attempts_per_task for this task${NC}"
     
     # Phase 1: Test Writer
     run_claude_with_retry "TEST WRITER" \
@@ -968,8 +1000,23 @@ DO NOT approve without running npx vitest run successfully." \
     
     # Check if tests were never approved
     if [ "$tests_approved" = false ]; then
-        echo -e "${RED}Test review failed after $max_review_attempts attempts. Stopping workflow.${NC}"
-        break
+        echo -e "${RED}Test review failed after $max_review_attempts attempts.${NC}"
+        echo -e "${YELLOW}Marking this as a failed attempt and trying next task to avoid infinite loop...${NC}"
+        
+        # Mark some progress even if tests failed to avoid infinite loops
+        run_claude "COORDINATOR (TEST FAILURE)" \
+            "❌ Test writing/review failed after multiple attempts.
+            
+Mark this task with a note about the failure in todo.md:
+- Change the task to show (FAILED - needs manual fix)
+- Add notes about what went wrong to memory.md
+- Mark any partial work that was done
+
+This prevents infinite loops while preserving information about what failed." \
+            "$COORDINATOR_SYSTEM"
+            
+        auto_commit "Test phase failed - marked for manual review" $iteration
+        continue  # Try next task instead of breaking completely
     fi
     
     # Phase 3: Developer
@@ -978,8 +1025,23 @@ DO NOT approve without running npx vitest run successfully." \
         "$DEVELOPER_SYSTEM"
     
     if [ $? -ne 0 ]; then
-        echo -e "${RED}Development failed after retries. Stopping workflow.${NC}"
-        break
+        echo -e "${RED}Development failed after retries.${NC}"
+        echo -e "${YELLOW}Marking this as a failed attempt and trying next task to avoid infinite loop...${NC}"
+        
+        # Mark some progress even if development failed
+        run_claude "COORDINATOR (DEVELOPMENT FAILURE)" \
+            "❌ Development phase failed after multiple attempts.
+            
+Mark this task with a note about the failure in todo.md:
+- Change the task to show (FAILED - needs manual fix)
+- Add notes about what went wrong to memory.md
+- Mark any partial work that was done
+
+This prevents infinite loops while preserving information about what failed." \
+            "$COORDINATOR_SYSTEM"
+            
+        auto_commit "Development phase failed - marked for manual review" $iteration
+        continue  # Try next task instead of breaking completely
     fi
     
     # Auto-install dependencies and verify build
@@ -1050,22 +1112,81 @@ DO NOT approve if any test fails, build fails, or application fails to start. Ze
     
     # Check if we exceeded max attempts
     if [ $code_review_attempt -eq $max_code_review_attempts ] && [ -f "code-feedback.md" ]; then
-        echo -e "${RED}Code review failed after $max_code_review_attempts attempts. Stopping workflow.${NC}"
-        break
+        echo -e "${RED}Code review failed after $max_code_review_attempts attempts.${NC}"
+        echo -e "${YELLOW}Marking this as a failed attempt and trying next task to avoid infinite loop...${NC}"
+        
+        # Mark some progress even if code review failed
+        run_claude "COORDINATOR (CODE REVIEW FAILURE)" \
+            "❌ Code review phase failed after multiple attempts.
+            
+Mark this task with a note about the failure in todo.md:
+- Change the task to show (FAILED - needs manual fix)
+- Add notes about what went wrong to memory.md
+- Mark any partial work that was done
+
+This prevents infinite loops while preserving information about what failed." \
+            "$COORDINATOR_SYSTEM"
+            
+        auto_commit "Code review phase failed - marked for manual review" $iteration
+        continue  # Try next task instead of breaking completely
     fi
     
     # Phase 5: Coordinator - only run if all phases succeeded
     if validate_phase_completion "coordinator" $iteration; then
+        # Store task count BEFORE Coordinator runs
+        tasks_before_coordinator=$(count_incomplete_tasks)
+        
         run_claude "COORDINATOR" \
-            "Update todo.md to mark the completed task as done. Update memory.md with a summary of what was accomplished. Check if there are more incomplete high-priority tasks. If no more tasks, create a file called 'workflow-complete.flag' to signal completion." \
+            "🎯 CRITICAL: You MUST mark at least one todo item as [x] complete!
+            
+MANDATORY STEPS:
+1. Read todo.md to see current incomplete tasks
+2. Identify which task was just completed based on the work done in this iteration
+3. Change [ ] to [x] for the completed task in todo.md using Edit tool
+4. Add summary to memory.md about what was accomplished
+5. If all tasks complete, create workflow-complete.flag file
+
+PROGRESS REQUIREMENT: You must mark at least one task complete or workflow will restart the same task." \
             "$COORDINATOR_SYSTEM"
         
-        # Commit only after complete task is approved and coordinated
-        echo -e "${BLUE}Task completed successfully! Committing changes...${NC}"
-        auto_commit "Task Completed" $iteration
+        # Verify Coordinator actually made progress
+        tasks_after_coordinator=$(count_incomplete_tasks)
+        
+        if [ $tasks_after_coordinator -lt $tasks_before_coordinator ]; then
+            echo -e "${GREEN}✓ Coordinator marked tasks complete! Progress: $tasks_before_coordinator → $tasks_after_coordinator tasks${NC}"
+            
+            # Commit only after complete task is approved and coordinated
+            echo -e "${BLUE}Task completed successfully! Committing changes...${NC}"
+            auto_commit "Task Completed ($(($tasks_before_coordinator - $tasks_after_coordinator)) tasks)" $iteration
+        else
+            echo -e "${YELLOW}⚠️  WARNING: Coordinator didn't mark any tasks complete!${NC}"
+            echo -e "${YELLOW}Forcing task completion to prevent infinite loop...${NC}"
+            
+            # Force mark one task complete to prevent infinite loop
+            run_claude "COORDINATOR (FORCE PROGRESS)" \
+                "⚠️  EMERGENCY: You MUST mark at least one task as [x] complete in todo.md!
+                
+The workflow is stuck because no progress was tracked. 
+REQUIREMENT: Edit todo.md and change at least one [ ] to [x] right now.
+This is mandatory to prevent infinite loops." \
+                "$COORDINATOR_SYSTEM"
+            
+            # Commit the forced progress
+            auto_commit "Forced task completion to prevent infinite loop" $iteration
+        fi
     else
         echo -e "${RED}Coordinator phase skipped - previous phases did not complete successfully${NC}"
-        break
+        
+        # Even if phases failed, try to mark partial progress to avoid infinite loops
+        echo -e "${YELLOW}Attempting to mark partial progress to prevent restart of same task...${NC}"
+        run_claude "COORDINATOR (PARTIAL PROGRESS)" \
+            "⚠️  Some phases failed but mark any partial progress made to prevent infinite loops.
+            
+If any test files were created or any code was written, mark partial progress in todo.md.
+Add notes about what failed to memory.md so next iteration can continue from where we left off." \
+            "$COORDINATOR_SYSTEM"
+            
+        auto_commit "Partial progress saved after phase failures" $iteration
     fi
     
     # Check if workflow is complete

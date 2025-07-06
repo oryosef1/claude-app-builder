@@ -133,7 +133,11 @@ const WebSocketTestComponent: React.FC = () => {
       
       <button 
         data-testid="connect-btn" 
-        onClick={() => ws.connect('ws://localhost:3002')}
+        onClick={() => {
+          ws.connect('ws://localhost:3002').catch(() => {
+            // Handle connection errors silently in test component
+          });
+        }}
       >
         Connect
       </button>
@@ -358,20 +362,21 @@ describe('WebSocket Dashboard Integration', () => {
     it('should handle connection failures gracefully', async () => {
       const user = userEvent.setup();
       
-      // Mock connection failure
-      vi.spyOn(mockClient, 'connect').mockImplementation(() => 
-        Promise.reject(new Error('Connection failed'))
-      );
+      // Mock connection failure with proper error handling
+      vi.spyOn(mockClient, 'connect').mockImplementation(async () => {
+        throw new Error('Connection failed');
+      });
       
       render(<WebSocketTestComponent />);
 
-      try {
-        await act(async () => {
+      // Properly handle the promise rejection in act
+      await act(async () => {
+        try {
           await user.click(screen.getByTestId('connect-btn'));
-        });
-      } catch (error) {
-        // Expected connection failure
-      }
+        } catch (error) {
+          // Expected connection failure - properly handled
+        }
+      });
 
       await waitFor(() => {
         expect(screen.getByTestId('connection-status')).toHaveTextContent('Disconnected');

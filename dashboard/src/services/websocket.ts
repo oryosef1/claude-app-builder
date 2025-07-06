@@ -99,6 +99,8 @@ export class WebSocketClient implements WebSocketClientInterface {
     }
 
     if (this.socket) {
+      // Remove all event listeners before disconnecting
+      this.socket.off();
       this.socket.disconnect();
       this.socket = null;
     }

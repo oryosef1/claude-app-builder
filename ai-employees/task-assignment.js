@@ -257,7 +257,7 @@ Provide high-quality work that reflects well on the company.
 }
 
 // CLI Interface
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith('/task-assignment.js')) {
     const manager = new AIEmployeeManager();
     const command = process.argv[2];
 

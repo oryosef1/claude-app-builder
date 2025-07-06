@@ -88,7 +88,7 @@ class WorkflowRouter {
                     {
                         "phase": "deployment",
                         "required_roles": ["DevOps Engineer"],
-                        "optional_roles": ["SRE"],
+                        "optional_roles": ["Site Reliability Engineer"],
                         "parallel": false,
                         "deliverables": ["deployment_plan", "infrastructure", "monitoring"]
                     },
@@ -147,7 +147,7 @@ class WorkflowRouter {
                     {
                         "phase": "implementation",
                         "required_roles": ["DevOps Engineer"],
-                        "optional_roles": ["SRE"],
+                        "optional_roles": ["Site Reliability Engineer"],
                         "parallel": false,
                         "deliverables": ["infrastructure_code", "automation_scripts", "ci_cd_pipeline"]
                     },
@@ -160,7 +160,7 @@ class WorkflowRouter {
                     },
                     {
                         "phase": "monitoring",
-                        "required_roles": ["SRE"],
+                        "required_roles": ["Site Reliability Engineer"],
                         "optional_roles": ["DevOps Engineer"],
                         "parallel": false,
                         "deliverables": ["monitoring_setup", "alerting_rules", "incident_response_plan"]

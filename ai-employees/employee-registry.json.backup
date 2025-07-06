@@ -45,8 +45,16 @@
         "technical_mentoring"
       ],
       "system_prompt_file": "corporate-prompts/technical-lead.md",
-      "current_projects": [],
-      "workload": 0,
+      "current_projects": [
+        {
+          "id": "task_001",
+          "title": "Design system architecture for AI employee memory system",
+          "priority": "high",
+          "assigned_date": "2025-07-06T13:46:38.777Z",
+          "status": "assigned"
+        }
+      ],
+      "workload": 3,
       "performance_metrics": {
         "architecture_decisions": 0,
         "system_reliability": 100,

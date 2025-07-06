@@ -1,0 +1,419 @@
+{
+  "created": "2025-07-06T13:56:00.949Z",
+  "snapshots": [
+    {
+      "timestamp": "2025-07-06T13:56:45.497Z",
+      "system_health": {
+        "employee_availability": 100,
+        "average_workload": 0.23076923076923078,
+        "overloaded_employees": 0,
+        "underutilized_employees": 12,
+        "overall_health_score": 80,
+        "health_status": "good"
+      },
+      "department_status": {
+        "Executive": {
+          "total_employees": 3,
+          "active_employees": 3,
+          "total_workload": 3,
+          "average_workload": 1,
+          "capacity_utilization": 20,
+          "department_head": "Alex Project Manager",
+          "status": "underutilized"
+        },
+        "Development": {
+          "total_employees": 4,
+          "active_employees": 4,
+          "total_workload": 0,
+          "average_workload": 0,
+          "capacity_utilization": 0,
+          "department_head": "Sam Senior Developer",
+          "status": "underutilized"
+        },
+        "Operations": {
+          "total_employees": 3,
+          "active_employees": 3,
+          "total_workload": 0,
+          "average_workload": 0,
+          "capacity_utilization": 0,
+          "department_head": "Drew DevOps Engineer",
+          "status": "underutilized"
+        },
+        "Support": {
+          "total_employees": 3,
+          "active_employees": 3,
+          "total_workload": 0,
+          "average_workload": 0,
+          "capacity_utilization": 0,
+          "department_head": "Blake Technical Writer",
+          "status": "underutilized"
+        }
+      },
+      "employee_status": {
+        "total": 13,
+        "active": 13,
+        "inactive": 0,
+        "overloaded": 0,
+        "underutilized": 12,
+        "optimal": 1
+      },
+      "capacity_utilization": {
+        "total_capacity": 65,
+        "current_workload": 3,
+        "utilization_percentage": 5,
+        "capacity_status": "underutilized",
+        "available_capacity": 62
+      },
+      "active_alerts": 0,
+      "performance_summary": {
+        "note": "Performance summary would integrate with performance-tracker.js",
+        "metrics_available": false
+      }
+    },
+    {
+      "timestamp": "2025-07-06T14:27:50.300Z",
+      "system_health": {
+        "employee_availability": 100,
+        "average_workload": 0.23076923076923078,
+        "overloaded_employees": 0,
+        "underutilized_employees": 12,
+        "overall_health_score": 80,
+        "health_status": "good"
+      },
+      "department_status": {
+        "Executive": {
+          "total_employees": 3,
+          "active_employees": 3,
+          "total_workload": 3,
+          "average_workload": 1,
+          "capacity_utilization": 20,
+          "department_head": "Alex Project Manager",
+          "status": "underutilized"
+        },
+        "Development": {
+          "total_employees": 4,
+          "active_employees": 4,
+          "total_workload": 0,
+          "average_workload": 0,
+          "capacity_utilization": 0,
+          "department_head": "Sam Senior Developer",
+          "status": "underutilized"
+        },
+        "Operations": {
+          "total_employees": 3,
+          "active_employees": 3,
+          "total_workload": 0,
+          "average_workload": 0,
+          "capacity_utilization": 0,
+          "department_head": "Drew DevOps Engineer",
+          "status": "underutilized"
+        },
+        "Support": {
+          "total_employees": 3,
+          "active_employees": 3,
+          "total_workload": 0,
+          "average_workload": 0,
+          "capacity_utilization": 0,
+          "department_head": "Blake Technical Writer",
+          "status": "underutilized"
+        }
+      },
+      "employee_status": {
+        "total": 13,
+        "active": 13,
+        "inactive": 0,
+        "overloaded": 0,
+        "underutilized": 12,
+        "optimal": 1
+      },
+      "capacity_utilization": {
+        "total_capacity": 65,
+        "current_workload": 3,
+        "utilization_percentage": 5,
+        "capacity_status": "underutilized",
+        "available_capacity": 62
+      },
+      "active_alerts": 0,
+      "performance_summary": {
+        "note": "Performance summary would integrate with performance-tracker.js",
+        "metrics_available": false
+      }
+    },
+    {
+      "timestamp": "2025-07-06T14:29:57.375Z",
+      "system_health": {
+        "employee_availability": 100,
+        "average_workload": 0.23076923076923078,
+        "overloaded_employees": 0,
+        "underutilized_employees": 12,
+        "overall_health_score": 80,
+        "health_status": "good"
+      },
+      "department_status": {
+        "Executive": {
+          "total_employees": 3,
+          "active_employees": 3,
+          "total_workload": 3,
+          "average_workload": 1,
+          "capacity_utilization": 20,
+          "department_head": "Alex Project Manager",
+          "status": "underutilized"
+        },
+        "Development": {
+          "total_employees": 4,
+          "active_employees": 4,
+          "total_workload": 0,
+          "average_workload": 0,
+          "capacity_utilization": 0,
+          "department_head": "Sam Senior Developer",
+          "status": "underutilized"
+        },
+        "Operations": {
+          "total_employees": 3,
+          "active_employees": 3,
+          "total_workload": 0,
+          "average_workload": 0,
+          "capacity_utilization": 0,
+          "department_head": "Drew DevOps Engineer",
+          "status": "underutilized"
+        },
+        "Support": {
+          "total_employees": 3,
+          "active_employees": 3,
+          "total_workload": 0,
+          "average_workload": 0,
+          "capacity_utilization": 0,
+          "department_head": "Blake Technical Writer",
+          "status": "underutilized"
+        }
+      },
+      "employee_status": {
+        "total": 13,
+        "active": 13,
+        "inactive": 0,
+        "overloaded": 0,
+        "underutilized": 12,
+        "optimal": 1
+      },
+      "capacity_utilization": {
+        "total_capacity": 65,
+        "current_workload": 3,
+        "utilization_percentage": 5,
+        "capacity_status": "underutilized",
+        "available_capacity": 62
+      },
+      "active_alerts": 0,
+      "performance_summary": {
+        "note": "Performance summary would integrate with performance-tracker.js",
+        "metrics_available": false
+      }
+    },
+    {
+      "timestamp": "2025-07-06T14:36:40.183Z",
+      "system_health": {
+        "employee_availability": 100,
+        "average_workload": 0.23076923076923078,
+        "overloaded_employees": 0,
+        "underutilized_employees": 12,
+        "overall_health_score": 80,
+        "health_status": "good"
+      },
+      "department_status": {
+        "Executive": {
+          "total_employees": 3,
+          "active_employees": 3,
+          "total_workload": 3,
+          "average_workload": 1,
+          "capacity_utilization": 20,
+          "department_head": "Alex Project Manager",
+          "status": "underutilized"
+        },
+        "Development": {
+          "total_employees": 4,
+          "active_employees": 4,
+          "total_workload": 0,
+          "average_workload": 0,
+          "capacity_utilization": 0,
+          "department_head": "Sam Senior Developer",
+          "status": "underutilized"
+        },
+        "Operations": {
+          "total_employees": 3,
+          "active_employees": 3,
+          "total_workload": 0,
+          "average_workload": 0,
+          "capacity_utilization": 0,
+          "department_head": "Drew DevOps Engineer",
+          "status": "underutilized"
+        },
+        "Support": {
+          "total_employees": 3,
+          "active_employees": 3,
+          "total_workload": 0,
+          "average_workload": 0,
+          "capacity_utilization": 0,
+          "department_head": "Blake Technical Writer",
+          "status": "underutilized"
+        }
+      },
+      "employee_status": {
+        "total": 13,
+        "active": 13,
+        "inactive": 0,
+        "overloaded": 0,
+        "underutilized": 12,
+        "optimal": 1
+      },
+      "capacity_utilization": {
+        "total_capacity": 65,
+        "current_workload": 3,
+        "utilization_percentage": 5,
+        "capacity_status": "underutilized",
+        "available_capacity": 62
+      },
+      "active_alerts": 0,
+      "performance_summary": {
+        "note": "Performance summary would integrate with performance-tracker.js",
+        "metrics_available": false
+      }
+    },
+    {
+      "timestamp": "2025-07-06T14:38:00.079Z",
+      "system_health": {
+        "employee_availability": 100,
+        "average_workload": 0.23076923076923078,
+        "overloaded_employees": 0,
+        "underutilized_employees": 12,
+        "overall_health_score": 80,
+        "health_status": "good"
+      },
+      "department_status": {
+        "Executive": {
+          "total_employees": 3,
+          "active_employees": 3,
+          "total_workload": 3,
+          "average_workload": 1,
+          "capacity_utilization": 20,
+          "department_head": "Alex Project Manager",
+          "status": "underutilized"
+        },
+        "Development": {
+          "total_employees": 4,
+          "active_employees": 4,
+          "total_workload": 0,
+          "average_workload": 0,
+          "capacity_utilization": 0,
+          "department_head": "Sam Senior Developer",
+          "status": "underutilized"
+        },
+        "Operations": {
+          "total_employees": 3,
+          "active_employees": 3,
+          "total_workload": 0,
+          "average_workload": 0,
+          "capacity_utilization": 0,
+          "department_head": "Drew DevOps Engineer",
+          "status": "underutilized"
+        },
+        "Support": {
+          "total_employees": 3,
+          "active_employees": 3,
+          "total_workload": 0,
+          "average_workload": 0,
+          "capacity_utilization": 0,
+          "department_head": "Blake Technical Writer",
+          "status": "underutilized"
+        }
+      },
+      "employee_status": {
+        "total": 13,
+        "active": 13,
+        "inactive": 0,
+        "overloaded": 0,
+        "underutilized": 12,
+        "optimal": 1
+      },
+      "capacity_utilization": {
+        "total_capacity": 65,
+        "current_workload": 3,
+        "utilization_percentage": 5,
+        "capacity_status": "underutilized",
+        "available_capacity": 62
+      },
+      "active_alerts": 0,
+      "performance_summary": {
+        "note": "Performance summary would integrate with performance-tracker.js",
+        "metrics_available": false
+      }
+    },
+    {
+      "timestamp": "2025-07-06T15:04:08.236Z",
+      "system_health": {
+        "employee_availability": 100,
+        "average_workload": 0.23076923076923078,
+        "overloaded_employees": 0,
+        "underutilized_employees": 12,
+        "overall_health_score": 80,
+        "health_status": "good"
+      },
+      "department_status": {
+        "Executive": {
+          "total_employees": 3,
+          "active_employees": 3,
+          "total_workload": 3,
+          "average_workload": 1,
+          "capacity_utilization": 20,
+          "department_head": "Alex Project Manager",
+          "status": "underutilized"
+        },
+        "Development": {
+          "total_employees": 4,
+          "active_employees": 4,
+          "total_workload": 0,
+          "average_workload": 0,
+          "capacity_utilization": 0,
+          "department_head": "Sam Senior Developer",
+          "status": "underutilized"
+        },
+        "Operations": {
+          "total_employees": 3,
+          "active_employees": 3,
+          "total_workload": 0,
+          "average_workload": 0,
+          "capacity_utilization": 0,
+          "department_head": "Drew DevOps Engineer",
+          "status": "underutilized"
+        },
+        "Support": {
+          "total_employees": 3,
+          "active_employees": 3,
+          "total_workload": 0,
+          "average_workload": 0,
+          "capacity_utilization": 0,
+          "department_head": "Blake Technical Writer",
+          "status": "underutilized"
+        }
+      },
+      "employee_status": {
+        "total": 13,
+        "active": 13,
+        "inactive": 0,
+        "overloaded": 0,
+        "underutilized": 12,
+        "optimal": 1
+      },
+      "capacity_utilization": {
+        "total_capacity": 65,
+        "current_workload": 3,
+        "utilization_percentage": 5,
+        "capacity_status": "underutilized",
+        "available_capacity": 62
+      },
+      "active_alerts": 0,
+      "performance_summary": {
+        "note": "Performance summary would integrate with performance-tracker.js",
+        "metrics_available": false
+      }
+    }
+  ]
+}

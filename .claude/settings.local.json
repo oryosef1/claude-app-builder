@@ -67,7 +67,15 @@
       "Bash(ps:*)",
       "Bash(true)",
       "Bash(wget:*)",
-      "Bash(./functional-validation.sh:*)"
+      "Bash(./functional-validation.sh:*)",
+      "Bash(./test-corporate-roles.sh:*)",
+      "Bash(./corporate-workflow.sh:*)",
+      "Bash(apt list:*)",
+      "Bash(/tmp/jq:*)",
+      "Bash(sudo cp:*)",
+      "Bash(PATH:*)",
+      "Bash(mv:*)",
+      "Bash(time node:*)"
     ],
     "deny": []
   }

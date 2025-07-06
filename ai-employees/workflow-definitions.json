@@ -1,0 +1,287 @@
+{
+  "software_development": {
+    "name": "Software Development Project",
+    "phases": [
+      {
+        "phase": "planning",
+        "required_roles": [
+          "Project Manager"
+        ],
+        "optional_roles": [
+          "Technical Lead"
+        ],
+        "parallel": false,
+        "deliverables": [
+          "project_plan",
+          "requirements",
+          "timeline"
+        ]
+      },
+      {
+        "phase": "architecture",
+        "required_roles": [
+          "Technical Lead"
+        ],
+        "optional_roles": [
+          "Senior Developer",
+          "Security Engineer"
+        ],
+        "parallel": false,
+        "deliverables": [
+          "technical_architecture",
+          "system_design",
+          "technology_stack"
+        ]
+      },
+      {
+        "phase": "development",
+        "required_roles": [
+          "Senior Developer"
+        ],
+        "optional_roles": [
+          "Junior Developer"
+        ],
+        "parallel": true,
+        "deliverables": [
+          "source_code",
+          "unit_tests",
+          "documentation"
+        ]
+      },
+      {
+        "phase": "testing",
+        "required_roles": [
+          "QA Engineer"
+        ],
+        "optional_roles": [
+          "Test Engineer"
+        ],
+        "parallel": true,
+        "deliverables": [
+          "test_plan",
+          "test_cases",
+          "test_results"
+        ]
+      },
+      {
+        "phase": "deployment",
+        "required_roles": [
+          "DevOps Engineer"
+        ],
+        "optional_roles": [
+          "SRE"
+        ],
+        "parallel": false,
+        "deliverables": [
+          "deployment_plan",
+          "infrastructure",
+          "monitoring"
+        ]
+      },
+      {
+        "phase": "documentation",
+        "required_roles": [
+          "Technical Writer"
+        ],
+        "optional_roles": [],
+        "parallel": true,
+        "deliverables": [
+          "user_docs",
+          "api_docs",
+          "maintenance_guide"
+        ]
+      }
+    ]
+  },
+  "ui_ux_project": {
+    "name": "UI/UX Design Project",
+    "phases": [
+      {
+        "phase": "research",
+        "required_roles": [
+          "UI/UX Designer"
+        ],
+        "optional_roles": [
+          "Project Manager"
+        ],
+        "parallel": false,
+        "deliverables": [
+          "user_research",
+          "personas",
+          "requirements"
+        ]
+      },
+      {
+        "phase": "design",
+        "required_roles": [
+          "UI/UX Designer"
+        ],
+        "optional_roles": [],
+        "parallel": false,
+        "deliverables": [
+          "wireframes",
+          "mockups",
+          "design_system"
+        ]
+      },
+      {
+        "phase": "prototyping",
+        "required_roles": [
+          "UI/UX Designer"
+        ],
+        "optional_roles": [
+          "Senior Developer"
+        ],
+        "parallel": false,
+        "deliverables": [
+          "interactive_prototype",
+          "usability_tests"
+        ]
+      },
+      {
+        "phase": "implementation",
+        "required_roles": [
+          "Senior Developer"
+        ],
+        "optional_roles": [
+          "Junior Developer"
+        ],
+        "parallel": true,
+        "deliverables": [
+          "frontend_code",
+          "responsive_design",
+          "accessibility"
+        ]
+      }
+    ]
+  },
+  "infrastructure_project": {
+    "name": "Infrastructure Project",
+    "phases": [
+      {
+        "phase": "planning",
+        "required_roles": [
+          "DevOps Engineer"
+        ],
+        "optional_roles": [
+          "Technical Lead",
+          "Security Engineer"
+        ],
+        "parallel": false,
+        "deliverables": [
+          "infrastructure_plan",
+          "security_requirements",
+          "capacity_planning"
+        ]
+      },
+      {
+        "phase": "implementation",
+        "required_roles": [
+          "DevOps Engineer"
+        ],
+        "optional_roles": [
+          "SRE"
+        ],
+        "parallel": false,
+        "deliverables": [
+          "infrastructure_code",
+          "automation_scripts",
+          "ci_cd_pipeline"
+        ]
+      },
+      {
+        "phase": "security_review",
+        "required_roles": [
+          "Security Engineer"
+        ],
+        "optional_roles": [
+          "DevOps Engineer"
+        ],
+        "parallel": false,
+        "deliverables": [
+          "security_audit",
+          "vulnerability_assessment",
+          "compliance_report"
+        ]
+      },
+      {
+        "phase": "monitoring",
+        "required_roles": [
+          "SRE"
+        ],
+        "optional_roles": [
+          "DevOps Engineer"
+        ],
+        "parallel": false,
+        "deliverables": [
+          "monitoring_setup",
+          "alerting_rules",
+          "incident_response_plan"
+        ]
+      }
+    ]
+  },
+  "quality_assurance": {
+    "name": "Quality Assurance Project",
+    "phases": [
+      {
+        "phase": "test_strategy",
+        "required_roles": [
+          "QA Director"
+        ],
+        "optional_roles": [
+          "QA Engineer"
+        ],
+        "parallel": false,
+        "deliverables": [
+          "test_strategy",
+          "quality_standards",
+          "test_framework"
+        ]
+      },
+      {
+        "phase": "test_planning",
+        "required_roles": [
+          "QA Engineer"
+        ],
+        "optional_roles": [
+          "Test Engineer"
+        ],
+        "parallel": false,
+        "deliverables": [
+          "test_plan",
+          "test_cases",
+          "test_data"
+        ]
+      },
+      {
+        "phase": "test_implementation",
+        "required_roles": [
+          "Test Engineer"
+        ],
+        "optional_roles": [
+          "QA Engineer"
+        ],
+        "parallel": true,
+        "deliverables": [
+          "automated_tests",
+          "manual_tests",
+          "test_environments"
+        ]
+      },
+      {
+        "phase": "test_execution",
+        "required_roles": [
+          "Test Engineer"
+        ],
+        "optional_roles": [],
+        "parallel": true,
+        "deliverables": [
+          "test_results",
+          "bug_reports",
+          "quality_metrics"
+        ]
+      }
+    ]
+  }
+}

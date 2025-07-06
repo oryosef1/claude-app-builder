@@ -1,0 +1,370 @@
+{
+  "company": {
+    "name": "Claude AI Software Company",
+    "founded": "2025-07-06",
+    "mission": "World's first fully AI-powered software development company",
+    "employees_count": 13
+  },
+  "employees": {
+    "emp_001": {
+      "id": "emp_001",
+      "name": "Alex Project Manager",
+      "role": "Project Manager",
+      "department": "Executive",
+      "level": "Senior",
+      "hire_date": "2025-07-06",
+      "status": "active",
+      "skills": [
+        "sprint_planning",
+        "resource_allocation",
+        "stakeholder_communication",
+        "team_coordination"
+      ],
+      "system_prompt_file": "corporate-prompts/project-manager.md",
+      "current_projects": [],
+      "workload": 0,
+      "performance_metrics": {
+        "projects_completed": 0,
+        "on_time_delivery": 100,
+        "client_satisfaction": 100,
+        "team_efficiency": 100
+      }
+    },
+    "emp_002": {
+      "id": "emp_002",
+      "name": "Taylor Technical Lead",
+      "role": "Technical Lead",
+      "department": "Executive",
+      "level": "Senior",
+      "hire_date": "2025-07-06",
+      "status": "active",
+      "skills": [
+        "system_architecture",
+        "technology_strategy",
+        "code_standards",
+        "technical_mentoring"
+      ],
+      "system_prompt_file": "corporate-prompts/technical-lead.md",
+      "current_projects": [
+        {
+          "id": "task_001",
+          "title": "Design system architecture for AI employee memory system",
+          "priority": "high",
+          "assigned_date": "2025-07-06T13:46:38.777Z",
+          "status": "assigned"
+        }
+      ],
+      "workload": 3,
+      "performance_metrics": {
+        "architecture_decisions": 0,
+        "system_reliability": 100,
+        "team_development": 100,
+        "technology_adoption": 100
+      }
+    },
+    "emp_003": {
+      "id": "emp_003",
+      "name": "Jordan QA Director",
+      "role": "QA Director",
+      "department": "Executive",
+      "level": "Senior",
+      "hire_date": "2025-07-06",
+      "status": "active",
+      "skills": [
+        "quality_standards",
+        "release_approval",
+        "compliance",
+        "process_excellence"
+      ],
+      "system_prompt_file": "corporate-prompts/qa-director.md",
+      "current_projects": [],
+      "workload": 0,
+      "performance_metrics": {
+        "quality_gates": 0,
+        "defect_escape_rate": 0,
+        "compliance_score": 100,
+        "process_improvements": 0
+      }
+    },
+    "emp_004": {
+      "id": "emp_004",
+      "name": "Sam Senior Developer",
+      "role": "Senior Developer",
+      "department": "Development",
+      "level": "Senior",
+      "hire_date": "2025-07-06",
+      "status": "active",
+      "skills": [
+        "complex_features",
+        "code_architecture",
+        "mentoring",
+        "performance_optimization"
+      ],
+      "system_prompt_file": "corporate-prompts/senior-developer.md",
+      "current_projects": [],
+      "workload": 0,
+      "performance_metrics": {
+        "features_delivered": 0,
+        "code_quality_score": 100,
+        "mentorship_impact": 100,
+        "bug_rate": 0
+      }
+    },
+    "emp_005": {
+      "id": "emp_005",
+      "name": "Casey Junior Developer",
+      "role": "Junior Developer",
+      "department": "Development",
+      "level": "Junior",
+      "hire_date": "2025-07-06",
+      "status": "active",
+      "skills": [
+        "feature_implementation",
+        "testing",
+        "documentation",
+        "learning"
+      ],
+      "system_prompt_file": "corporate-prompts/junior-developer.md",
+      "current_projects": [],
+      "workload": 0,
+      "performance_metrics": {
+        "tasks_completed": 0,
+        "skill_development": 100,
+        "code_review_score": 100,
+        "learning_velocity": 100
+      }
+    },
+    "emp_006": {
+      "id": "emp_006",
+      "name": "Morgan QA Engineer",
+      "role": "QA Engineer",
+      "department": "Development",
+      "level": "Mid",
+      "hire_date": "2025-07-06",
+      "status": "active",
+      "skills": [
+        "test_strategy",
+        "automation",
+        "quality_gates",
+        "risk_analysis"
+      ],
+      "system_prompt_file": "corporate-prompts/qa-engineer.md",
+      "current_projects": [],
+      "workload": 0,
+      "performance_metrics": {
+        "test_coverage": 100,
+        "automation_rate": 100,
+        "defect_detection": 100,
+        "quality_improvements": 0
+      }
+    },
+    "emp_007": {
+      "id": "emp_007",
+      "name": "Riley Test Engineer",
+      "role": "Test Engineer",
+      "department": "Development",
+      "level": "Mid",
+      "hire_date": "2025-07-06",
+      "status": "active",
+      "skills": [
+        "test_implementation",
+        "manual_testing",
+        "automation",
+        "bug_detection"
+      ],
+      "system_prompt_file": "corporate-prompts/test-engineer.md",
+      "current_projects": [],
+      "workload": 0,
+      "performance_metrics": {
+        "tests_executed": 0,
+        "bugs_found": 0,
+        "test_efficiency": 100,
+        "coverage_achieved": 100
+      }
+    },
+    "emp_008": {
+      "id": "emp_008",
+      "name": "Drew DevOps Engineer",
+      "role": "DevOps Engineer",
+      "department": "Operations",
+      "level": "Senior",
+      "hire_date": "2025-07-06",
+      "status": "active",
+      "skills": [
+        "ci_cd",
+        "infrastructure",
+        "deployment",
+        "monitoring"
+      ],
+      "system_prompt_file": "corporate-prompts/devops-engineer.md",
+      "current_projects": [],
+      "workload": 0,
+      "performance_metrics": {
+        "deployment_success": 100,
+        "pipeline_efficiency": 100,
+        "infrastructure_uptime": 100,
+        "automation_coverage": 100
+      }
+    },
+    "emp_009": {
+      "id": "emp_009",
+      "name": "Avery SRE",
+      "role": "Site Reliability Engineer",
+      "department": "Operations",
+      "level": "Senior",
+      "hire_date": "2025-07-06",
+      "status": "active",
+      "skills": [
+        "reliability",
+        "monitoring",
+        "incident_response",
+        "performance"
+      ],
+      "system_prompt_file": "corporate-prompts/sre.md",
+      "current_projects": [],
+      "workload": 0,
+      "performance_metrics": {
+        "uptime_percentage": 100,
+        "incident_response_time": 0,
+        "performance_improvements": 0,
+        "reliability_score": 100
+      }
+    },
+    "emp_010": {
+      "id": "emp_010",
+      "name": "Phoenix Security Engineer",
+      "role": "Security Engineer",
+      "department": "Operations",
+      "level": "Senior",
+      "hire_date": "2025-07-06",
+      "status": "active",
+      "skills": [
+        "security_audits",
+        "vulnerability_management",
+        "compliance",
+        "incident_response"
+      ],
+      "system_prompt_file": "corporate-prompts/security-engineer.md",
+      "current_projects": [],
+      "workload": 0,
+      "performance_metrics": {
+        "vulnerabilities_found": 0,
+        "security_score": 100,
+        "compliance_rate": 100,
+        "audit_results": 100
+      }
+    },
+    "emp_011": {
+      "id": "emp_011",
+      "name": "Blake Technical Writer",
+      "role": "Technical Writer",
+      "department": "Support",
+      "level": "Mid",
+      "hire_date": "2025-07-06",
+      "status": "active",
+      "skills": [
+        "documentation",
+        "api_docs",
+        "user_guides",
+        "knowledge_management"
+      ],
+      "system_prompt_file": "corporate-prompts/technical-writer.md",
+      "current_projects": [],
+      "workload": 0,
+      "performance_metrics": {
+        "docs_created": 0,
+        "user_satisfaction": 100,
+        "documentation_coverage": 100,
+        "knowledge_base_quality": 100
+      }
+    },
+    "emp_012": {
+      "id": "emp_012",
+      "name": "Quinn UI/UX Designer",
+      "role": "UI/UX Designer",
+      "department": "Support",
+      "level": "Mid",
+      "hire_date": "2025-07-06",
+      "status": "active",
+      "skills": [
+        "ui_design",
+        "ux_research",
+        "prototyping",
+        "design_systems"
+      ],
+      "system_prompt_file": "corporate-prompts/ui-ux-designer.md",
+      "current_projects": [],
+      "workload": 0,
+      "performance_metrics": {
+        "designs_delivered": 0,
+        "user_satisfaction": 100,
+        "design_system_adoption": 100,
+        "usability_score": 100
+      }
+    },
+    "emp_013": {
+      "id": "emp_013",
+      "name": "River Build Engineer",
+      "role": "Build Engineer",
+      "department": "Support",
+      "level": "Mid",
+      "hire_date": "2025-07-06",
+      "status": "active",
+      "skills": [
+        "build_systems",
+        "dependency_management",
+        "release_engineering",
+        "optimization"
+      ],
+      "system_prompt_file": "corporate-prompts/build-engineer.md",
+      "current_projects": [],
+      "workload": 0,
+      "performance_metrics": {
+        "build_success_rate": 100,
+        "build_time_optimization": 100,
+        "dependency_updates": 0,
+        "release_efficiency": 100
+      }
+    }
+  },
+  "departments": {
+    "Executive": {
+      "head": "emp_001",
+      "employees": [
+        "emp_001",
+        "emp_002",
+        "emp_003"
+      ],
+      "focus": "Leadership, strategy, and oversight"
+    },
+    "Development": {
+      "head": "emp_004",
+      "employees": [
+        "emp_004",
+        "emp_005",
+        "emp_006",
+        "emp_007"
+      ],
+      "focus": "Software development and quality assurance"
+    },
+    "Operations": {
+      "head": "emp_008",
+      "employees": [
+        "emp_008",
+        "emp_009",
+        "emp_010"
+      ],
+      "focus": "Infrastructure, reliability, and security"
+    },
+    "Support": {
+      "head": "emp_011",
+      "employees": [
+        "emp_011",
+        "emp_012",
+        "emp_013"
+      ],
+      "focus": "Documentation, design, and build systems"
+    }
+  },
+  "last_updated": "2025-07-06T00:00:00Z"
+}

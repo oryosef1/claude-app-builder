@@ -75,7 +75,9 @@
       "Bash(sudo cp:*)",
       "Bash(PATH:*)",
       "Bash(mv:*)",
-      "Bash(time node:*)"
+      "Bash(time node:*)",
+      "Bash(source:*)",
+      "Bash(detect_project_type:*)"
     ],
     "deny": []
   }

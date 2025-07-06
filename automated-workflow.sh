@@ -219,11 +219,18 @@ BEFORE WRITING ANY TESTS:
 5. CHECK existing file structure and imports
 
 WRITE TESTS THAT:
-- Validate WORKING features for EXISTING code interfaces
+- Test REAL implementations, NOT mocked objects
+- Import from actual implementation files (src/services/*, src/app.ts, etc.)
+- FAIL WITHOUT IMPLEMENTATION - tests must require real code to pass
 - Use ONLY dependencies that exist in package.json
-- Match ACTUAL constructor signatures from implementation
-- Import from REAL file paths that exist
-- Test ACTUAL service methods, not imagined ones
+- Create interface contracts that Developer must implement
+- NO MOCKING OF CORE FUNCTIONALITY - only mock external dependencies (databases, APIs)
+
+🚨 CRITICAL: NEVER MOCK THE IMPLEMENTATION YOU'RE TESTING 🚨
+- Do NOT use vi.mock() or jest.mock() on your own code
+- Do NOT create fake objects that make tests pass without implementation
+- Tests MUST fail if the real implementation doesn't exist
+- Only mock external services (database, HTTP requests, file system)
 
 CRITICAL REQUIREMENTS:
 - Follow @ARCHITECTURE.md project structure - create projects in separate directories
@@ -268,12 +275,26 @@ REJECTION CRITERIA (MUST create test-feedback.md):
 - Missing dependencies in package.json
 - Broken imports or file paths
 - Tests that expect failures instead of success
+- 🚨 CRITICAL: Tests that use mocking for core functionality
+- Tests that create fake implementations (vi.fn().mockReturnValue, etc.)
+- Tests that pass without real implementation files
+- Tests that don't import from actual src/ files
+
+🚨 MOCKING DETECTION - IMMEDIATELY REJECT IF FOUND:
+- vi.mock() or jest.mock() on our own code (src/*)
+- Fake object creation with vi.fn() for our services
+- Tests passing when no real implementation exists
+- Mock implementations instead of real imports
 
 APPROVAL CRITERIA (ONLY approve if ALL are true):
 - npx vitest run executes successfully with 0 failures
 - All tests pass
 - Good test coverage and quality
 - Tests validate working functionality
+- 🚨 CRITICAL: Tests import from REAL implementation files (src/*)
+- NO mocking of our own code - only external dependencies mocked
+- Tests FAIL without implementation (verified by checking src/ directory)
+- Tests use interface contracts, not fake implementations
 
 ZERO TOLERANCE: Never approve without running npx vitest run successfully."
 

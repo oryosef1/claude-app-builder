@@ -50,6 +50,11 @@ Before starting any task, ALWAYS read these files:
   - Report progress through each test file evaluation
 - **Responsibility**: Review tests for quality and coverage
 - **Validation**: Run tests to verify they fail correctly
+- **🚨 CRITICAL: REJECT MOCKED TESTS**: 
+  - Check for vi.mock() or jest.mock() on our own code
+  - Verify tests import from real implementation files
+  - Ensure tests FAIL without implementation
+  - Reject fake implementations (vi.fn().mockReturnValue)
 - **Output**: Approval or test-feedback.md with specific issues
 - **Final Action**: Update @memory.md with review notes
 
@@ -147,6 +152,14 @@ Before starting any task, ALWAYS read these files:
 - **STARTUP VALIDATION**: Must test that services actually start and are accessible
 - **Coverage**: All functionality must be tested
 - **Failure**: Tests must fail without implementation
+
+🚨 **CRITICAL: NO MOCKING OF OUR OWN CODE** 🚨
+- Tests MUST import from real implementation files (src/services/*, src/app.ts)
+- NEVER use vi.mock() or jest.mock() on our own code
+- NEVER create fake implementations with vi.fn().mockReturnValue()
+- Only mock external dependencies (databases, HTTP APIs, file system)
+- Tests MUST fail if real implementation doesn't exist
+- Use interface contracts, not mocked objects
 
 ### Code Requirements
 - **COMPLETE**: Implement FULL, WORKING, END-TO-END functionality

@@ -28,6 +28,31 @@ Before starting any task, ALWAYS read these files:
 
 ## Development Workflow Roles
 
+### Task State Analyzer
+- **First Action**: Read @todo.md to identify current incomplete task
+- **CONTINUOUS FEEDBACK REQUIRED**:
+  - Announce which task you're analyzing
+  - Report what files and states you're checking
+  - Describe your findings for each workflow phase
+  - Explain your decision for starting phase
+  - Show the phase control configuration you're creating
+- **Responsibility**: Analyze project state and determine optimal workflow entry point
+- **Critical Analysis**:
+  - Check if tests exist for current task
+  - Verify if tests have been approved (no test-feedback.md)
+  - Examine if implementation files exist
+  - Determine if code has been reviewed (no code-feedback.md)
+  - Assess if deployment validation has been completed
+- **Output**: .phase-control.env file with skip flags and starting phase
+- **Decision Logic**:
+  - No tests → Start with Test Writer
+  - Tests exist, need approval → Start with Test Reviewer
+  - Tests approved, no implementation → Start with Developer
+  - Implementation exists, needs review → Start with Code Reviewer
+  - Code approved, needs validation → Start with Deployment Validator
+  - All complete → Start with Coordinator
+- **Final Action**: Update @memory.md with analysis findings
+
 ### Test Writer
 - **First Action**: Read @ARCHITECTURE.md, @memory.md, @todo.md
 - **CONTINUOUS FEEDBACK REQUIRED**:

@@ -201,6 +201,55 @@ USER: $prompt"
 }
 
 # System prompts for each role
+TASK_STATE_ANALYZER_SYSTEM="You are a Task State Analyzer for the Claude App Builder project.
+
+🗣️ CONTINUOUS FEEDBACK REQUIRED:
+Report your analysis process:
+- Announce which task you're analyzing
+- Describe what files and states you're checking
+- Report your findings for each phase
+- Explain your decision for starting phase
+- Show the phase control configuration you're creating
+
+RESPONSIBILITIES:
+Analyze the current task state and determine which workflow phase to start from.
+
+ANALYSIS PROCESS:
+1. **Read Current Task**: Get the first incomplete task from todo.md
+2. **Check Existing Work**:
+   - Tests Written: Check if test files exist for current task
+   - Tests Approved: Look for test-feedback.md (exists = tests need revision)
+   - Implementation Exists: Check if src/ files exist matching test imports
+   - Code Reviewed: Look for code-feedback.md (exists = code needs revision)
+   - Validation Complete: Check for successful functional validation
+
+3. **Determine Starting Phase**:
+   - No tests exist → START FROM: Test Writer
+   - Tests exist but test-feedback.md present → START FROM: Test Writer (revision needed)
+   - Tests exist, no test-feedback.md, no implementation → START FROM: Test Reviewer
+   - Implementation exists but code-feedback.md present → START FROM: Developer (revision needed)  
+   - Implementation exists, no code-feedback.md, not validated → START FROM: Code Reviewer
+   - All phases complete → START FROM: Coordinator
+
+4. **Create Phase Control File**: Write .phase-control.env with skip flags:
+   SKIP_TEST_WRITER=true/false
+   SKIP_TEST_REVIEWER=true/false  
+   SKIP_DEVELOPER=true/false
+   SKIP_CODE_REVIEWER=true/false
+   SKIP_DEPLOYMENT_VALIDATOR=true/false
+   START_FROM_PHASE=phase_name
+   CURRENT_TASK=\"Task description\"
+   ANALYSIS_REASON=\"Why starting from this phase\"
+
+CRITICAL REQUIREMENTS:
+- ALWAYS create .phase-control.env file with phase control flags
+- PROVIDE clear reasoning for your decision
+- CHECK actual file existence, not assumptions
+- REPORT your analysis process transparently
+- UPDATE @memory.md with your analysis findings
+
+You must ANALYZE the actual project state and make INTELLIGENT decisions about workflow resumption."
+
 TEST_WRITER_SYSTEM="You are a Test Writer for the Claude App Builder project. 
 
 🗣️ CONTINUOUS FEEDBACK REQUIRED:
@@ -1011,7 +1060,7 @@ while true; do
     max_attempts_per_task=3
     
     # Estimate phases per iteration
-    phases_per_iteration=6  # Test Writer, Test Reviewer, Developer, Code Reviewer, Deployment Validator, Coordinator
+    phases_per_iteration=7  # Task State Analyzer, Test Writer, Test Reviewer, Developer, Code Reviewer, Deployment Validator, Coordinator
     
     while [ $iteration -lt $max_iterations ] && has_incomplete_tasks; do
     iteration=$((iteration + 1))
@@ -1075,8 +1124,59 @@ Task that failed: $first_task" \
     task_attempts[$first_task_hash]=$((${task_attempts[$first_task_hash]:-0} + 1))
     echo -e "${BLUE}Attempt ${task_attempts[$first_task_hash]} of $max_attempts_per_task for this task${NC}"
     
-    # Phase 1: Test Writer
-    run_claude_with_retry "TEST WRITER" \
+    # Phase 0: Task State Analyzer (NEW)
+    echo -e "${BLUE}=== Phase 0: Task State Analyzer ===${NC}"
+    save_workflow_state "running" "task_state_analyzer" $iteration "Analyzing current task state"
+    
+    run_claude "TASK STATE ANALYZER" \
+        "Read @todo.md to identify the first incomplete task. 
+
+TASK PROCESSING STRATEGY: $task_strategy
+
+Analyze the current project state and determine which workflow phase to start from:
+
+1. Check what work already exists for the current task
+2. Determine the appropriate starting phase 
+3. Create .phase-control.env file with skip flags
+4. Update @memory.md with your analysis
+
+Your analysis will control which phases run in this iteration." \
+        "$TASK_STATE_ANALYZER_SYSTEM"
+    
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}Task State Analysis failed. Starting with default Test Writer phase.${NC}"
+        # Create default phase control file
+        cat > .phase-control.env << EOF
+SKIP_TEST_WRITER=false
+SKIP_TEST_REVIEWER=false
+SKIP_DEVELOPER=false
+SKIP_CODE_REVIEWER=false
+SKIP_DEPLOYMENT_VALIDATOR=false
+START_FROM_PHASE=test_writer
+CURRENT_TASK="Unknown task"
+ANALYSIS_REASON="Task State Analyzer failed - using default workflow"
+EOF
+    fi
+    
+    # Load phase control settings
+    if [ -f ".phase-control.env" ]; then
+        source .phase-control.env
+        echo -e "${GREEN}✓ Phase control loaded: Starting from $START_FROM_PHASE${NC}"
+        echo -e "${BLUE}Reason: $ANALYSIS_REASON${NC}"
+    else
+        echo -e "${YELLOW}⚠ No phase control file found. Using default workflow.${NC}"
+        SKIP_TEST_WRITER=false
+        SKIP_TEST_REVIEWER=false
+        SKIP_DEVELOPER=false
+        SKIP_CODE_REVIEWER=false
+        SKIP_DEPLOYMENT_VALIDATOR=false
+        START_FROM_PHASE=test_writer
+    fi
+    
+    # Phase 1: Test Writer (CONDITIONAL)
+    if [ "$SKIP_TEST_WRITER" != "true" ]; then
+        echo -e "${BLUE}=== Phase 1: Test Writer ===${NC}"
+        run_claude_with_retry "TEST WRITER" \
         "Read @ARCHITECTURE.md, @memory.md and @todo.md. 
 
 TASK PROCESSING STRATEGY: $task_strategy
@@ -1084,14 +1184,19 @@ TASK PROCESSING STRATEGY: $task_strategy
 Follow the project structure in ARCHITECTURE.md - create projects in separate directories (e.g., dashboard/), NEVER mix with system files. Use the $suggested_template template structure from templates/ directory for guidance. Write comprehensive unit, integration, and e2e tests according to the task strategy above. Update memory.md with test design decisions and todo.md to show progress." \
         "$TEST_WRITER_SYSTEM"
     
-    if [ $? -ne 0 ]; then
-        echo -e "${RED}Test writing failed after retries. Stopping workflow.${NC}"
-        break
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}Test writing failed after retries. Stopping workflow.${NC}"
+            break
+        fi
+        # Don't commit after individual phases - only after complete task approval
+        # auto_commit "Test Writer" $iteration
+    else
+        echo -e "${YELLOW}⏭️  Skipping Test Writer phase (already complete)${NC}"
     fi
-    # Don't commit after individual phases - only after complete task approval
-    # auto_commit "Test Writer" $iteration
     
-    # Phase 2: Test Reviewer with proper rejection loop
+    # Phase 2: Test Reviewer with proper rejection loop (CONDITIONAL)
+    if [ "$SKIP_TEST_REVIEWER" != "true" ]; then
+        echo -e "${BLUE}=== Phase 2: Test Reviewer ===${NC}"
     max_review_attempts=3
     review_attempt=0
     tests_approved=false
@@ -1162,8 +1267,13 @@ This prevents infinite loops while preserving information about what failed." \
         auto_commit "Test phase failed - marked for manual review" $iteration
         continue  # Try next task instead of breaking completely
     fi
+    else
+        echo -e "${YELLOW}⏭️  Skipping Test Reviewer phase (already complete)${NC}"
+    fi
     
-    # Phase 3: Developer
+    # Phase 3: Developer (CONDITIONAL)
+    if [ "$SKIP_DEVELOPER" != "true" ]; then
+        echo -e "${BLUE}=== Phase 3: Developer ===${NC}"
     run_claude_with_retry "DEVELOPER" \
         "Read @ARCHITECTURE.md and the approved tests. Implement COMPLETE, WORKING features in the correct project directory structure (e.g., dashboard/). NEVER put project files in the root system directory. Use the $suggested_template template structure for guidance. Create fully functional code that fulfills the todo requirements. Update memory.md with implementation details when done." \
         "$DEVELOPER_SYSTEM"
@@ -1195,8 +1305,13 @@ This prevents infinite loops while preserving information about what failed." \
             verify_build "$project_dir"
         fi
     done
+    else
+        echo -e "${YELLOW}⏭️  Skipping Developer phase (already complete)${NC}"
+    fi
     
-    # Phase 4: Code Reviewer with proper rejection loop
+    # Phase 4: Code Reviewer with proper rejection loop (CONDITIONAL)
+    if [ "$SKIP_CODE_REVIEWER" != "true" ]; then
+        echo -e "${BLUE}=== Phase 4: Code Reviewer ===${NC}"
     max_code_review_attempts=3
     code_review_attempt=0
     
@@ -1274,8 +1389,13 @@ This prevents infinite loops while preserving information about what failed." \
         auto_commit "Code review phase failed - marked for manual review" $iteration
         continue  # Try next task instead of breaking completely
     fi
+    else
+        echo -e "${YELLOW}⏭️  Skipping Code Reviewer phase (already complete)${NC}"
+    fi
     
-    # Phase 5: Deployment Validator - CRITICAL FUNCTIONAL VALIDATION
+    # Phase 5: Deployment Validator - CRITICAL FUNCTIONAL VALIDATION (CONDITIONAL)
+    if [ "$SKIP_DEPLOYMENT_VALIDATOR" != "true" ]; then
+        echo -e "${BLUE}=== Phase 5: Deployment Validator ===${NC}"
     echo -e "${BLUE}=== Running Claude as: DEPLOYMENT VALIDATOR ===${NC}"
     echo -e "${YELLOW}🔍 Validating functional implementation...$NC"
     
@@ -1326,6 +1446,9 @@ You must REJECT if implementation is not fully functional!" \
         continue
     else
         echo -e "${GREEN}✅ Deployment validation passed - implementation is functional!${NC}"
+    fi
+    else
+        echo -e "${YELLOW}⏭️  Skipping Deployment Validator phase (already complete)${NC}"
     fi
     
     # Phase 6: Coordinator - only run if all phases succeeded

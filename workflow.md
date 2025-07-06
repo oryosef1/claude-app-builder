@@ -3,16 +3,33 @@
 ## Workflow Overview
 Automated TDD pipeline with multiple Claude instances, each with specific roles:
 
-1. **Test Writer** → Writes unit, integration, and e2e tests
-2. **Test Reviewer** → Reviews and validates test quality
-3. **Developer** → Implements COMPLETE, FUNCTIONAL code to pass tests
-4. **Code Reviewer** → Reviews code and runs tests
-5. **Deployment Validator** → Validates everything works in real environment
-6. **Coordinator** → Updates memory/todo and manages workflow
+1. **Task State Analyzer** → Analyzes current project state and determines starting phase
+2. **Test Writer** → Writes unit, integration, and e2e tests
+3. **Test Reviewer** → Reviews and validates test quality
+4. **Developer** → Implements COMPLETE, FUNCTIONAL code to pass tests
+5. **Code Reviewer** → Reviews code and runs tests
+6. **Deployment Validator** → Validates everything works in real environment
+7. **Coordinator** → Updates memory/todo and manages workflow
 
 ## Roles and Responsibilities
 
-### 1. Test Writer Claude
+### 1. Task State Analyzer Claude
+```
+Role: Analyze current project state and determine optimal workflow entry point
+Input: @todo.md, @memory.md, existing project files
+Tasks:
+- Read current incomplete task from todo.md
+- Check if tests exist for current task
+- Verify test approval status (check for test-feedback.md)
+- Examine implementation file existence
+- Assess code review status (check for code-feedback.md)
+- Determine deployment validation completion
+- Create .phase-control.env with skip flags and starting phase
+- Update @memory.md with analysis findings
+Output: Phase control configuration and workflow entry point decision
+```
+
+### 2. Test Writer Claude
 ```
 Role: Write comprehensive tests based on todo.md tasks
 Input: @memory.md, @todo.md
@@ -26,7 +43,7 @@ Tasks:
 Output: Test files (*.test.ts)
 ```
 
-### 2. Test Reviewer Claude
+### 3. Test Reviewer Claude
 ```
 Role: Validate test quality and coverage
 Input: Test files, @memory.md
@@ -40,7 +57,7 @@ Tasks:
 Output: Approved tests or feedback
 ```
 
-### 3. Developer Claude
+### 4. Developer Claude
 ```
 Role: Implement COMPLETE, FUNCTIONAL code to make tests pass
 Input: Approved tests, @memory.md, @todo.md
@@ -54,7 +71,7 @@ Tasks:
 Output: Complete implementation files
 ```
 
-### 4. Code Reviewer Claude
+### 5. Code Reviewer Claude
 ```
 Role: Review code quality and test results
 Input: Implementation files, test files, @memory.md
@@ -69,7 +86,7 @@ Tasks:
 Output: Approved code or feedback
 ```
 
-### 5. Deployment Validator Claude
+### 6. Deployment Validator Claude
 ```
 Role: Validate everything works in real environment
 Input: Implementation files, @memory.md, @todo.md
@@ -85,7 +102,7 @@ Tasks:
 Output: Validation results and approval
 ```
 
-### 6. Coordinator Claude
+### 7. Coordinator Claude
 ```
 Role: Manage workflow and documentation
 Input: All outputs, @memory.md, @todo.md
@@ -124,24 +141,31 @@ Output: Updated documentation, next action
 while (todo_has_incomplete_items):
     task = get_next_todo_item()
     
-    # Phase 1: Test Writing
-    tests = test_writer_claude(task, memory, todo)
-    while not test_reviewer_claude.approve(tests):
-        feedback = test_reviewer_claude.get_feedback()
-        tests = test_writer_claude.revise(tests, feedback)
+    # Phase 0: Task State Analysis
+    analysis = task_state_analyzer_claude(task, memory, todo, project_files)
+    phase_control = analysis.determine_starting_phase()
     
-    # Phase 2: Implementation
-    code = developer_claude(tests, memory, todo)
-    while not code_reviewer_claude.approve(code, tests):
-        feedback = code_reviewer_claude.get_feedback()
-        code = developer_claude.revise(code, feedback)
+    # Phase 1: Test Writing (conditional)
+    if phase_control.run_test_writer:
+        tests = test_writer_claude(task, memory, todo)
+        while not test_reviewer_claude.approve(tests):
+            feedback = test_reviewer_claude.get_feedback()
+            tests = test_writer_claude.revise(tests, feedback)
     
-    # Phase 3: Deployment Validation
-    while not deployment_validator_claude.approve(code, tests):
-        validation_results = deployment_validator_claude.run_validation()
-        if validation_results.failed:
-            feedback = deployment_validator_claude.get_feedback()
-            code = developer_claude.fix_issues(code, feedback)
+    # Phase 2: Implementation (conditional)
+    if phase_control.run_developer:
+        code = developer_claude(tests, memory, todo)
+        while not code_reviewer_claude.approve(code, tests):
+            feedback = code_reviewer_claude.get_feedback()
+            code = developer_claude.revise(code, feedback)
+    
+    # Phase 3: Deployment Validation (conditional)
+    if phase_control.run_deployment_validator:
+        while not deployment_validator_claude.approve(code, tests):
+            validation_results = deployment_validator_claude.run_validation()
+            if validation_results.failed:
+                feedback = deployment_validator_claude.get_feedback()
+                code = developer_claude.fix_issues(code, feedback)
     
     # Phase 4: Coordination
     coordinator_claude.update_documentation(task, tests, code)
@@ -173,6 +197,15 @@ poe-overlay/
 ## Implementation Commands
 
 Each Claude instance should be run with specific prompts:
+
+### Task State Analyzer
+```
+You are a Task State Analyzer for the project. Read @todo.md to identify the first incomplete task,
+then analyze current project state to determine optimal workflow entry point.
+Check existing tests, implementations, and validation status.
+Create .phase-control.env file with skip flags for completed phases.
+Update @memory.md with your analysis findings.
+```
 
 ### Test Writer
 ```

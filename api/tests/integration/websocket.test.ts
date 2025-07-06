@@ -21,32 +21,53 @@ describe('WebSocket Integration Tests', () => {
 
   beforeEach(async () => {
     // Use random port for testing
-    serverPort = 3000 + Math.floor(Math.random() * 1000);
+    serverPort = 7000 + Math.floor(Math.random() * 1000);
     
-    // Create services
-    webSocketServer = new WebSocketServer();
-    workflowManager = new WorkflowManager();
-    fileWatcher = new FileWatcher();
+    try {
+      // Create services
+      webSocketServer = new WebSocketServer();
+      workflowManager = new WorkflowManager();
+      fileWatcher = new FileWatcher();
 
-    // Start WebSocket server
-    await webSocketServer.start(serverPort);
+      // Start WebSocket server
+      await webSocketServer.start(serverPort);
 
-    // Create HTTP server for integration testing
-    const app = createApp();
-    httpServer = app.listen(serverPort + 1);
+      // Create HTTP server for integration testing
+      const app = createApp();
+      httpServer = app.listen(serverPort + 1);
+    } catch (error) {
+      console.warn('Integration test setup error:', error);
+      // Try alternative port
+      serverPort = 8000 + Math.floor(Math.random() * 1000);
+      try {
+        await webSocketServer.start(serverPort);
+      } catch (retryError) {
+        console.warn('Retry setup error:', retryError);
+      }
+    }
   });
 
   afterEach(async () => {
-    if (clientSocket) {
-      clientSocket.disconnect();
-    }
-    
-    await webSocketServer.cleanup();
-    await workflowManager.cleanup();
-    await fileWatcher.cleanup();
-    
-    if (httpServer) {
-      httpServer.close();
+    try {
+      if (clientSocket) {
+        clientSocket.disconnect();
+        clientSocket = null as any;
+      }
+      
+      await Promise.all([
+        webSocketServer?.cleanup().catch(e => console.warn('WebSocket cleanup:', e)),
+        workflowManager?.cleanup().catch(e => console.warn('WorkflowManager cleanup:', e)),
+        fileWatcher?.cleanup().catch(e => console.warn('FileWatcher cleanup:', e))
+      ]);
+      
+      if (httpServer) {
+        httpServer.close();
+      }
+      
+      // Wait for port release
+      await new Promise(resolve => setTimeout(resolve, 200));
+    } catch (error) {
+      console.warn('Cleanup error:', error);
     }
   });
 

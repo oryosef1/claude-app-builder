@@ -1,17 +1,35 @@
 import { FileWatcherInterface } from '../types/workflow';
 import * as fs from 'fs/promises';
 import * as chokidar from 'chokidar';
+import * as path from 'path';
 
 export class FileWatcher implements FileWatcherInterface {
   private watchers: Map<string, any> = new Map();
   private callbacks: Map<string, Array<(content: string) => void>> = new Map();
+
+  private getFilePath(filename: string): string {
+    // If it's already an absolute path, use it as-is
+    if (path.isAbsolute(filename)) {
+      return filename;
+    }
+    
+    // For relative paths that look like project files (todo.md, memory.md, etc.)
+    // resolve to project root
+    if (filename.includes('.md') || filename.includes('.json')) {
+      return path.join(process.cwd(), '..', filename);
+    }
+    
+    // For other relative paths, use current directory
+    return path.resolve(filename);
+  }
 
   watchFile(filePath: string, callback: (content: string) => void): void {
     this.addCallback(filePath, callback);
     
     if (!this.watchers.has(filePath)) {
       try {
-        const watcher = chokidar.watch(filePath, {
+        const resolvedPath = this.getFilePath(filePath);
+        const watcher = chokidar.watch(resolvedPath, {
           persistent: true,
           ignoreInitial: false
         });
@@ -76,7 +94,8 @@ export class FileWatcher implements FileWatcherInterface {
 
   async readFile(filePath: string): Promise<string> {
     try {
-      return await fs.readFile(filePath, 'utf8');
+      const resolvedPath = this.getFilePath(filePath);
+      return await fs.readFile(resolvedPath, 'utf8');
     } catch (error) {
       if ((error as any).code === 'ENOENT') {
         throw new Error(`File not found: ${filePath}`);
@@ -87,11 +106,12 @@ export class FileWatcher implements FileWatcherInterface {
 
   async writeFile(filePath: string, content: string): Promise<void> {
     try {
+      const resolvedPath = this.getFilePath(filePath);
       // Ensure directory exists
-      const dir = require('path').dirname(filePath);
+      const dir = path.dirname(resolvedPath);
       await fs.mkdir(dir, { recursive: true });
       
-      await fs.writeFile(filePath, content, 'utf8');
+      await fs.writeFile(resolvedPath, content, 'utf8');
     } catch (error) {
       throw new Error(`Failed to write file ${filePath}: ${error}`);
     }

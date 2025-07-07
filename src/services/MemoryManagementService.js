@@ -338,7 +338,7 @@ export class MemoryManagementService {
   async getMemoryStatistics(employeeId) {
     try {
       const namespace = this.vectorDb.generateEmployeeNamespace(employeeId);
-      const stats = await this.vectorDb.redis.hgetall(`namespace:${namespace}`);
+      const stats = await this.vectorDb.getRedisClient().hgetall(`namespace:${namespace}`);
       
       return {
         employee_id: employeeId,
@@ -586,6 +586,406 @@ export class MemoryManagementService {
         new winston.transports.File({ filename: 'logs/memory-management.log' })
       ]
     });
+  }
+
+  // ===== MEMORY LIFECYCLE MANAGEMENT =====
+  // High-level interface for Task 5.5: Memory Cleanup and Optimization
+
+  /**
+   * Perform memory cleanup for an employee
+   * @param {string} employeeId - Employee ID
+   * @param {object} options - Cleanup options
+   * @returns {object} Cleanup results
+   */
+  async performEmployeeMemoryCleanup(employeeId, options = {}) {
+    try {
+      this.logger.info(`Starting memory cleanup for employee ${employeeId}`);
+      
+      const results = await this.vectorDb.performMemoryCleanup(employeeId, options);
+      
+      this.logger.info(`Memory cleanup completed for ${employeeId}`, {
+        archived: results.archival.archivedCount,
+        savedMB: results.storage.savedMB,
+        executionTime: `${results.executionTimeMs}ms`
+      });
+      
+      return results;
+    } catch (error) {
+      this.logger.error(`Failed to perform memory cleanup for ${employeeId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Perform memory cleanup for all employees
+   * @param {object} options - Cleanup options
+   * @returns {object} Aggregate cleanup results
+   */
+  async performCompanyWideCleanup(options = {}) {
+    try {
+      const employees = [
+        'emp_001', 'emp_002', 'emp_003', 'emp_004', 'emp_005', 'emp_006',
+        'emp_007', 'emp_008', 'emp_009', 'emp_010', 'emp_011', 'emp_012', 'emp_013'
+      ];
+      
+      this.logger.info(`Starting company-wide memory cleanup for ${employees.length} employees`);
+      
+      const results = [];
+      let totalArchived = 0;
+      let totalSavedMB = 0;
+      let totalExecutionTime = 0;
+      let successCount = 0;
+      let errorCount = 0;
+      
+      for (const employeeId of employees) {
+        try {
+          const result = await this.performEmployeeMemoryCleanup(employeeId, options);
+          results.push(result);
+          
+          totalArchived += result.archival.archivedCount;
+          totalSavedMB += result.storage.savedMB;
+          totalExecutionTime += result.executionTimeMs;
+          successCount++;
+          
+          // Small delay between employees to prevent overload
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } catch (error) {
+          this.logger.error(`Cleanup failed for employee ${employeeId}:`, error);
+          results.push({
+            success: false,
+            employeeId,
+            error: error.message
+          });
+          errorCount++;
+        }
+      }
+      
+      const aggregateResults = {
+        success: true,
+        totalEmployees: employees.length,
+        successfulCleanups: successCount,
+        failedCleanups: errorCount,
+        aggregate: {
+          totalMemoriesArchived: totalArchived,
+          totalStorageSavedMB: totalSavedMB,
+          totalExecutionTimeMs: totalExecutionTime,
+          averageExecutionTimeMs: totalExecutionTime / successCount
+        },
+        employeeResults: results,
+        timestamp: new Date().toISOString()
+      };
+      
+      this.logger.info('Company-wide memory cleanup completed', {
+        successful: successCount,
+        failed: errorCount,
+        totalArchived,
+        totalSavedMB: totalSavedMB.toFixed(2)
+      });
+      
+      return aggregateResults;
+    } catch (error) {
+      this.logger.error('Failed to perform company-wide cleanup:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get memory storage statistics for an employee
+   * @param {string} employeeId - Employee ID
+   * @returns {object} Storage statistics
+   */
+  async getEmployeeStorageStats(employeeId) {
+    try {
+      const stats = await this.vectorDb.getStorageStatistics(employeeId);
+      
+      // Enhance with additional metadata
+      const enhancedStats = {
+        ...stats,
+        department: await this.getEmployeeDepartment(employeeId),
+        role: await this.getEmployeeRole(employeeId),
+        storageStatus: stats.estimatedSizeMB > 100 ? 'over_target' : 'within_target',
+        targetStorageMB: 100,
+        utilizationPercent: (stats.estimatedSizeMB / 100) * 100
+      };
+      
+      return enhancedStats;
+    } catch (error) {
+      this.logger.error(`Failed to get storage statistics for ${employeeId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get comprehensive cleanup analytics for the company
+   * @returns {object} Cleanup analytics
+   */
+  async getCleanupAnalytics() {
+    try {
+      const analytics = await this.vectorDb.getCleanupAnalytics();
+      
+      // Enhance with additional business metrics
+      const enhancedAnalytics = {
+        ...analytics,
+        businessMetrics: {
+          storageEfficiency: (analytics.employeesOverTarget / analytics.totalEmployees) < 0.2 ? 'excellent' :
+                           (analytics.employeesOverTarget / analytics.totalEmployees) < 0.5 ? 'good' : 'needs_attention',
+          costProjection: {
+            currentMonthlyCostUSD: 0, // Free system
+            projectedSavingsUSD: analytics.totalEstimatedSizeMB * 0.001 // Hypothetical cost if paid
+          },
+          recommendations: this.generateCleanupRecommendations(analytics)
+        }
+      };
+      
+      return enhancedAnalytics;
+    } catch (error) {
+      this.logger.error('Failed to get cleanup analytics:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Archive specific memories for an employee
+   * @param {string} employeeId - Employee ID
+   * @param {Array} memoryIds - Memory IDs to archive
+   * @returns {object} Archive results
+   */
+  async archiveEmployeeMemories(employeeId, memoryIds) {
+    try {
+      this.logger.info(`Archiving ${memoryIds.length} memories for employee ${employeeId}`);
+      
+      // Get memories for analysis first
+      const memories = await this.vectorDb.getMemoriesForLifecycleAnalysis(employeeId);
+      const memoriesToArchive = memories.filter(memory => memoryIds.includes(memory.id));
+      
+      if (memoriesToArchive.length === 0) {
+        throw new Error('No valid memories found to archive');
+      }
+      
+      const results = await this.vectorDb.archiveMemories(employeeId, memoriesToArchive);
+      
+      this.logger.info(`Memory archival completed for ${employeeId}`, {
+        requested: memoryIds.length,
+        archived: results.archivedCount,
+        errors: results.errors.length
+      });
+      
+      return results;
+    } catch (error) {
+      this.logger.error(`Failed to archive memories for ${employeeId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Restore memories from archive for an employee
+   * @param {string} employeeId - Employee ID
+   * @param {Array} memoryIds - Memory IDs to restore
+   * @returns {object} Restoration results
+   */
+  async restoreEmployeeMemories(employeeId, memoryIds) {
+    try {
+      this.logger.info(`Restoring ${memoryIds.length} memories for employee ${employeeId}`);
+      
+      const results = await this.vectorDb.restoreMemories(employeeId, memoryIds);
+      
+      this.logger.info(`Memory restoration completed for ${employeeId}`, {
+        requested: memoryIds.length,
+        restored: results.restoredCount,
+        errors: results.errors.length
+      });
+      
+      return results;
+    } catch (error) {
+      this.logger.error(`Failed to restore memories for ${employeeId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Schedule automated cleanup for the company
+   * @param {object} options - Scheduling options
+   * @returns {object} Scheduling results
+   */
+  async scheduleAutomatedCleanup(options = {}) {
+    try {
+      const scheduleResults = await this.vectorDb.scheduleAutomatedCleanup(options);
+      
+      this.logger.info('Automated cleanup scheduled', {
+        schedule: scheduleResults.schedule,
+        employees: scheduleResults.employees,
+        timezone: scheduleResults.timezone
+      });
+      
+      return scheduleResults;
+    } catch (error) {
+      this.logger.error('Failed to schedule automated cleanup:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate cleanup recommendations based on analytics
+   * @param {object} analytics - Cleanup analytics
+   * @returns {Array} Recommendations
+   */
+  generateCleanupRecommendations(analytics) {
+    const recommendations = [];
+    
+    // Storage efficiency recommendations
+    if (analytics.employeesOverTarget > 0) {
+      recommendations.push({
+        type: 'storage_optimization',
+        priority: 'high',
+        message: `${analytics.employeesOverTarget} employees exceed 100MB storage target`,
+        action: 'Run memory cleanup for over-target employees'
+      });
+    }
+    
+    // Average storage recommendations
+    if (analytics.averageStorageMB > 80) {
+      recommendations.push({
+        type: 'preventive_cleanup',
+        priority: 'medium',
+        message: `Average storage (${analytics.averageStorageMB.toFixed(1)}MB) approaching target`,
+        action: 'Schedule more frequent cleanup cycles'
+      });
+    }
+    
+    // Performance recommendations
+    if (analytics.totalVectorCount > 10000) {
+      recommendations.push({
+        type: 'performance_optimization',
+        priority: 'medium',
+        message: `High vector count (${analytics.totalVectorCount}) may impact query performance`,
+        action: 'Consider aggressive archival thresholds'
+      });
+    }
+    
+    // Maintenance recommendations
+    recommendations.push({
+      type: 'maintenance',
+      priority: 'low',
+      message: 'Regular cleanup maintains optimal performance',
+      action: 'Ensure automated cleanup is scheduled daily'
+    });
+    
+    return recommendations;
+  }
+
+  /**
+   * Get memory lifecycle analysis for an employee
+   * @param {string} employeeId - Employee ID
+   * @param {object} options - Analysis options
+   * @returns {object} Lifecycle analysis
+   */
+  async getMemoryLifecycleAnalysis(employeeId, options = {}) {
+    try {
+      const memories = await this.vectorDb.getMemoriesForLifecycleAnalysis(employeeId, options);
+      const storageStats = await this.getEmployeeStorageStats(employeeId);
+      
+      // Analyze memory distribution
+      const memoryTypes = {
+        experience: memories.filter(m => m.metadata?.memory_type === 'experience').length,
+        knowledge: memories.filter(m => m.metadata?.memory_type === 'knowledge').length,
+        decision: memories.filter(m => m.metadata?.memory_type === 'decision').length
+      };
+      
+      // Analyze age distribution
+      const now = Date.now();
+      const ageDistribution = {
+        recent: memories.filter(m => {
+          const age = (now - new Date(m.metadata?.timestamp || now).getTime()) / (1000 * 60 * 60 * 24);
+          return age <= 30;
+        }).length,
+        medium: memories.filter(m => {
+          const age = (now - new Date(m.metadata?.timestamp || now).getTime()) / (1000 * 60 * 60 * 24);
+          return age > 30 && age <= 90;
+        }).length,
+        old: memories.filter(m => {
+          const age = (now - new Date(m.metadata?.timestamp || now).getTime()) / (1000 * 60 * 60 * 24);
+          return age > 90;
+        }).length
+      };
+      
+      // Analyze importance distribution
+      const importanceStats = {
+        high: memories.filter(m => m.importanceScore >= 0.7).length,
+        medium: memories.filter(m => m.importanceScore >= 0.4 && m.importanceScore < 0.7).length,
+        low: memories.filter(m => m.importanceScore < 0.4).length,
+        averageScore: memories.reduce((sum, m) => sum + m.importanceScore, 0) / memories.length
+      };
+      
+      // Identify cleanup candidates
+      const cleanupCandidates = memories.filter(memory => {
+        const age = (now - new Date(memory.metadata?.timestamp || now).getTime()) / (1000 * 60 * 60 * 24);
+        return age > 180 && memory.importanceScore < 0.3;
+      });
+      
+      return {
+        employeeId,
+        analysis: {
+          totalMemories: memories.length,
+          memoryTypes,
+          ageDistribution,
+          importanceStats,
+          cleanupCandidates: cleanupCandidates.length,
+          storageStats,
+          recommendations: this.generateMemoryRecommendations(memories, storageStats)
+        },
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      this.logger.error(`Failed to get lifecycle analysis for ${employeeId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate memory-specific recommendations
+   * @param {Array} memories - Memory analysis results
+   * @param {object} storageStats - Storage statistics
+   * @returns {Array} Recommendations
+   */
+  generateMemoryRecommendations(memories, storageStats) {
+    const recommendations = [];
+    
+    const now = Date.now();
+    const oldMemories = memories.filter(m => {
+      const age = (now - new Date(m.metadata?.timestamp || now).getTime()) / (1000 * 60 * 60 * 24);
+      return age > 180;
+    });
+    
+    const lowImportanceMemories = memories.filter(m => m.importanceScore < 0.3);
+    
+    if (storageStats.estimatedSizeMB > 100) {
+      recommendations.push({
+        type: 'urgent_cleanup',
+        priority: 'high',
+        message: `Storage (${storageStats.estimatedSizeMB.toFixed(1)}MB) exceeds target`,
+        candidates: Math.min(oldMemories.length, lowImportanceMemories.length)
+      });
+    }
+    
+    if (oldMemories.length > 50) {
+      recommendations.push({
+        type: 'archive_old',
+        priority: 'medium',
+        message: `${oldMemories.length} memories older than 6 months`,
+        action: 'Consider archiving old, low-importance memories'
+      });
+    }
+    
+    if (lowImportanceMemories.length > 100) {
+      recommendations.push({
+        type: 'cleanup_low_importance',
+        priority: 'medium',
+        message: `${lowImportanceMemories.length} low-importance memories found`,
+        action: 'Archive memories with importance score < 0.3'
+      });
+    }
+    
+    return recommendations;
   }
 
   /**

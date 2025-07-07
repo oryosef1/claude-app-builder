@@ -368,23 +368,242 @@ class MemorySystemAPI {
       }
     });
 
+    // ===== MEMORY LIFECYCLE MANAGEMENT ENDPOINTS =====
+    // Task 5.5: Memory Cleanup and Optimization API
+
+    // Perform memory cleanup for specific employee
+    this.app.post('/api/memory/cleanup/:employeeId', async (req, res) => {
+      try {
+        const { employeeId } = req.params;
+        const options = req.body || {};
+        
+        if (!employeeId) {
+          return res.status(400).json({
+            error: 'Missing required parameter: employeeId'
+          });
+        }
+
+        const results = await this.memoryService.performEmployeeMemoryCleanup(employeeId, options);
+
+        res.json({
+          success: true,
+          employeeId: employeeId,
+          cleanup: results
+        });
+      } catch (error) {
+        this.logger.error('Error performing employee memory cleanup:', error);
+        res.status(500).json({
+          error: 'Failed to perform memory cleanup',
+          message: error.message
+        });
+      }
+    });
+
+    // Perform company-wide memory cleanup
+    this.app.post('/api/memory/cleanup', async (req, res) => {
+      try {
+        const options = req.body || {};
+        
+        const results = await this.memoryService.performCompanyWideCleanup(options);
+
+        res.json({
+          success: true,
+          companyWideCleanup: results
+        });
+      } catch (error) {
+        this.logger.error('Error performing company-wide cleanup:', error);
+        res.status(500).json({
+          error: 'Failed to perform company-wide cleanup',
+          message: error.message
+        });
+      }
+    });
+
+    // Get cleanup analytics
+    this.app.get('/api/memory/analytics', async (req, res) => {
+      try {
+        const analytics = await this.memoryService.getCleanupAnalytics();
+
+        res.json({
+          success: true,
+          analytics: analytics
+        });
+      } catch (error) {
+        this.logger.error('Error getting cleanup analytics:', error);
+        res.status(500).json({
+          error: 'Failed to get cleanup analytics',
+          message: error.message
+        });
+      }
+    });
+
+    // Archive specific memories
+    this.app.post('/api/memory/archive', async (req, res) => {
+      try {
+        const { employeeId, memoryIds } = req.body;
+        
+        if (!employeeId || !memoryIds || !Array.isArray(memoryIds)) {
+          return res.status(400).json({
+            error: 'Missing required fields: employeeId, memoryIds (array)'
+          });
+        }
+
+        const results = await this.memoryService.archiveEmployeeMemories(employeeId, memoryIds);
+
+        res.json({
+          success: true,
+          employeeId: employeeId,
+          archive: results
+        });
+      } catch (error) {
+        this.logger.error('Error archiving memories:', error);
+        res.status(500).json({
+          error: 'Failed to archive memories',
+          message: error.message
+        });
+      }
+    });
+
+    // Restore memories from archive
+    this.app.post('/api/memory/restore', async (req, res) => {
+      try {
+        const { employeeId, memoryIds } = req.body;
+        
+        if (!employeeId || !memoryIds || !Array.isArray(memoryIds)) {
+          return res.status(400).json({
+            error: 'Missing required fields: employeeId, memoryIds (array)'
+          });
+        }
+
+        const results = await this.memoryService.restoreEmployeeMemories(employeeId, memoryIds);
+
+        res.json({
+          success: true,
+          employeeId: employeeId,
+          restore: results
+        });
+      } catch (error) {
+        this.logger.error('Error restoring memories:', error);
+        res.status(500).json({
+          error: 'Failed to restore memories',
+          message: error.message
+        });
+      }
+    });
+
+    // Get memory lifecycle analysis for an employee
+    this.app.get('/api/memory/lifecycle/:employeeId', async (req, res) => {
+      try {
+        const { employeeId } = req.params;
+        const options = req.query || {};
+        
+        if (!employeeId) {
+          return res.status(400).json({
+            error: 'Missing required parameter: employeeId'
+          });
+        }
+
+        const analysis = await this.memoryService.getMemoryLifecycleAnalysis(employeeId, options);
+
+        res.json({
+          success: true,
+          lifecycle: analysis
+        });
+      } catch (error) {
+        this.logger.error('Error getting lifecycle analysis:', error);
+        res.status(500).json({
+          error: 'Failed to get lifecycle analysis',
+          message: error.message
+        });
+      }
+    });
+
+    // Get storage statistics for specific employee
+    this.app.get('/api/memory/storage/:employeeId', async (req, res) => {
+      try {
+        const { employeeId } = req.params;
+        
+        if (!employeeId) {
+          return res.status(400).json({
+            error: 'Missing required parameter: employeeId'
+          });
+        }
+
+        const stats = await this.memoryService.getEmployeeStorageStats(employeeId);
+
+        res.json({
+          success: true,
+          storage: stats
+        });
+      } catch (error) {
+        this.logger.error('Error getting storage statistics:', error);
+        res.status(500).json({
+          error: 'Failed to get storage statistics',
+          message: error.message
+        });
+      }
+    });
+
+    // Schedule automated cleanup
+    this.app.post('/api/memory/schedule', async (req, res) => {
+      try {
+        const options = req.body || {};
+        
+        const results = await this.memoryService.scheduleAutomatedCleanup(options);
+
+        res.json({
+          success: true,
+          schedule: results
+        });
+      } catch (error) {
+        this.logger.error('Error scheduling automated cleanup:', error);
+        res.status(500).json({
+          error: 'Failed to schedule automated cleanup',
+          message: error.message
+        });
+      }
+    });
+
     // API documentation
     this.app.get('/api/docs', (req, res) => {
       res.json({
         service: 'AI Company Memory System API',
-        version: '1.0.0',
+        version: '2.0.0',
         endpoints: {
+          // Memory Storage
           'POST /api/memory/experience': 'Store experience memory',
           'POST /api/memory/knowledge': 'Store knowledge memory',
           'POST /api/memory/decision': 'Store decision memory',
+          'POST /api/memory/interaction': 'Store interaction memory',
+          
+          // Memory Retrieval
           'POST /api/memory/search': 'Search memories',
           'POST /api/memory/context': 'Get relevant context for task',
           'GET /api/memory/expertise/:employeeId/:domain': 'Get employee expertise',
+          
+          // Memory Statistics
           'GET /api/memory/stats/:employeeId': 'Get memory statistics',
-          'POST /api/memory/interaction': 'Store interaction memory',
           'GET /api/memory/stats': 'Get all employees statistics',
+          'GET /api/memory/storage/:employeeId': 'Get storage statistics for employee',
+          
+          // Memory Lifecycle Management (Task 5.5)
+          'POST /api/memory/cleanup/:employeeId': 'Perform memory cleanup for employee',
+          'POST /api/memory/cleanup': 'Perform company-wide memory cleanup',
+          'GET /api/memory/analytics': 'Get cleanup analytics and recommendations',
+          'POST /api/memory/archive': 'Archive specific memories',
+          'POST /api/memory/restore': 'Restore memories from archive',
+          'GET /api/memory/lifecycle/:employeeId': 'Get memory lifecycle analysis',
+          'POST /api/memory/schedule': 'Schedule automated cleanup',
+          
+          // System
           'GET /health': 'Health check',
           'GET /api/docs': 'API documentation'
+        },
+        new_features: {
+          'memory_cleanup': 'Automated memory archival based on importance scoring',
+          'storage_optimization': 'Three-tier storage system (Active/Archive/Deleted)',
+          'lifecycle_management': 'Comprehensive memory lifecycle analytics',
+          'cleanup_analytics': 'Real-time cleanup metrics and recommendations'
         }
       });
     });

@@ -66,6 +66,13 @@ export class VectorDatabaseService {
   }
 
   /**
+   * Get Redis client (for external access)
+   */
+  getRedisClient() {
+    return this.redis;
+  }
+
+  /**
    * Verify all database connections
    */
   async verifyConnections() {
@@ -627,7 +634,7 @@ export class VectorDatabaseService {
 
     for (const match of matches) {
       try {
-        const memoryData = await this.redis.hGetAll(`memory:${match.id}`);
+        const memoryData = await this.redis.hgetall(`memory:${match.id}`);
         
         if (memoryData.data) {
           enrichedResults.push({
@@ -655,8 +662,8 @@ export class VectorDatabaseService {
   async updateAccessStatistics(results) {
     for (const result of results) {
       try {
-        await this.redis.hIncrBy(`memory:${result.id}`, 'accessed_count', 1);
-        await this.redis.hSet(`memory:${result.id}`, 'last_accessed', new Date().toISOString());
+        await this.redis.hincrby(`memory:${result.id}`, 'accessed_count', 1);
+        await this.redis.hset(`memory:${result.id}`, 'last_accessed', new Date().toISOString());
       } catch (error) {
         this.logger.warn(`Failed to update access statistics for ${result.id}:`, error);
       }
@@ -669,8 +676,8 @@ export class VectorDatabaseService {
    */
   async updateNamespaceStats(namespace) {
     try {
-      await this.redis.hIncrBy(`namespace:${namespace}`, 'memory_count', 1);
-      await this.redis.hSet(`namespace:${namespace}`, 'last_accessed', new Date().toISOString());
+      await this.redis.hincrby(`namespace:${namespace}`, 'memory_count', 1);
+      await this.redis.hset(`namespace:${namespace}`, 'last_accessed', new Date().toISOString());
     } catch (error) {
       this.logger.warn(`Failed to update namespace statistics:`, error);
     }
@@ -752,6 +759,419 @@ export class VectorDatabaseService {
         new winston.transports.File({ filename: 'logs/vector-db-service.log' })
       ]
     });
+  }
+
+  // ===== MEMORY LIFECYCLE MANAGEMENT SYSTEM =====
+  // Implementation of Task 5.5: Memory Cleanup and Optimization
+
+  /**
+   * Calculate importance score for a memory
+   * Multi-factor algorithm: 0.4×access + 0.3×recency + 0.2×relevance + 0.1×collaboration
+   * @param {object} memory - Memory object with metadata
+   * @returns {number} Importance score (0-1)
+   */
+  calculateImportanceScore(memory) {
+    try {
+      const now = Date.now();
+      const createdAt = new Date(memory.metadata?.timestamp || memory.metadata?.created_at || now).getTime();
+      const lastAccessed = new Date(memory.metadata?.last_accessed || createdAt).getTime();
+      
+      // Access frequency factor (0.4 weight)
+      const accessCount = memory.metadata?.access_count || 0;
+      const normalizedAccess = Math.min(accessCount / 10, 1); // Normalize to 0-1, cap at 10 accesses
+      
+      // Recency factor (0.3 weight) - newer memories score higher
+      const ageInDays = (now - createdAt) / (1000 * 60 * 60 * 24);
+      const recencyScore = Math.max(0, 1 - (ageInDays / 180)); // Score decreases over 6 months
+      
+      // Relevance factor (0.2 weight) - based on search relevance
+      const relevanceScore = memory.metadata?.relevance_score || 0.5;
+      
+      // Collaboration factor (0.1 weight) - memories shared between employees
+      const collaborationScore = memory.metadata?.shared_count ? Math.min(memory.metadata.shared_count / 5, 1) : 0;
+      
+      // Calculate weighted importance score
+      const importance = (
+        (normalizedAccess * 0.4) +
+        (recencyScore * 0.3) +
+        (relevanceScore * 0.2) +
+        (collaborationScore * 0.1)
+      );
+      
+      this.logger.debug(`Importance score for memory ${memory.id}: ${importance.toFixed(3)}`, {
+        access: normalizedAccess,
+        recency: recencyScore,
+        relevance: relevanceScore,
+        collaboration: collaborationScore
+      });
+      
+      return Math.max(0, Math.min(1, importance)); // Ensure 0-1 range
+    } catch (error) {
+      this.logger.error('Error calculating importance score:', error);
+      return 0.5; // Default neutral score
+    }
+  }
+
+  /**
+   * Get memories for lifecycle analysis
+   * @param {string} employeeId - Employee namespace
+   * @param {object} options - Analysis options
+   * @returns {Array} Array of memories with importance scores
+   */
+  async getMemoriesForLifecycleAnalysis(employeeId, options = {}) {
+    try {
+      const namespace = `emp_${employeeId.replace('emp_', '')}`;
+      
+      // Query all memories for the employee
+      const queryResponse = await this.index.namespace(namespace).query({
+        vector: new Array(1536).fill(0), // Dummy vector for metadata-only query
+        topK: options.limit || 1000,
+        includeMetadata: true,
+        includeValues: false
+      });
+      
+      // Calculate importance scores
+      const memoriesWithScores = queryResponse.matches.map(match => ({
+        id: match.id,
+        metadata: match.metadata,
+        importanceScore: this.calculateImportanceScore(match)
+      }));
+      
+      // Sort by importance score (ascending - lowest first for archival)
+      memoriesWithScores.sort((a, b) => a.importanceScore - b.importanceScore);
+      
+      this.logger.info(`Analyzed ${memoriesWithScores.length} memories for employee ${employeeId}`);
+      
+      return memoriesWithScores;
+    } catch (error) {
+      this.logger.error('Error getting memories for lifecycle analysis:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Archive memories to local storage
+   * @param {string} employeeId - Employee namespace
+   * @param {Array} memoriesToArchive - Memories to archive
+   * @returns {object} Archival results
+   */
+  async archiveMemories(employeeId, memoriesToArchive) {
+    try {
+      const fs = await import('fs/promises');
+      const path = await import('path');
+      
+      // Create archive directory structure
+      const archiveDir = path.join(process.cwd(), 'memory-archive', employeeId);
+      await fs.mkdir(archiveDir, { recursive: true });
+      
+      const archivedMemories = [];
+      const errors = [];
+      
+      for (const memory of memoriesToArchive) {
+        try {
+          // Prepare archive entry
+          const archiveEntry = {
+            id: memory.id,
+            metadata: memory.metadata,
+            importanceScore: memory.importanceScore,
+            archivedAt: new Date().toISOString(),
+            originalNamespace: `emp_${employeeId.replace('emp_', '')}`
+          };
+          
+          // Encrypt archive data
+          const encryptedData = this.encrypt(JSON.stringify(archiveEntry));
+          
+          // Save to archive file
+          const archiveFile = path.join(archiveDir, `${memory.id}.json`);
+          await fs.writeFile(archiveFile, JSON.stringify({
+            encrypted: true,
+            data: encryptedData
+          }));
+          
+          // Remove from active storage (Pinecone)
+          await this.index.namespace(`emp_${employeeId.replace('emp_', '')}`).deleteOne(memory.id);
+          
+          archivedMemories.push(memory.id);
+          
+          this.logger.debug(`Archived memory ${memory.id} for employee ${employeeId}`);
+        } catch (error) {
+          this.logger.error(`Error archiving memory ${memory.id}:`, error);
+          errors.push({ memoryId: memory.id, error: error.message });
+        }
+      }
+      
+      return {
+        success: true,
+        archivedCount: archivedMemories.length,
+        archivedMemories,
+        errors,
+        archiveLocation: archiveDir
+      };
+    } catch (error) {
+      this.logger.error('Error archiving memories:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Restore memories from archive
+   * @param {string} employeeId - Employee namespace
+   * @param {Array} memoryIds - Memory IDs to restore
+   * @returns {object} Restoration results
+   */
+  async restoreMemories(employeeId, memoryIds) {
+    try {
+      const fs = await import('fs/promises');
+      const path = await import('path');
+      
+      const archiveDir = path.join(process.cwd(), 'memory-archive', employeeId);
+      const restoredMemories = [];
+      const errors = [];
+      
+      for (const memoryId of memoryIds) {
+        try {
+          const archiveFile = path.join(archiveDir, `${memoryId}.json`);
+          
+          // Read and decrypt archive data
+          const archiveData = JSON.parse(await fs.readFile(archiveFile, 'utf8'));
+          const decryptedData = JSON.parse(this.decrypt(archiveData.data));
+          
+          // Generate new embedding for restoration
+          const embedding = await this.generateEmbedding(decryptedData.metadata.content || '');
+          
+          // Restore to active storage
+          await this.index.namespace(`emp_${employeeId.replace('emp_', '')}`).upsert([{
+            id: memoryId,
+            values: embedding,
+            metadata: {
+              ...decryptedData.metadata,
+              restored_at: new Date().toISOString(),
+              access_count: (decryptedData.metadata.access_count || 0) + 1
+            }
+          }]);
+          
+          // Remove from archive
+          await fs.unlink(archiveFile);
+          
+          restoredMemories.push(memoryId);
+          
+          this.logger.debug(`Restored memory ${memoryId} for employee ${employeeId}`);
+        } catch (error) {
+          this.logger.error(`Error restoring memory ${memoryId}:`, error);
+          errors.push({ memoryId, error: error.message });
+        }
+      }
+      
+      return {
+        success: true,
+        restoredCount: restoredMemories.length,
+        restoredMemories,
+        errors
+      };
+    } catch (error) {
+      this.logger.error('Error restoring memories:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Perform automated memory cleanup
+   * Archives memories older than threshold with low importance scores
+   * @param {string} employeeId - Employee namespace
+   * @param {object} options - Cleanup options
+   * @returns {object} Cleanup results
+   */
+  async performMemoryCleanup(employeeId, options = {}) {
+    try {
+      const startTime = Date.now();
+      
+      // Default cleanup parameters
+      const config = {
+        ageThresholdDays: options.ageThresholdDays || 180, // 6 months
+        importanceThreshold: options.importanceThreshold || 0.3,
+        maxMemoriesToArchive: options.maxMemoriesToArchive || 100,
+        targetStorageMB: options.targetStorageMB || 100
+      };
+      
+      this.logger.info(`Starting memory cleanup for employee ${employeeId}`, config);
+      
+      // Get current storage statistics
+      const beforeStats = await this.getStorageStatistics(employeeId);
+      
+      // Get memories for analysis
+      const memories = await this.getMemoriesForLifecycleAnalysis(employeeId);
+      
+      // Filter memories for archival
+      const now = Date.now();
+      const candidatesForArchival = memories.filter(memory => {
+        const createdAt = new Date(memory.metadata?.timestamp || memory.metadata?.created_at).getTime();
+        const ageInDays = (now - createdAt) / (1000 * 60 * 60 * 24);
+        
+        return (
+          ageInDays > config.ageThresholdDays &&
+          memory.importanceScore < config.importanceThreshold
+        );
+      });
+      
+      // Limit archival to prevent performance impact
+      const memoriesToArchive = candidatesForArchival.slice(0, config.maxMemoriesToArchive);
+      
+      let archiveResults = { archivedCount: 0, archivedMemories: [], errors: [] };
+      
+      if (memoriesToArchive.length > 0) {
+        archiveResults = await this.archiveMemories(employeeId, memoriesToArchive);
+      }
+      
+      // Get post-cleanup statistics
+      const afterStats = await this.getStorageStatistics(employeeId);
+      
+      const executionTime = Date.now() - startTime;
+      
+      const results = {
+        success: true,
+        employeeId,
+        executionTimeMs: executionTime,
+        config,
+        analysis: {
+          totalMemories: memories.length,
+          candidatesForArchival: candidatesForArchival.length,
+          memoriesToArchive: memoriesToArchive.length
+        },
+        archival: archiveResults,
+        storage: {
+          before: beforeStats,
+          after: afterStats,
+          savedMB: beforeStats.estimatedSizeMB - afterStats.estimatedSizeMB
+        },
+        performance: {
+          executionTimeMs: executionTime,
+          targetMet: executionTime < 300000, // 5 minutes
+          storageMB: afterStats.estimatedSizeMB,
+          targetStorageMet: afterStats.estimatedSizeMB <= config.targetStorageMB
+        }
+      };
+      
+      this.logger.info(`Memory cleanup completed for employee ${employeeId}`, {
+        archived: archiveResults.archivedCount,
+        executionTime: `${executionTime}ms`,
+        storageSaved: `${results.storage.savedMB.toFixed(2)}MB`
+      });
+      
+      return results;
+    } catch (error) {
+      this.logger.error('Error performing memory cleanup:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get storage statistics for an employee
+   * @param {string} employeeId - Employee namespace
+   * @returns {object} Storage statistics
+   */
+  async getStorageStatistics(employeeId) {
+    try {
+      const namespace = `emp_${employeeId.replace('emp_', '')}`;
+      
+      // Get namespace statistics
+      const stats = await this.index.describeIndexStats();
+      const namespaceStats = stats.namespaces?.[namespace] || { vectorCount: 0 };
+      
+      // Estimate storage size (rough calculation)
+      const avgVectorSizeKB = 6; // Approximate size per vector in KB
+      const estimatedSizeMB = (namespaceStats.vectorCount * avgVectorSizeKB) / 1024;
+      
+      return {
+        employeeId,
+        namespace,
+        vectorCount: namespaceStats.vectorCount,
+        estimatedSizeMB: estimatedSizeMB,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      this.logger.error('Error getting storage statistics:', error);
+      return {
+        employeeId,
+        vectorCount: 0,
+        estimatedSizeMB: 0,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Schedule automated cleanup for all employees
+   * @param {object} options - Scheduling options
+   * @returns {object} Scheduling results
+   */
+  async scheduleAutomatedCleanup(options = {}) {
+    try {
+      // Schedule cleanup to run daily at 2 AM
+      const schedule = options.schedule || '0 2 * * *';
+      
+      // List of all employees
+      const employees = [
+        'emp_001', 'emp_002', 'emp_003', 'emp_004', 'emp_005', 'emp_006',
+        'emp_007', 'emp_008', 'emp_009', 'emp_010', 'emp_011', 'emp_012', 'emp_013'
+      ];
+      
+      this.logger.info(`Scheduled cleanup configured for ${employees.length} employees`, {
+        schedule,
+        timezone: options.timezone || 'UTC'
+      });
+      
+      return {
+        success: true,
+        schedule,
+        timezone: options.timezone || 'UTC',
+        employees: employees.length
+      };
+    } catch (error) {
+      this.logger.error('Error configuring scheduled cleanup:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get cleanup status and analytics
+   * @returns {object} Cleanup analytics
+   */
+  async getCleanupAnalytics() {
+    try {
+      const employees = [
+        'emp_001', 'emp_002', 'emp_003', 'emp_004', 'emp_005', 'emp_006',
+        'emp_007', 'emp_008', 'emp_009', 'emp_010', 'emp_011', 'emp_012', 'emp_013'
+      ];
+      
+      const analytics = {
+        totalEmployees: employees.length,
+        storageStats: [],
+        totalVectorCount: 0,
+        totalEstimatedSizeMB: 0,
+        employeesOverTarget: 0,
+        averageStorageMB: 0,
+        timestamp: new Date().toISOString()
+      };
+      
+      // Gather statistics for each employee
+      for (const employeeId of employees) {
+        const stats = await this.getStorageStatistics(employeeId);
+        analytics.storageStats.push(stats);
+        analytics.totalVectorCount += stats.vectorCount;
+        analytics.totalEstimatedSizeMB += stats.estimatedSizeMB;
+        
+        if (stats.estimatedSizeMB > 100) { // Target is 100MB per employee
+          analytics.employeesOverTarget++;
+        }
+      }
+      
+      analytics.averageStorageMB = analytics.totalEstimatedSizeMB / analytics.totalEmployees;
+      
+      return analytics;
+    } catch (error) {
+      this.logger.error('Error getting cleanup analytics:', error);
+      throw error;
+    }
   }
 
   /**

@@ -83,7 +83,12 @@
       "Bash(redis-cli:*)",
       "Bash(timeout:*)",
       "Bash(timeout:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(/dev/null)",
+      "Bash(nc:*)",
+      "Bash(redis-server:*)",
+      "Bash(cd \"/mnt/c/Users/בית/Downloads/poe helper\")",
+      "Bash(npm start)"
     ],
     "deny": []
   }

@@ -338,7 +338,7 @@ export class MemoryManagementService {
   async getMemoryStatistics(employeeId) {
     try {
       const namespace = this.vectorDb.generateEmployeeNamespace(employeeId);
-      const stats = await this.vectorDb.getRedisClient().hgetall(`namespace:${namespace}`);
+      const stats = await this.vectorDb.getRedisClient().hGetAll(`namespace:${namespace}`);
       
       return {
         employee_id: employeeId,

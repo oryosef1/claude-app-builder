@@ -161,7 +161,7 @@ export class VectorDatabaseService {
         metadata: {
           employee_id: employeeId,
           memory_type: encryptedMemory.memory_type,
-          content_hash: this.generateContentHash(encryptedMemory.content),
+          content_hash: this.generateContentHash(encryptedMemory.content?.encrypted || encryptedMemory.content),
           created_at: new Date().toISOString(),
           importance: encryptedMemory.metadata?.importance || 5.0,
           tags: encryptedMemory.metadata?.tags || [],
@@ -634,7 +634,7 @@ export class VectorDatabaseService {
 
     for (const match of matches) {
       try {
-        const memoryData = await this.redis.hgetall(`memory:${match.id}`);
+        const memoryData = await this.redis.hGetAll(`memory:${match.id}`);
         
         if (memoryData.data) {
           enrichedResults.push({
@@ -662,8 +662,8 @@ export class VectorDatabaseService {
   async updateAccessStatistics(results) {
     for (const result of results) {
       try {
-        await this.redis.hincrby(`memory:${result.id}`, 'accessed_count', 1);
-        await this.redis.hset(`memory:${result.id}`, 'last_accessed', new Date().toISOString());
+        await this.redis.hIncrBy(`memory:${result.id}`, 'accessed_count', 1);
+        await this.redis.hSet(`memory:${result.id}`, 'last_accessed', new Date().toISOString());
       } catch (error) {
         this.logger.warn(`Failed to update access statistics for ${result.id}:`, error);
       }
@@ -676,8 +676,8 @@ export class VectorDatabaseService {
    */
   async updateNamespaceStats(namespace) {
     try {
-      await this.redis.hincrby(`namespace:${namespace}`, 'memory_count', 1);
-      await this.redis.hset(`namespace:${namespace}`, 'last_accessed', new Date().toISOString());
+      await this.redis.hIncrBy(`namespace:${namespace}`, 'memory_count', 1);
+      await this.redis.hSet(`namespace:${namespace}`, 'last_accessed', new Date().toISOString());
     } catch (error) {
       this.logger.warn(`Failed to update namespace statistics:`, error);
     }

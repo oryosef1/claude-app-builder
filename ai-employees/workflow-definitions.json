@@ -152,6 +152,36 @@
           "responsive_design",
           "accessibility"
         ]
+      },
+      {
+        "phase": "testing",
+        "required_roles": [
+          "QA Engineer"
+        ],
+        "optional_roles": [
+          "Test Engineer"
+        ],
+        "parallel": true,
+        "deliverables": [
+          "usability_testing",
+          "functionality_tests",
+          "accessibility_validation",
+          "cross_browser_testing"
+        ]
+      },
+      {
+        "phase": "documentation",
+        "required_roles": [
+          "Technical Writer"
+        ],
+        "optional_roles": [],
+        "parallel": true,
+        "deliverables": [
+          "user_guide",
+          "component_documentation",
+          "style_guide",
+          "design_specifications"
+        ]
       }
     ]
   },

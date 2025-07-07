@@ -20,8 +20,9 @@ STATUS_MONITOR="ai-employees/status-monitor.js"
 TASK_ASSIGNMENT="ai-employees/task-assignment.js"
 
 # Processing mode configuration
-PROCESSING_MODE=${PROCESSING_MODE:-"corporate"}  # Options: "corporate", "sequential", "batch"
-MAX_CONCURRENT_EMPLOYEES=${MAX_CONCURRENT_EMPLOYEES:-3}
+PROCESSING_MODE=${PROCESSING_MODE:-"single"}  # Options: "corporate", "sequential", "batch", "single"
+MAX_CONCURRENT_EMPLOYEES=${MAX_CONCURRENT_EMPLOYEES:-1}
+SINGLE_TASK_MODE=${SINGLE_TASK_MODE:-true}  # Stop after completing one task
 VERBOSE=${VERBOSE:-true}
 WORKFLOW_STATE_FILE=${WORKFLOW_STATE_FILE:-".corporate-workflow-state.json"}
 
@@ -149,6 +150,116 @@ load_employee_prompt() {
     fi
 }
 
+# Store AI employee memory after task completion (Task 5.3: Memory persistence)
+store_employee_memory() {
+    local employee_id="$1"
+    local task_description="$2"
+    local ai_output="$3"
+    local success="$4"
+    local duration="$5"
+    local start_time=$(date +%s%3N)  # milliseconds for performance tracking
+    
+    # Check if Memory API is available
+    if ! nc -z localhost 3333 2>/dev/null; then
+        if [ "$VERBOSE" = "true" ]; then
+            log_corporate "WARNING" "Memory" "MemoryStorage" "Memory service not available - skipping memory storage"
+        fi
+        return 0
+    fi
+    
+    # Classify memory type based on task and output content
+    local memory_type="experience"  # Default to experience
+    local output_lower=$(echo "$ai_output" | tr '[:upper:]' '[:lower:]')
+    
+    if echo "$task_description" | grep -qi "architecture\|design\|pattern\|decision\|technical.*lead" ||
+       echo "$output_lower" | grep -q "architect\|design.*pattern\|technical.*decision\|chose.*because\|rationale"; then
+        memory_type="decision"
+    elif echo "$task_description" | grep -qi "knowledge\|documentation\|guide\|best.*practice" ||
+         echo "$output_lower" | grep -q "best.*practice\|how.*to\|pattern\|standard\|guideline"; then
+        memory_type="knowledge"
+    fi
+    
+    # Extract key insights from output (first 500 chars for content summary)
+    local content_summary=$(echo "$ai_output" | head -c 500 | tr '\n' ' ' | sed 's/[[:space:]]\+/ /g')
+    
+    # Create memory storage payload with rich metadata
+    local memory_request=$(cat << EOF
+{
+    "employeeId": "$employee_id",
+    "content": "$content_summary",
+    "type": "$memory_type",
+    "metadata": {
+        "task_description": "$task_description",
+        "success": $success,
+        "duration_seconds": $duration,
+        "timestamp": "$(date -Iseconds)",
+        "workflow_context": "corporate_task_execution",
+        "output_length": $(echo "$ai_output" | wc -c),
+        "complexity_indicators": {
+            "has_code": $(echo "$output_lower" | grep -q "function\|class\|import\|const\|let\|var" && echo "true" || echo "false"),
+            "has_decisions": $(echo "$output_lower" | grep -q "decided\|chose\|because\|rationale" && echo "true" || echo "false"),
+            "has_collaboration": $(echo "$output_lower" | grep -q "team\|collaborate\|discuss\|coordinate" && echo "true" || echo "false")
+        }
+    }
+}
+EOF
+)
+    
+    # Try to store memory asynchronously (background process)
+    local temp_response_file="/tmp/memory_storage_$$"
+    
+    # Use background process for async storage to avoid workflow delays
+    (
+        # Determine HTTP client
+        local http_client="curl"
+        if ! command -v curl >/dev/null 2>&1; then
+            if command -v wget >/dev/null 2>&1; then
+                http_client="wget"
+            else
+                exit 1
+            fi
+        fi
+        
+        # Make HTTP request to Memory API
+        if [ "$http_client" = "curl" ]; then
+            echo "$memory_request" | timeout 10 curl -s -X POST "http://localhost:3333/api/memory/$memory_type" \
+                -H 'Content-Type: application/json' \
+                -d @- \
+                --max-time 10 > "$temp_response_file" 2>/dev/null
+        elif [ "$http_client" = "wget" ]; then
+            echo "$memory_request" > "/tmp/memory_request_$$"
+            timeout 10 wget -q -O "$temp_response_file" \
+                --header="Content-Type: application/json" \
+                --post-file="/tmp/memory_request_$$" \
+                "http://localhost:3333/api/memory/$memory_type" 2>/dev/null
+            rm -f "/tmp/memory_request_$$"
+        fi
+        
+        # Response file will be checked by main process
+        
+        # Small delay before cleanup to allow main process to check result
+        sleep 0.5
+        rm -f "$temp_response_file"
+    ) &
+    
+    # Brief wait to allow response check
+    sleep 0.1
+    
+    # Check result if file exists
+    if [ -f "$temp_response_file" ] && grep -q '"success":true' "$temp_response_file" 2>/dev/null; then
+        if [ "$VERBOSE" = "true" ]; then
+            log_corporate "SUCCESS" "Memory" "MemoryStorage" "Memory storage initiated for $employee_id"
+        fi
+    elif [ -f "$temp_response_file" ]; then
+        if [ "$VERBOSE" = "true" ]; then
+            local error_response=$(cat "$temp_response_file" | head -c 200)
+            log_corporate "WARNING" "Memory" "MemoryStorage" "Memory storage failed for $employee_id - Response: $error_response"
+        fi
+    fi
+    
+    return 0
+}
+
 # Load relevant memory context for AI employee task execution
 load_employee_context() {
     local employee_id="$1"
@@ -253,11 +364,13 @@ create_project_assignment() {
     local project_type="$2"
     
     # Create project specification file
-    cat > "current-project.json" << EOF
+    if [ "$project_type" = "auto_detect" ]; then
+        # Let workflow router use Claude AI to detect type
+        cat > "current-project.json" << EOF
 {
     "id": "project_$(date +%s)",
     "name": "$project_name",
-    "type": "$project_type",
+    "description": "$project_name",
     "complexity": "medium",
     "timeline": "normal",
     "team_size": "small",
@@ -265,6 +378,22 @@ create_project_assignment() {
     "created": "$(date -Iseconds)"
 }
 EOF
+    else
+        # Use specified type
+        cat > "current-project.json" << EOF
+{
+    "id": "project_$(date +%s)",
+    "name": "$project_name",
+    "type": "$project_type",
+    "description": "$project_name",
+    "complexity": "medium",
+    "timeline": "normal",
+    "team_size": "small",
+    "status": "active",
+    "created": "$(date -Iseconds)"
+}
+EOF
+    fi
     
     echo -e "${BLUE}Project specification created: $project_name${NC}"
 }
@@ -364,6 +493,13 @@ EOF
         node "$PERFORMANCE_TRACKER" record "$employee_id" <(echo "{"id":"task_$(date +%s)","title":"$task_description","complexity":2}") "$results_file" >/dev/null 2>&1
         rm -f "$results_file"
         
+        # NEW: Store AI output in memory for persistent learning (Task 5.3)
+        local ai_output=""
+        if [ -f "$temp_output_file" ]; then
+            ai_output=$(cat "$temp_output_file")
+        fi
+        store_employee_memory "$employee_id" "$task_description" "$ai_output" "true" "$duration"
+        
         # Clean up temp file
         rm -f "$temp_output_file"
         return 0
@@ -378,6 +514,9 @@ EOF
             if echo "$error_content" | grep -q "thinking.*blocks.*cannot be modified"; then
                 log_corporate "ERROR" "$department" "$employee_name" "API Error: Thinking blocks modification issue - retrying with clean prompt (${duration}s)"
                 
+                # NEW: Store API error as experience memory for learning (Task 5.3)
+                store_employee_memory "$employee_id" "$task_description" "API Error: Thinking blocks modification issue encountered. Task skipped to avoid workflow failure." "false" "$duration"
+                
                 # Clean up and return success to avoid workflow failure
                 rm -f "$temp_output_file"
                 return 0
@@ -389,6 +528,13 @@ EOF
         else
             log_corporate "ERROR" "$department" "$employee_name" "Task failed with exit code: $exit_code (${duration}s)"
         fi
+        
+        # NEW: Store failed task as experience memory for learning (Task 5.3)
+        local error_output=""
+        if [ -f "$temp_output_file" ]; then
+            error_output=$(cat "$temp_output_file")
+        fi
+        store_employee_memory "$employee_id" "$task_description" "Task failed with exit code $exit_code. Error: $error_output" "false" "$duration"
         
         # Clean up temp file
         rm -f "$temp_output_file"
@@ -512,33 +658,7 @@ get_corporate_task_from_todo() {
     fi
 }
 
-# Determine project type from todo content
-detect_project_type() {
-    local todo_content=$(cat todo.md 2>/dev/null || echo "")
-    
-    # Check for testing requirements - if tests are needed, it's software development
-    if echo "$todo_content" | grep -qi "unit test\|testing\|test.*functionality\|npm test\|jest\|vitest"; then
-        echo "software_development"
-    # Check for application development indicators
-    elif echo "$todo_content" | grep -qi "application\|app\|build\|package\.json\|typescript\|vite\|create.*component"; then
-        echo "software_development"
-    # Check for pure UI/UX design work (no implementation)
-    elif echo "$todo_content" | grep -qi "wireframe\|mockup\|design.*system\|prototype" && ! echo "$todo_content" | grep -qi "implement\|build\|create.*tsx\|component"; then
-        echo "ui_ux_project"
-    # Check for backend/API development
-    elif echo "$todo_content" | grep -qi "api\|backend\|server\|express\|database"; then
-        echo "software_development"
-    # Check for infrastructure work
-    elif echo "$todo_content" | grep -qi "infrastructure\|devops\|deployment\|ci.*cd\|docker"; then
-        echo "infrastructure_project"
-    # Check for pure testing work
-    elif echo "$todo_content" | grep -qi "test.*strategy\|qa.*plan\|testing.*framework" && ! echo "$todo_content" | grep -qi "implement\|build\|create"; then
-        echo "quality_assurance"
-    else
-        # Default to software development for any application building
-        echo "software_development"
-    fi
-}
+# Note: Project type detection now handled by Claude AI in workflow-router.js
 
 # Main corporate workflow execution
 main_corporate_workflow() {
@@ -569,12 +689,9 @@ main_corporate_workflow() {
         
         echo -e "${BLUE}Current Task: $current_task${NC}"
         
-        # Detect project type and create assignment
-        local project_type=$(detect_project_type)
-        echo -e "${BLUE}Detected Project Type: $project_type${NC}"
-        
-        # Create project assignment
-        create_project_assignment "$current_task" "$project_type"
+        # Create project assignment (let workflow router detect type with Claude AI)
+        echo -e "${BLUE}Creating project assignment...${NC}"
+        create_project_assignment "$current_task" "auto_detect"
         
         # Route project through corporate workflow
         if route_corporate_project "current-project.json"; then
@@ -588,7 +705,16 @@ main_corporate_workflow() {
             # Cleanup
             rm -f "current-project.json" "project-routing.json"
             
-            echo -e "\n${GREEN}✅ Task completed! Moving to next task...${NC}"
+            echo -e "\n${GREEN}✅ Task completed!${NC}"
+            
+            # Check if single task mode is enabled
+            if [ "$SINGLE_TASK_MODE" = "true" ]; then
+                echo -e "${YELLOW}🛑 SINGLE TASK MODE: Stopping after completing one task${NC}"
+                echo -e "${BLUE}Run './corporate-workflow.sh run' again to continue with next task${NC}"
+                return 0
+            fi
+            
+            echo -e "${GREEN}Moving to next task...${NC}"
             echo ""
             
             # Brief pause before next iteration

@@ -203,9 +203,59 @@ class WorkflowRouter {
         };
     }
 
+    // Use Claude to intelligently determine project type
+    async detectProjectType(projectData) {
+        const taskName = projectData.name || '';
+        const taskDescription = projectData.description || '';
+        
+        const projectAnalysisPrompt = `
+You are an expert Project Manager at an AI software company. Analyze this task and determine the most appropriate workflow type.
+
+TASK TO ANALYZE:
+Name: ${taskName}
+Description: ${taskDescription}
+
+AVAILABLE WORKFLOW TYPES:
+1. "ui_ux_project" - UI/UX design, dashboards, interfaces, frontend, user experience
+2. "infrastructure_project" - DevOps, deployment, CI/CD, servers, infrastructure, monitoring setup
+3. "quality_assurance" - Testing, validation, QA processes, test planning, quality standards
+4. "software_development" - Backend APIs, algorithms, data processing, business logic
+
+INSTRUCTIONS:
+- Respond with ONLY the workflow type (e.g., "ui_ux_project")
+- Choose the type that best matches the primary focus of this task
+- Consider what kind of specialists would be most needed for this work
+
+WORKFLOW TYPE:`;
+
+        try {
+            // Execute Claude to determine project type
+            const { execSync } = await import('child_process');
+            const response = execSync(`echo "${projectAnalysisPrompt}" | claude --print --dangerously-skip-permissions`, {
+                encoding: 'utf8',
+                timeout: 30000
+            }).trim();
+            
+            // Validate response is one of our workflow types
+            const validTypes = ['ui_ux_project', 'infrastructure_project', 'quality_assurance', 'software_development'];
+            const detectedType = response.toLowerCase().trim();
+            
+            if (validTypes.includes(detectedType)) {
+                return detectedType;
+            }
+            
+            console.log(`Invalid workflow type detected: ${detectedType}, defaulting to software_development`);
+            return 'software_development';
+            
+        } catch (error) {
+            console.error('Error detecting project type with Claude:', error);
+            return 'software_development'; // Fallback
+        }
+    }
+
     // Route a project through the appropriate workflow
-    routeProject(projectData) {
-        const workflowType = projectData.type || 'software_development';
+    async routeProject(projectData) {
+        const workflowType = projectData.type || await this.detectProjectType(projectData);
         const workflow = this.workflows[workflowType];
         
         if (!workflow) {
@@ -429,45 +479,46 @@ if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith
     const router = new WorkflowRouter();
     const command = process.argv[2];
 
-    switch (command) {
-        case 'route':
-            const projectFile = process.argv[3];
-            if (!projectFile) {
-                console.error('Usage: node workflow-router.js route <project.json>');
-                process.exit(1);
-            }
-            try {
-                const projectData = JSON.parse(fs.readFileSync(projectFile, 'utf8'));
-                const result = router.routeProject(projectData);
-                console.log(JSON.stringify(result, null, 2));
-            } catch (error) {
-                console.error('Error:', error.message);
-                process.exit(1);
-            }
-            break;
+    async function runCLI() {
+        switch (command) {
+            case 'route':
+                const projectFile = process.argv[3];
+                if (!projectFile) {
+                    console.error('Usage: node workflow-router.js route <project.json>');
+                    process.exit(1);
+                }
+                try {
+                    const projectData = JSON.parse(fs.readFileSync(projectFile, 'utf8'));
+                    const result = await router.routeProject(projectData);
+                    console.log(JSON.stringify(result, null, 2));
+                } catch (error) {
+                    console.error('Error:', error.message);
+                    process.exit(1);
+                }
+                break;
 
-        case 'workflows':
-            console.log(JSON.stringify(router.workflows, null, 2));
-            break;
+            case 'workflows':
+                console.log(JSON.stringify(router.workflows, null, 2));
+                break;
 
-        case 'recommend':
-            const projectFileRec = process.argv[3];
-            if (!projectFileRec) {
-                console.error('Usage: node workflow-router.js recommend <project.json>');
-                process.exit(1);
-            }
-            try {
-                const projectData = JSON.parse(fs.readFileSync(projectFileRec, 'utf8'));
-                const result = router.generateWorkflowRecommendations(projectData);
-                console.log(JSON.stringify(result, null, 2));
-            } catch (error) {
-                console.error('Error:', error.message);
-                process.exit(1);
-            }
-            break;
+            case 'recommend':
+                const projectFileRec = process.argv[3];
+                if (!projectFileRec) {
+                    console.error('Usage: node workflow-router.js recommend <project.json>');
+                    process.exit(1);
+                }
+                try {
+                    const projectData = JSON.parse(fs.readFileSync(projectFileRec, 'utf8'));
+                    const result = router.generateWorkflowRecommendations(projectData);
+                    console.log(JSON.stringify(result, null, 2));
+                } catch (error) {
+                    console.error('Error:', error.message);
+                    process.exit(1);
+                }
+                break;
 
-        default:
-            console.log(`
+            default:
+                console.log(`
 AI Employee Workflow Routing System
 
 Commands:
@@ -479,8 +530,14 @@ Examples:
   node workflow-router.js route example-project.json
   node workflow-router.js workflows
   node workflow-router.js recommend project.json
-            `);
+                `);
+        }
     }
+
+    runCLI().catch(error => {
+        console.error('CLI Error:', error.message);
+        process.exit(1);
+    });
 }
 
 export default WorkflowRouter;

@@ -3,11 +3,13 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { Box, AppBar, Toolbar, Typography, Button, Avatar } from '@mui/material';
-import { Dashboard, People, Memory, AccountTree, Analytics, Settings } from '@mui/icons-material';
+import { Dashboard, People, Memory, AccountTree, Analytics as AnalyticsIcon, Settings } from '@mui/icons-material';
 import Employees from '@/pages/Employees';
 import MemoryPage from '@/pages/Memory';
 import WorkflowsPage from '@/pages/Workflows';
 import MonitoringDashboard from '@/pages/MonitoringDashboard';
+import CentralizedDashboard from '@/pages/CentralizedDashboard';
+import Analytics from '@/pages/Analytics';
 
 // Create theme
 const theme = createTheme({
@@ -78,7 +80,7 @@ const Header: React.FC = () => {
           <Button color="inherit" startIcon={<AccountTree />}>
             Workflows
           </Button>
-          <Button color="inherit" startIcon={<Analytics />}>
+          <Button color="inherit" startIcon={<AnalyticsIcon />}>
             Analytics
           </Button>
           <Button color="inherit" startIcon={<Settings />}>
@@ -92,7 +94,6 @@ const Header: React.FC = () => {
 
 
 // Placeholder pages
-const AnalyticsPage = () => <Box sx={{ p: 3 }}><Typography variant="h4">Analytics Dashboard</Typography></Box>;
 const SettingsPage = () => <Box sx={{ p: 3 }}><Typography variant="h4">Settings</Typography></Box>;
 
 function App() {
@@ -106,11 +107,12 @@ function App() {
           <Box component="main" sx={{ flexGrow: 1, bgcolor: 'background.default' }}>
             <Routes>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<MonitoringDashboard />} />
+              <Route path="/dashboard" element={<CentralizedDashboard />} />
+              <Route path="/dashboard/monitoring" element={<MonitoringDashboard />} />
               <Route path="/employees" element={<Employees />} />
               <Route path="/memory" element={<MemoryPage />} />
               <Route path="/workflows" element={<WorkflowsPage />} />
-              <Route path="/analytics" element={<AnalyticsPage />} />
+              <Route path="/analytics" element={<Analytics />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Routes>
           </Box>

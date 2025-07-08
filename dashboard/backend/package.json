@@ -1,0 +1,63 @@
+{
+  "name": "ai-dashboard-backend",
+  "version": "1.0.0",
+  "description": "Multi-Agent Dashboard System Backend - Claude AI Software Company",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "lint": "eslint src/**/*.ts",
+    "format": "prettier --write src/**/*.ts",
+    "test": "jest"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2",
+    "bull": "^4.11.4",
+    "redis": "^4.6.0",
+    "cors": "^2.8.5",
+    "uuid": "^9.0.1",
+    "winston": "^3.11.0",
+    "dotenv": "^16.3.1",
+    "node-fetch": "^3.3.2",
+    "joi": "^17.11.0",
+    "jsonwebtoken": "^9.0.2",
+    "bcrypt": "^5.1.1",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.1.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.0",
+    "@types/express": "^4.17.20",
+    "@types/cors": "^2.8.15",
+    "@types/uuid": "^9.0.6",
+    "@types/bcrypt": "^5.0.2",
+    "@types/jsonwebtoken": "^9.0.5",
+    "typescript": "^5.2.0",
+    "tsx": "^3.14.0",
+    "eslint": "^8.51.0",
+    "@typescript-eslint/eslint-plugin": "^6.8.0",
+    "@typescript-eslint/parser": "^6.8.0",
+    "prettier": "^3.0.3",
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.6",
+    "ts-jest": "^29.1.1",
+    "nodemon": "^3.0.1"
+  },
+  "keywords": [
+    "ai",
+    "dashboard",
+    "multi-agent",
+    "claude",
+    "process-management",
+    "real-time",
+    "websocket"
+  ],
+  "author": "Claude AI Software Company",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

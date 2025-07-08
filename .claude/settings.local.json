@@ -103,7 +103,8 @@
       "Bash(for:*)",
       "Bash(do echo \"Employee $emp:\")",
       "Bash(./start.sh:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(do echo \"Testing port $port:\")"
     ],
     "deny": []
   }

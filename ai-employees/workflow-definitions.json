@@ -69,13 +69,28 @@
           "DevOps Engineer"
         ],
         "optional_roles": [
-          "SRE"
+          "Site Reliability Engineer"
         ],
         "parallel": false,
         "deliverables": [
           "deployment_plan",
           "infrastructure",
           "monitoring"
+        ]
+      },
+      {
+        "phase": "quality_review",
+        "required_roles": [
+          "Project Manager"
+        ],
+        "optional_roles": [
+          "Technical Lead"
+        ],
+        "parallel": false,
+        "deliverables": [
+          "quality_assessment",
+          "go_no_go_decision",
+          "next_actions"
         ]
       },
       {
@@ -154,19 +169,18 @@
         ]
       },
       {
-        "phase": "testing",
+        "phase": "quality_review",
         "required_roles": [
-          "QA Engineer"
+          "Project Manager"
         ],
         "optional_roles": [
-          "Test Engineer"
+          "Technical Lead"
         ],
-        "parallel": true,
+        "parallel": false,
         "deliverables": [
-          "usability_testing",
-          "functionality_tests",
-          "accessibility_validation",
-          "cross_browser_testing"
+          "quality_assessment",
+          "go_no_go_decision",
+          "next_actions"
         ]
       },
       {
@@ -177,10 +191,9 @@
         "optional_roles": [],
         "parallel": true,
         "deliverables": [
-          "user_guide",
-          "component_documentation",
-          "style_guide",
-          "design_specifications"
+          "user_docs",
+          "design_docs",
+          "style_guide"
         ]
       }
     ]
@@ -210,7 +223,7 @@
           "DevOps Engineer"
         ],
         "optional_roles": [
-          "SRE"
+          "Site Reliability Engineer"
         ],
         "parallel": false,
         "deliverables": [
@@ -237,7 +250,7 @@
       {
         "phase": "monitoring",
         "required_roles": [
-          "SRE"
+          "Site Reliability Engineer"
         ],
         "optional_roles": [
           "DevOps Engineer"
@@ -247,6 +260,34 @@
           "monitoring_setup",
           "alerting_rules",
           "incident_response_plan"
+        ]
+      },
+      {
+        "phase": "quality_review",
+        "required_roles": [
+          "Project Manager"
+        ],
+        "optional_roles": [
+          "Technical Lead"
+        ],
+        "parallel": false,
+        "deliverables": [
+          "quality_assessment",
+          "go_no_go_decision",
+          "next_actions"
+        ]
+      },
+      {
+        "phase": "documentation",
+        "required_roles": [
+          "Technical Writer"
+        ],
+        "optional_roles": [],
+        "parallel": true,
+        "deliverables": [
+          "infrastructure_docs",
+          "runbooks",
+          "maintenance_guide"
         ]
       }
     ]
@@ -310,6 +351,34 @@
           "test_results",
           "bug_reports",
           "quality_metrics"
+        ]
+      },
+      {
+        "phase": "quality_review",
+        "required_roles": [
+          "Project Manager"
+        ],
+        "optional_roles": [
+          "QA Director"
+        ],
+        "parallel": false,
+        "deliverables": [
+          "quality_assessment",
+          "go_no_go_decision",
+          "next_actions"
+        ]
+      },
+      {
+        "phase": "documentation",
+        "required_roles": [
+          "Technical Writer"
+        ],
+        "optional_roles": [],
+        "parallel": true,
+        "deliverables": [
+          "test_documentation",
+          "quality_reports",
+          "best_practices"
         ]
       }
     ]

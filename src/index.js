@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 import winston from 'winston';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { writeFileSync } from 'fs';
+import net from 'net';
 import MemoryManagementService from './services/MemoryManagementService.js';
 
 dotenv.config();
@@ -20,7 +22,9 @@ class MemorySystemAPI {
     this.app = express();
     this.memoryService = new MemoryManagementService();
     this.logger = this.setupLogger();
-    this.port = process.env.API_PORT || 3000;
+    this.preferredPort = parseInt(process.env.API_PORT) || 3333;
+    this.port = this.preferredPort;
+    this.fallbackPorts = [3334, 3335, 3336, 3337, 3338];
   }
 
   /**
@@ -618,19 +622,89 @@ class MemorySystemAPI {
   }
 
   /**
+   * Check if a port is available
+   */
+  async isPortAvailable(port) {
+    return new Promise((resolve) => {
+      const server = net.createServer();
+      server.listen(port, () => {
+        server.once('close', () => {
+          resolve(true);
+        });
+        server.close();
+      });
+      server.on('error', () => {
+        resolve(false);
+      });
+    });
+  }
+
+  /**
+   * Find an available port starting with preferred port
+   */
+  async findAvailablePort() {
+    // First try preferred port
+    if (await this.isPortAvailable(this.preferredPort)) {
+      return this.preferredPort;
+    }
+
+    this.logger.warn(`Preferred port ${this.preferredPort} is in use, trying fallback ports...`);
+
+    // Try fallback ports
+    for (const port of this.fallbackPorts) {
+      if (await this.isPortAvailable(port)) {
+        this.logger.info(`Using fallback port ${port}`);
+        return port;
+      }
+    }
+
+    throw new Error(`No available ports found. Tried ${this.preferredPort}, ${this.fallbackPorts.join(', ')}`);
+  }
+
+  /**
    * Start the server
    */
   async startServer() {
-    return new Promise((resolve, reject) => {
-      this.server = this.app.listen(this.port, (error) => {
-        if (error) {
-          reject(error);
-        } else {
-          this.logger.info(`Memory System API listening on port ${this.port}`);
-          resolve();
-        }
+    try {
+      // Find available port
+      this.port = await this.findAvailablePort();
+      
+      return new Promise((resolve, reject) => {
+        this.server = this.app.listen(this.port, (error) => {
+          if (error) {
+            reject(error);
+          } else {
+            this.logger.info(`Memory System API listening on port ${this.port}`);
+            
+            // Save the actual port to a file for other services to discover
+            this.savePortToFile();
+            
+            resolve();
+          }
+        });
       });
-    });
+    } catch (error) {
+      this.logger.error('Failed to find available port:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Save the actual port to a file for service discovery
+   */
+  savePortToFile() {
+    try {
+      const portInfo = {
+        port: this.port,
+        service: 'AI Company Memory System',
+        timestamp: new Date().toISOString(),
+        pid: process.pid
+      };
+      writeFileSync('.memory-api-port', JSON.stringify(portInfo, null, 2));
+      this.logger.info(`Port information saved to .memory-api-port file`);
+    } catch (error) {
+      this.logger.warn('Failed to save port information:', error);
+    }
   }
 
   /**

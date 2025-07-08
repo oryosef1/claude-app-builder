@@ -6,6 +6,8 @@ const rateLimit = require('express-rate-limit');
 const winston = require('winston');
 const WebSocket = require('ws');
 const http = require('http');
+const net = require('net');
+const { writeFileSync } = require('fs');
 
 // Import route handlers
 const employeeRoutes = require('./routes/employees');
@@ -36,17 +38,17 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
-// Rate limiting
+// Rate limiting - Increased for dashboard usage
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 1000, // limit each IP to 1000 requests per minute
   message: 'Too many requests from this IP, please try again later.'
 });
 
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:5173'], // Dashboard ports
+  origin: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:8200', 'http://localhost:8100', 'http://localhost:8105', 'null'], // Dashboard ports + file:// origin
   credentials: true
 }));
 app.use(limiter);
@@ -157,13 +159,74 @@ app.use((req, res) => {
   });
 });
 
-const PORT = process.env.API_BRIDGE_PORT || 3001;
+// Port configuration with dynamic allocation
+const preferredPort = parseInt(process.env.API_BRIDGE_PORT) || 3001;
+const fallbackPorts = [3002, 3003, 3004, 3005, 3006];
 
-server.listen(PORT, () => {
-  logger.info(`Corporate Infrastructure API Bridge started on port ${PORT}`);
-  logger.info(`Health check available at http://localhost:${PORT}/health`);
-  logger.info(`WebSocket server started for real-time updates`);
-});
+// Check if port is available
+function isPortAvailable(port) {
+  return new Promise((resolve) => {
+    const server = net.createServer();
+    server.listen(port, () => {
+      server.once('close', () => resolve(true));
+      server.close();
+    });
+    server.on('error', () => resolve(false));
+  });
+}
+
+// Find an available port
+async function findAvailablePort() {
+  if (await isPortAvailable(preferredPort)) {
+    return preferredPort;
+  }
+  
+  logger.warn(`Preferred port ${preferredPort} is in use, trying fallback ports...`);
+  
+  for (const port of fallbackPorts) {
+    if (await isPortAvailable(port)) {
+      logger.info(`Using fallback port ${port}`);
+      return port;
+    }
+  }
+  
+  throw new Error(`No available ports found. Tried: ${preferredPort}, ${fallbackPorts.join(', ')}`);
+}
+
+// Start server with dynamic port allocation
+async function startServer() {
+  try {
+    const PORT = await findAvailablePort();
+    
+    server.listen(PORT, () => {
+      logger.info(`Corporate Infrastructure API Bridge started on port ${PORT}`);
+      logger.info(`Health check available at http://localhost:${PORT}/health`);
+      logger.info(`WebSocket server started for real-time updates`);
+      
+      // Save port information for other services to discover
+      const portInfo = {
+        port: PORT,
+        service: 'Corporate Infrastructure API Bridge',
+        timestamp: new Date().toISOString(),
+        pid: process.pid
+      };
+      
+      try {
+        writeFileSync('.api-bridge-port', JSON.stringify(portInfo, null, 2));
+        logger.info('Port information saved to .api-bridge-port file');
+      } catch (error) {
+        logger.warn('Failed to save port information:', error.message);
+      }
+    });
+    
+  } catch (error) {
+    logger.error('Failed to start server:', error.message);
+    process.exit(1);
+  }
+}
+
+// Start the server
+startServer();
 
 // Graceful shutdown
 process.on('SIGTERM', () => {

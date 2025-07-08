@@ -93,6 +93,13 @@ class WorkflowRouter {
                         "deliverables": ["deployment_plan", "infrastructure", "monitoring"]
                     },
                     {
+                        "phase": "quality_review",
+                        "required_roles": ["Project Manager"],
+                        "optional_roles": ["Technical Lead"],
+                        "parallel": false,
+                        "deliverables": ["quality_assessment", "go_no_go_decision", "next_actions"]
+                    },
+                    {
                         "phase": "documentation",
                         "required_roles": ["Technical Writer"],
                         "optional_roles": [],
@@ -131,6 +138,20 @@ class WorkflowRouter {
                         "optional_roles": ["Junior Developer"],
                         "parallel": true,
                         "deliverables": ["frontend_code", "responsive_design", "accessibility"]
+                    },
+                    {
+                        "phase": "quality_review",
+                        "required_roles": ["Project Manager"],
+                        "optional_roles": ["Technical Lead"],
+                        "parallel": false,
+                        "deliverables": ["quality_assessment", "go_no_go_decision", "next_actions"]
+                    },
+                    {
+                        "phase": "documentation",
+                        "required_roles": ["Technical Writer"],
+                        "optional_roles": [],
+                        "parallel": true,
+                        "deliverables": ["user_docs", "design_docs", "style_guide"]
                     }
                 ]
             },
@@ -164,6 +185,20 @@ class WorkflowRouter {
                         "optional_roles": ["DevOps Engineer"],
                         "parallel": false,
                         "deliverables": ["monitoring_setup", "alerting_rules", "incident_response_plan"]
+                    },
+                    {
+                        "phase": "quality_review",
+                        "required_roles": ["Project Manager"],
+                        "optional_roles": ["Technical Lead"],
+                        "parallel": false,
+                        "deliverables": ["quality_assessment", "go_no_go_decision", "next_actions"]
+                    },
+                    {
+                        "phase": "documentation",
+                        "required_roles": ["Technical Writer"],
+                        "optional_roles": [],
+                        "parallel": true,
+                        "deliverables": ["infrastructure_docs", "runbooks", "maintenance_guide"]
                     }
                 ]
             },
@@ -197,6 +232,20 @@ class WorkflowRouter {
                         "optional_roles": [],
                         "parallel": true,
                         "deliverables": ["test_results", "bug_reports", "quality_metrics"]
+                    },
+                    {
+                        "phase": "quality_review",
+                        "required_roles": ["Project Manager"],
+                        "optional_roles": ["QA Director"],
+                        "parallel": false,
+                        "deliverables": ["quality_assessment", "go_no_go_decision", "next_actions"]
+                    },
+                    {
+                        "phase": "documentation",
+                        "required_roles": ["Technical Writer"],
+                        "optional_roles": [],
+                        "parallel": true,
+                        "deliverables": ["test_documentation", "quality_reports", "best_practices"]
                     }
                 ]
             }
@@ -365,6 +414,7 @@ WORKFLOW TYPE:`;
             'development': 80,
             'testing': 40,
             'deployment': 16,
+            'quality_review': 8,
             'documentation': 24,
             'prototyping': 32,
             'implementation': 60,

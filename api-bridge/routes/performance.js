@@ -232,7 +232,7 @@ router.post('/event', async (req, res) => {
       timestamp: new Date().toISOString()
     };
 
-    const { stdout } = await execAsync(`node "${path.join(__dirname, '../../ai-employees/performance-tracker.js')}" record '${JSON.stringify(eventData)}'`);
+    const { stdout } = await execAsync(`node "${path.join(__dirname, '../../ai-employees/performance-tracker.js')}" event '${JSON.stringify(eventData)}'`);
     const result = JSON.parse(stdout);
 
     // Broadcast real-time update

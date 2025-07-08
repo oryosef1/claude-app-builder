@@ -150,6 +150,31 @@ load_employee_prompt() {
     fi
 }
 
+# Discover Memory API port from port file or default
+get_memory_api_port() {
+    local port_file=".memory-api-port"
+    local default_port=3333
+    
+    if [ -f "$port_file" ]; then
+        # Extract port from JSON file using basic text processing
+        local port=$(grep '"port"' "$port_file" | sed 's/.*"port": *\([0-9]*\).*/\1/')
+        if [ -n "$port" ] && [ "$port" -gt 0 ] 2>/dev/null; then
+            echo "$port"
+            return
+        fi
+    fi
+    
+    # Try default port and common fallback ports
+    for port in 3333 3334 3335 3336 3337 3338; do
+        if nc -z localhost "$port" 2>/dev/null; then
+            echo "$port"
+            return
+        fi
+    done
+    
+    echo "$default_port"  # fallback to default
+}
+
 # Store AI employee memory after task completion (Task 5.3: Memory persistence)
 store_employee_memory() {
     local employee_id="$1"
@@ -159,10 +184,13 @@ store_employee_memory() {
     local duration="$5"
     local start_time=$(date +%s%3N)  # milliseconds for performance tracking
     
+    # Discover Memory API port
+    local memory_port=$(get_memory_api_port)
+    
     # Check if Memory API is available
-    if ! nc -z localhost 3333 2>/dev/null; then
+    if ! nc -z localhost "$memory_port" 2>/dev/null; then
         if [ "$VERBOSE" = "true" ]; then
-            log_corporate "WARNING" "Memory" "MemoryStorage" "Memory service not available - skipping memory storage"
+            log_corporate "WARNING" "Memory" "MemoryStorage" "Memory service not available on port $memory_port - skipping memory storage"
         fi
         return 0
     fi
@@ -180,30 +208,37 @@ store_employee_memory() {
     fi
     
     # Extract key insights from output (first 500 chars for content summary)
-    local content_summary=$(echo "$ai_output" | head -c 500 | tr '\n' ' ' | sed 's/[[:space:]]\+/ /g')
+    # Properly escape for JSON - remove newlines, escape quotes and backslashes
+    local content_summary=$(echo "$ai_output" | head -c 500 | tr '\n\r' '  ' | sed 's/[[:space:]]\+/ /g' | sed 's/\\/\\\\/g; s/"/\\"/g')
     
-    # Create memory storage payload with rich metadata
-    local memory_request=$(cat << EOF
-{
-    "employeeId": "$employee_id",
-    "content": "$content_summary",
-    "type": "$memory_type",
-    "metadata": {
-        "task_description": "$task_description",
-        "success": $success,
-        "duration_seconds": $duration,
-        "timestamp": "$(date -Iseconds)",
-        "workflow_context": "corporate_task_execution",
-        "output_length": $(echo "$ai_output" | wc -c),
-        "complexity_indicators": {
-            "has_code": $(echo "$output_lower" | grep -q "function\|class\|import\|const\|let\|var" && echo "true" || echo "false"),
-            "has_decisions": $(echo "$output_lower" | grep -q "decided\|chose\|because\|rationale" && echo "true" || echo "false"),
-            "has_collaboration": $(echo "$output_lower" | grep -q "team\|collaborate\|discuss\|coordinate" && echo "true" || echo "false")
+    # Escape task description for JSON
+    local task_desc_escaped=$(echo "$task_description" | tr '\n\r' '  ' | sed 's/\\/\\\\/g; s/"/\\"/g')
+    
+    # Boolean values for complexity indicators
+    local has_code=$(echo "$output_lower" | grep -q "function\|class\|import\|const\|let\|var" && echo "true" || echo "false")
+    local has_decisions=$(echo "$output_lower" | grep -q "decided\|chose\|because\|rationale" && echo "true" || echo "false")
+    local has_collaboration=$(echo "$output_lower" | grep -q "team\|collaborate\|discuss\|coordinate" && echo "true" || echo "false")
+    local output_length=$(echo "$ai_output" | wc -c)
+    
+    # Create memory storage payload with proper JSON escaping
+    local memory_request="{
+    \"employeeId\": \"$employee_id\",
+    \"content\": \"$content_summary\",
+    \"type\": \"$memory_type\",
+    \"metadata\": {
+        \"task_description\": \"$task_desc_escaped\",
+        \"success\": $success,
+        \"duration_seconds\": $duration,
+        \"timestamp\": \"$(date -Iseconds)\",
+        \"workflow_context\": \"corporate_task_execution\",
+        \"output_length\": $output_length,
+        \"complexity_indicators\": {
+            \"has_code\": $has_code,
+            \"has_decisions\": $has_decisions,
+            \"has_collaboration\": $has_collaboration
         }
     }
-}
-EOF
-)
+}"
     
     # Try to store memory asynchronously (background process)
     local temp_response_file="/tmp/memory_storage_$$"
@@ -222,7 +257,7 @@ EOF
         
         # Make HTTP request to Memory API
         if [ "$http_client" = "curl" ]; then
-            echo "$memory_request" | timeout 10 curl -s -X POST "http://localhost:3333/api/memory/$memory_type" \
+            echo "$memory_request" | timeout 10 curl -s -X POST "http://localhost:$memory_port/api/memory/$memory_type" \
                 -H 'Content-Type: application/json' \
                 -d @- \
                 --max-time 10 > "$temp_response_file" 2>/dev/null
@@ -231,8 +266,8 @@ EOF
             timeout 10 wget -q -O "$temp_response_file" \
                 --header="Content-Type: application/json" \
                 --post-file="/tmp/memory_request_$$" \
-                "http://localhost:3333/api/memory/$memory_type" 2>/dev/null
-            rm -f "/tmp/memory_request_$$"
+                "http://localhost:$memory_port/api/memory/$memory_type" 2>/dev/null
+            rm -f "/tmp/memory_request_$$" 2>/dev/null
         fi
         
         # Response file will be checked by main process
@@ -266,9 +301,12 @@ load_employee_context() {
     local task_description="$2"
     local start_time=$(date +%s%3N)  # milliseconds for performance tracking
     
+    # Discover Memory API port
+    local memory_port=$(get_memory_api_port)
+    
     # Check if Memory API is available
-    if ! nc -z localhost 3333 2>/dev/null; then
-        echo "# Memory service not available - proceeding without context"
+    if ! nc -z localhost "$memory_port" 2>/dev/null; then
+        echo "# Memory service not available on port $memory_port - proceeding without context"
         return 0
     fi
     
@@ -305,7 +343,7 @@ EOF
     
     if [ "$http_client" = "curl" ]; then
         # Use curl if available
-        if timeout 5 bash -c "echo '$context_request' | curl -s -X POST 'http://localhost:3333/api/memory/context' \
+        if timeout 5 bash -c "echo '$context_request' | curl -s -X POST 'http://localhost:$memory_port/api/memory/context' \
             -H 'Content-Type: application/json' \
             -d @- \
             --max-time 5" > "$temp_response_file" 2>/dev/null; then
@@ -317,7 +355,7 @@ EOF
         if timeout 5 wget -q -O "$temp_response_file" \
             --header="Content-Type: application/json" \
             --post-file="/tmp/context_request_$$" \
-            "http://localhost:3333/api/memory/context" 2>/dev/null; then
+            "http://localhost:$memory_port/api/memory/context" 2>/dev/null; then
             context_response=$(cat "$temp_response_file")
         fi
         rm -f "/tmp/context_request_$$"
@@ -454,7 +492,7 @@ CORPORATE STANDARDS:
 - Collaborate effectively with other AI employees
 - Document decisions and progress in memory.md
 - Maintain high quality and professional standards
-- Update todo.md with task progress
+- Update system/todo.md with task progress
 
 SYSTEM PROMPT:
 $system_prompt
@@ -466,10 +504,10 @@ $user_prompt"
     local claude_output
     local temp_output_file="/tmp/corporate_claude_output_$$"
     
-    # Execute Claude and capture both stdout and stderr
+    # Execute Claude and capture both stdout and stderr with simplified tool list
     if printf "%s\n" "$full_prompt" | claude --print \
         --dangerously-skip-permissions \
-        --allowedTools "Bash,Edit,Write,Read,Grep,Glob,LS,MultiEdit,NotebookEdit,NotebookRead,WebFetch,WebSearch,TodoRead,TodoWrite,Task" \
+        --allowedTools "Bash,Edit,Write,Read,TodoRead,TodoWrite" \
         --model "sonnet" > "$temp_output_file" 2>&1; then
         
         local exit_code=0
@@ -581,7 +619,7 @@ execute_corporate_workflow() {
                     if [ -n "$employee_id" ]; then
                         local task_prompt="Execute $phase_name phase for the current project. 
                         
-Read @todo.md for current tasks and @memory.md for context.
+Read @system/todo.md for current tasks and @system/memory.md for context.
 Follow your role-specific responsibilities for this phase.
 Update documentation with your progress when complete."
                         
@@ -601,7 +639,7 @@ Update documentation with your progress when complete."
                             echo -e "${BLUE}Auto-assigning $first_employee for role $role${NC}"
                             local task_prompt="Execute $phase_name phase for the current project as $role.
                             
-Read @todo.md for current tasks and @memory.md for context.
+Read @system/todo.md for current tasks and @system/memory.md for context.
 Follow your role-specific responsibilities for this phase.
 Update documentation with your progress when complete."
                             
@@ -649,9 +687,9 @@ monitor_corporate_workflow() {
 
 # Corporate task selection based on current project
 get_corporate_task_from_todo() {
-    if [ -f "todo.md" ]; then
+    if [ -f "system/todo.md" ]; then
         # Get first incomplete task
-        local first_task=$(grep -n "\[\s*\]" todo.md | head -1)
+        local first_task=$(grep -n "\[\s*\]" system/todo.md | head -1)
         if [ -n "$first_task" ]; then
             echo "$first_task" | cut -d':' -f2- | sed 's/^[ \t]*\[\s*\]\s*//'
         fi
@@ -682,8 +720,8 @@ main_corporate_workflow() {
         local current_task=$(get_corporate_task_from_todo)
         if [ -z "$current_task" ]; then
             echo -e "${GREEN}🎉 ALL TASKS COMPLETE! AI COMPANY HAS FINISHED THE ENTIRE TODO LIST! 🎉${NC}"
-            echo -e "${YELLOW}No more incomplete tasks found in todo.md${NC}"
-            echo -e "${BLUE}Add more tasks to todo.md to continue autonomous operation${NC}"
+            echo -e "${YELLOW}No more incomplete tasks found in system/todo.md${NC}"
+            echo -e "${BLUE}Add more tasks to system/todo.md to continue autonomous operation${NC}"
             return 0
         fi
         

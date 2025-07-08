@@ -10,9 +10,19 @@ node_modules/
 dist/
 build/
 
-# Logs
+# Logs and temporary files
 *.log
 logs/
+temp-archive/
+dump.rdb
+
+# Temporary workflow files
+workflow-workflow_*.json
+test_*.json
+
+# Port discovery files
+.api-bridge-port
+.memory-api-port
 
 # IDE
 .vscode/
@@ -28,3 +38,11 @@ Thumbs.db
 
 # Local settings
 .claude/settings.local.json
+
+# Development files
+test-*.js
+*-test.js
+*-debug.*
+*-fixed.*
+*-new.*
+*-restart.*

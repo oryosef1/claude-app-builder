@@ -88,7 +88,22 @@
       "Bash(nc:*)",
       "Bash(redis-server:*)",
       "Bash(cd \"/mnt/c/Users/בית/Downloads/poe helper\")",
-      "Bash(npm start)"
+      "Bash(npm start)",
+      "Bash(npx vite:*)",
+      "Bash(get_memory_api_port)",
+      "Bash(for port in 3333 3334 3335 3336)",
+      "Bash(do echo -n \"Port $port: \")",
+      "Bash(done)",
+      "Bash(echo)",
+      "Bash(echo:*)",
+      "Bash(powershell:*)",
+      "Bash(for i in {1..3})",
+      "Bash(do)",
+      "Bash(wget -qO- --method=POST --header=\"Content-Type: application/json\" --body-data=\"{\"\"employeeId\"\":\"\"emp_00$i\"\",\"\"content\"\":\"\"Real employee activity $i\"\",\"\"metadata\"\":{\"\"source\"\":\"\"dashboard_implementation\"\",\"\"activity\"\":\"\"real_work\"\"}}\" http://localhost:3333/api/memory/experience)",
+      "Bash(for:*)",
+      "Bash(do echo \"Employee $emp:\")",
+      "Bash(./start.sh:*)",
+      "Bash(tree:*)"
     ],
     "deny": []
   }

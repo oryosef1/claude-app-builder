@@ -206,7 +206,7 @@ export class MemoryManagementService {
         minImportance: options.minImportance || 0
       };
 
-      const results = await this.vectorDb.retrieveMemories(employeeId, query, searchOptions);
+      const results = await this.vectorDb.retrieveMemories(query, employeeId, searchOptions);
       
       // Post-process results
       const processedResults = this.postProcessResults(results, options);

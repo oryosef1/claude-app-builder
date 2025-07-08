@@ -1,0 +1,278 @@
+{
+  "success": true,
+  "routing": {
+    "project_id": "project_1751989018",
+    "project_name": "- [ ] **Task 13.1**: Implement Node.js process orchestrator with Express",
+    "workflow_type": "software_development",
+    "workflow_name": "Software Development Project",
+    "phases": [
+      {
+        "phase_name": "planning",
+        "required_roles": [
+          "Project Manager"
+        ],
+        "optional_roles": [
+          "Technical Lead"
+        ],
+        "parallel": false,
+        "deliverables": [
+          "project_plan",
+          "requirements",
+          "timeline"
+        ],
+        "assigned_employees": [
+          {
+            "id": "emp_001",
+            "name": "Alex Project Manager",
+            "role": "Project Manager",
+            "workload": 0,
+            "estimated_effort": 13
+          }
+        ],
+        "optional_employees": [
+          {
+            "id": "emp_002",
+            "name": "Taylor Technical Lead",
+            "role": "Technical Lead",
+            "workload": 0,
+            "estimated_effort": 13
+          }
+        ],
+        "estimated_duration": 16,
+        "dependencies": [],
+        "status": "planned"
+      },
+      {
+        "phase_name": "architecture",
+        "required_roles": [
+          "Technical Lead"
+        ],
+        "optional_roles": [
+          "Senior Developer",
+          "Security Engineer"
+        ],
+        "parallel": false,
+        "deliverables": [
+          "technical_architecture",
+          "system_design",
+          "technology_stack"
+        ],
+        "assigned_employees": [
+          {
+            "id": "emp_002",
+            "name": "Taylor Technical Lead",
+            "role": "Technical Lead",
+            "workload": 0,
+            "estimated_effort": 19
+          }
+        ],
+        "optional_employees": [
+          {
+            "id": "emp_004",
+            "name": "Sam Senior Developer",
+            "role": "Senior Developer",
+            "workload": 0,
+            "estimated_effort": 19
+          },
+          {
+            "id": "emp_010",
+            "name": "Phoenix Security Engineer",
+            "role": "Security Engineer",
+            "workload": 0,
+            "estimated_effort": 19
+          }
+        ],
+        "estimated_duration": 24,
+        "dependencies": [],
+        "status": "planned"
+      },
+      {
+        "phase_name": "development",
+        "required_roles": [
+          "Senior Developer"
+        ],
+        "optional_roles": [
+          "Junior Developer"
+        ],
+        "parallel": true,
+        "deliverables": [
+          "source_code",
+          "unit_tests",
+          "documentation"
+        ],
+        "assigned_employees": [
+          {
+            "id": "emp_004",
+            "name": "Sam Senior Developer",
+            "role": "Senior Developer",
+            "workload": 0,
+            "estimated_effort": 64
+          }
+        ],
+        "optional_employees": [
+          {
+            "id": "emp_005",
+            "name": "Casey Junior Developer",
+            "role": "Junior Developer",
+            "workload": 0,
+            "estimated_effort": 104
+          }
+        ],
+        "estimated_duration": 80,
+        "dependencies": [],
+        "status": "planned"
+      },
+      {
+        "phase_name": "testing",
+        "required_roles": [
+          "QA Engineer"
+        ],
+        "optional_roles": [
+          "Test Engineer"
+        ],
+        "parallel": true,
+        "deliverables": [
+          "test_plan",
+          "test_cases",
+          "test_results"
+        ],
+        "assigned_employees": [
+          {
+            "id": "emp_006",
+            "name": "Morgan QA Engineer",
+            "role": "QA Engineer",
+            "workload": 0,
+            "estimated_effort": 40
+          }
+        ],
+        "optional_employees": [
+          {
+            "id": "emp_007",
+            "name": "Riley Test Engineer",
+            "role": "Test Engineer",
+            "workload": 0,
+            "estimated_effort": 40
+          }
+        ],
+        "estimated_duration": 40,
+        "dependencies": [],
+        "status": "planned"
+      },
+      {
+        "phase_name": "deployment",
+        "required_roles": [
+          "DevOps Engineer"
+        ],
+        "optional_roles": [
+          "Site Reliability Engineer"
+        ],
+        "parallel": false,
+        "deliverables": [
+          "deployment_plan",
+          "infrastructure",
+          "monitoring"
+        ],
+        "assigned_employees": [
+          {
+            "id": "emp_008",
+            "name": "Drew DevOps Engineer",
+            "role": "DevOps Engineer",
+            "workload": 0,
+            "estimated_effort": 13
+          }
+        ],
+        "optional_employees": [
+          {
+            "id": "emp_009",
+            "name": "Avery SRE",
+            "role": "Site Reliability Engineer",
+            "workload": 0,
+            "estimated_effort": 13
+          }
+        ],
+        "estimated_duration": 16,
+        "dependencies": [],
+        "status": "planned"
+      },
+      {
+        "phase_name": "quality_review",
+        "required_roles": [
+          "Project Manager"
+        ],
+        "optional_roles": [
+          "Technical Lead"
+        ],
+        "parallel": false,
+        "deliverables": [
+          "quality_assessment",
+          "go_no_go_decision",
+          "next_actions"
+        ],
+        "assigned_employees": [
+          {
+            "id": "emp_001",
+            "name": "Alex Project Manager",
+            "role": "Project Manager",
+            "workload": 0,
+            "estimated_effort": 6
+          }
+        ],
+        "optional_employees": [
+          {
+            "id": "emp_002",
+            "name": "Taylor Technical Lead",
+            "role": "Technical Lead",
+            "workload": 0,
+            "estimated_effort": 6
+          }
+        ],
+        "estimated_duration": 8,
+        "dependencies": [],
+        "status": "planned"
+      },
+      {
+        "phase_name": "documentation",
+        "required_roles": [
+          "Technical Writer"
+        ],
+        "optional_roles": [],
+        "parallel": true,
+        "deliverables": [
+          "user_docs",
+          "api_docs",
+          "maintenance_guide"
+        ],
+        "assigned_employees": [
+          {
+            "id": "emp_011",
+            "name": "Blake Technical Writer",
+            "role": "Technical Writer",
+            "workload": 0,
+            "estimated_effort": 24
+          }
+        ],
+        "optional_employees": [],
+        "estimated_duration": 24,
+        "dependencies": [],
+        "status": "planned"
+      }
+    ],
+    "estimated_duration": 208,
+    "required_employees": [
+      "emp_001",
+      "emp_002",
+      "emp_004",
+      "emp_006",
+      "emp_008",
+      "emp_011"
+    ],
+    "optional_employees": [
+      "emp_002",
+      "emp_004",
+      "emp_010",
+      "emp_005",
+      "emp_007",
+      "emp_009"
+    ]
+  }
+}

@@ -1,5 +1,18 @@
 import VectorDatabaseService from './VectorDatabaseService.js';
 import winston from 'winston';
+import { EMPLOYEES, getEmployeeDepartment, getEmployeeRole } from '../config/employees.js';
+import {
+  postProcessResults,
+  rankMemoriesByRelevance,
+  generateContextSummary,
+  calculateExpertiseMetrics
+} from '../utils/memoryOperations.js';
+import {
+  generateCleanupRecommendations,
+  generateMemoryRecommendations,
+  performCompanyWideCleanup,
+  analyzeMemoryLifecycle
+} from '../utils/cleanupOperations.js';
 
 /**
  * Memory Management Service
@@ -38,23 +51,7 @@ export class MemoryManagementService {
    * Initialize namespaces for all 13 AI employees
    */
   async initializeEmployeeNamespaces() {
-    const employees = [
-      { id: 'emp_001', role: 'project_manager', department: 'Executive' },
-      { id: 'emp_002', role: 'technical_lead', department: 'Executive' },
-      { id: 'emp_003', role: 'qa_director', department: 'Executive' },
-      { id: 'emp_004', role: 'senior_developer', department: 'Development' },
-      { id: 'emp_005', role: 'junior_developer', department: 'Development' },
-      { id: 'emp_006', role: 'qa_engineer', department: 'Development' },
-      { id: 'emp_007', role: 'test_engineer', department: 'Development' },
-      { id: 'emp_008', role: 'devops_engineer', department: 'Operations' },
-      { id: 'emp_009', role: 'sre', department: 'Operations' },
-      { id: 'emp_010', role: 'security_engineer', department: 'Operations' },
-      { id: 'emp_011', role: 'technical_writer', department: 'Support' },
-      { id: 'emp_012', role: 'ui_ux_designer', department: 'Support' },
-      { id: 'emp_013', role: 'build_engineer', department: 'Support' }
-    ];
-
-    for (const employee of employees) {
+    for (const employee of EMPLOYEES) {
       try {
         await this.vectorDb.createEmployeeNamespace(
           employee.id,
@@ -91,8 +88,8 @@ export class MemoryManagementService {
           timestamp: new Date().toISOString(),
           importance: metadata.importance || 7.0,
           tags: metadata.tags || ['experience'],
-          department: await this.getEmployeeDepartment(employeeId),
-          role: await this.getEmployeeRole(employeeId),
+          department: getEmployeeDepartment(employeeId),
+          role: getEmployeeRole(employeeId),
           ...metadata
         }
       };
@@ -131,8 +128,8 @@ export class MemoryManagementService {
           tags: metadata.tags || ['knowledge'],
           source: metadata.source || 'experience',
           confidence: metadata.confidence || 8.0,
-          department: await this.getEmployeeDepartment(employeeId),
-          role: await this.getEmployeeRole(employeeId),
+          department: getEmployeeDepartment(employeeId),
+          role: getEmployeeRole(employeeId),
           ...metadata
         }
       };
@@ -174,8 +171,8 @@ export class MemoryManagementService {
           stakeholders: metadata.stakeholders || [],
           outcome: metadata.outcome || 'pending',
           effectiveness: metadata.effectiveness || null,
-          department: await this.getEmployeeDepartment(employeeId),
-          role: await this.getEmployeeRole(employeeId),
+          department: getEmployeeDepartment(employeeId),
+          role: getEmployeeRole(employeeId),
           ...metadata
         }
       };
@@ -209,7 +206,7 @@ export class MemoryManagementService {
       const results = await this.vectorDb.retrieveMemories(query, employeeId, searchOptions);
       
       // Post-process results
-      const processedResults = this.postProcessResults(results, options);
+      const processedResults = postProcessResults(results, options);
       
       this.logger.info(`Memory search completed for ${employeeId}: ${processedResults.length} results`);
       
@@ -271,7 +268,7 @@ export class MemoryManagementService {
       const relevantMemories = await this.searchMemories(employeeId, domain, expertiseOptions);
       
       // Calculate expertise metrics
-      const expertiseMetrics = this.calculateExpertiseMetrics(relevantMemories, domain);
+      const expertiseMetrics = calculateExpertiseMetrics(relevantMemories, domain);
       
       return {
         employee_id: employeeId,
@@ -701,8 +698,8 @@ export class MemoryManagementService {
       // Enhance with additional metadata
       const enhancedStats = {
         ...stats,
-        department: await this.getEmployeeDepartment(employeeId),
-        role: await this.getEmployeeRole(employeeId),
+        department: getEmployeeDepartment(employeeId),
+        role: getEmployeeRole(employeeId),
         storageStatus: stats.estimatedSizeMB > 100 ? 'over_target' : 'within_target',
         targetStorageMB: 100,
         utilizationPercent: (stats.estimatedSizeMB / 100) * 100

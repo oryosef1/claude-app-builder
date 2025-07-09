@@ -1,9 +1,13 @@
-const express = require('express');
-const fs = require('fs-extra');
-const path = require('path');
-const { exec } = require('child_process');
-const util = require('util');
-const axios = require('axios');
+import express from 'express';
+import fs from 'fs-extra';
+import path from 'path';
+import { exec } from 'child_process';
+import util from 'util';
+import axios from 'axios';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 const execAsync = util.promisify(exec);
@@ -698,4 +702,4 @@ router.get('/departments/:department', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

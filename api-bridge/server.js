@@ -1,20 +1,20 @@
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
-const winston = require('winston');
-const WebSocket = require('ws');
-const http = require('http');
-const net = require('net');
-const { writeFileSync } = require('fs');
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import rateLimit from 'express-rate-limit';
+import winston from 'winston';
+import WebSocket from 'ws';
+import http from 'http';
+import net from 'net';
+import { writeFileSync } from 'fs';
 
 // Import route handlers
-const employeeRoutes = require('./routes/employees');
-const workflowRoutes = require('./routes/workflows');
-const memoryRoutes = require('./routes/memory');
-const performanceRoutes = require('./routes/performance');
-const systemRoutes = require('./routes/system');
+import employeeRoutes from './routes/employees.js';
+import workflowRoutes from './routes/workflows.js';
+import memoryRoutes from './routes/memory.js';
+import performanceRoutes from './routes/performance.js';
+import systemRoutes from './routes/system.js';
 
 // Configure logger
 const logger = winston.createLogger({
@@ -47,9 +47,23 @@ const limiter = rateLimit({
 
 // Middleware
 app.use(helmet());
+// CORS configuration - environment-aware and secure
+const corsOrigins = process.env.NODE_ENV === 'production' 
+  ? (process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [])
+  : [
+      'http://localhost:3000',   // Default frontend
+      'http://localhost:5173',   // Vite dev server
+      'http://localhost:8200',   // Dashboard
+      'http://localhost:8100',   // Additional dashboard port
+      'http://localhost:8105',   // Additional dashboard port
+      'http://localhost:8080'    // Backend dashboard
+    ];
+
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:8200', 'http://localhost:8100', 'http://localhost:8105', 'null'], // Dashboard ports + file:// origin
-  credentials: true
+  origin: corsOrigins,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 app.use(limiter);
 app.use(morgan('combined', { stream: { write: message => logger.info(message.trim()) } }));
@@ -237,4 +251,4 @@ process.on('SIGTERM', () => {
   });
 });
 
-module.exports = { app, server, broadcast };
+export { app, server, broadcast };

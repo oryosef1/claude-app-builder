@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "API Bridge Service for Claude AI Software Company Corporate Infrastructure",
   "main": "server.js",
+  "type": "module",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",

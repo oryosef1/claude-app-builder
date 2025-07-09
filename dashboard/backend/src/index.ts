@@ -13,9 +13,55 @@ import { AIEmployee } from './types/index.js';
 
 dotenv.config();
 
+// Environment variable validation
+interface EnvironmentConfig {
+  DASHBOARD_PORT: string;
+  NODE_ENV: string;
+  FRONTEND_URL: string;
+  MEMORY_API_URL: string;
+  API_BRIDGE_URL: string;
+}
+
+function validateEnvironment(): EnvironmentConfig {
+  const requiredVars = ['DASHBOARD_PORT'];
+  const missing = requiredVars.filter(varName => !process.env[varName]);
+  
+  if (missing.length > 0) {
+    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+  }
+
+  // Set defaults for optional variables
+  if (!process.env['NODE_ENV']) {
+    process.env['NODE_ENV'] = 'development';
+  }
+
+  if (!process.env['FRONTEND_URL']) {
+    process.env['FRONTEND_URL'] = 'http://localhost:3000';
+  }
+
+  if (!process.env['MEMORY_API_URL']) {
+    process.env['MEMORY_API_URL'] = 'http://localhost:3333';
+  }
+
+  if (!process.env['API_BRIDGE_URL']) {
+    process.env['API_BRIDGE_URL'] = 'http://localhost:3002';
+  }
+
+  return {
+    DASHBOARD_PORT: process.env['DASHBOARD_PORT']!,
+    NODE_ENV: process.env['NODE_ENV']!,
+    FRONTEND_URL: process.env['FRONTEND_URL']!,
+    MEMORY_API_URL: process.env['MEMORY_API_URL']!,
+    API_BRIDGE_URL: process.env['API_BRIDGE_URL']!
+  };
+}
+
+// Validate environment on startup
+const envConfig = validateEnvironment();
+
 const app = express();
 const server = createServer(app);
-const PORT = process.env['DASHBOARD_PORT'] || 8080;
+const PORT = parseInt(envConfig.DASHBOARD_PORT) || 8080;
 
 const logger = winston.createLogger({
   level: 'info',
@@ -95,21 +141,21 @@ async function checkServiceHealth(url: string): Promise<{ status: 'healthy' | 'u
 
 app.get('/health', async (_req, res) => {
   try {
-    const memoryApiCheck = await checkServiceHealth('http://localhost:3333/health');
-    const apiBridgeCheck = await checkServiceHealth('http://localhost:3002/health');
+    const memoryApiCheck = await checkServiceHealth(`${envConfig.MEMORY_API_URL}/health`);
+    const apiBridgeCheck = await checkServiceHealth(`${envConfig.API_BRIDGE_URL}/health`);
     
     const systemHealth: SystemHealth = {
       services: [
         {
           name: 'Memory API',
-          url: 'http://localhost:3333',
+          url: envConfig.MEMORY_API_URL,
           status: memoryApiCheck.status,
           responseTime: memoryApiCheck.responseTime,
           lastCheck: new Date()
         },
         {
           name: 'API Bridge',
-          url: 'http://localhost:3002',
+          url: envConfig.API_BRIDGE_URL,
           status: apiBridgeCheck.status,
           responseTime: apiBridgeCheck.responseTime,
           lastCheck: new Date()
@@ -148,7 +194,7 @@ app.get('/api/status', (_req, res) => {
 
 app.get('/api/employees', async (_req, res) => {
   try {
-    const response = await fetch('http://localhost:3002/employees');
+    const response = await fetch(`${envConfig.API_BRIDGE_URL}/api/employees`);
     if (!response.ok) {
       throw new Error(`API Bridge returned ${response.status}`);
     }
@@ -171,7 +217,7 @@ const dashboardServer = new DashboardServer(server, processManager, taskQueue, l
 // Load employees from API Bridge
 async function loadEmployees(): Promise<void> {
   try {
-    const response = await fetch('http://localhost:3002/employees');
+    const response = await fetch(`${envConfig.API_BRIDGE_URL}/api/employees`);
     if (response.ok) {
       const employees = await response.json() as AIEmployee[];
       await processManager.loadEmployees(employees);

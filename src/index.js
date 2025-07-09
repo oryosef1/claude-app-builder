@@ -7,6 +7,11 @@ import { fileURLToPath } from 'url';
 import { writeFileSync } from 'fs';
 import net from 'net';
 import MemoryManagementService from './services/MemoryManagementService.js';
+import {
+  validateMemoryRequest,
+  validateSearchRequest,
+  createValidationMiddleware
+} from './utils/validation.js';
 
 dotenv.config();
 
@@ -57,10 +62,23 @@ class MemorySystemAPI {
    * Setup Express middleware
    */
   setupMiddleware() {
-    // CORS
+    // CORS - secure configuration
+    const corsOrigins = process.env.NODE_ENV === 'production'
+      ? (process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : [])
+      : [
+          'http://localhost:3000',   // Default frontend
+          'http://localhost:5173',   // Vite dev server
+          'http://localhost:8080',   // Dashboard backend
+          'http://localhost:3002',   // API Bridge
+          'http://localhost:8100',   // Dashboard variations
+          'http://localhost:8200'    // Dashboard variations
+        ];
+
     this.app.use(cors({
-      origin: process.env.CORS_ORIGIN || '*',
-      credentials: true
+      origin: corsOrigins,
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
     }));
 
     // JSON parsing
@@ -102,15 +120,11 @@ class MemorySystemAPI {
     });
 
     // Store experience memory
-    this.app.post('/api/memory/experience', async (req, res) => {
+    this.app.post('/api/memory/experience', 
+      createValidationMiddleware(validateMemoryRequest),
+      async (req, res) => {
       try {
         const { employeeId, content, context, metadata } = req.body;
-        
-        if (!employeeId || !content) {
-          return res.status(400).json({
-            error: 'Missing required fields: employeeId, content'
-          });
-        }
 
         const memoryId = await this.memoryService.storeExperienceMemory(
           employeeId,
@@ -135,15 +149,11 @@ class MemorySystemAPI {
     });
 
     // Store knowledge memory
-    this.app.post('/api/memory/knowledge', async (req, res) => {
+    this.app.post('/api/memory/knowledge', 
+      createValidationMiddleware(validateMemoryRequest),
+      async (req, res) => {
       try {
         const { employeeId, content, context, metadata } = req.body;
-        
-        if (!employeeId || !content) {
-          return res.status(400).json({
-            error: 'Missing required fields: employeeId, content'
-          });
-        }
 
         const memoryId = await this.memoryService.storeKnowledgeMemory(
           employeeId,
@@ -168,15 +178,11 @@ class MemorySystemAPI {
     });
 
     // Store decision memory
-    this.app.post('/api/memory/decision', async (req, res) => {
+    this.app.post('/api/memory/decision', 
+      createValidationMiddleware(validateMemoryRequest),
+      async (req, res) => {
       try {
         const { employeeId, content, context, metadata } = req.body;
-        
-        if (!employeeId || !content) {
-          return res.status(400).json({
-            error: 'Missing required fields: employeeId, content'
-          });
-        }
 
         const memoryId = await this.memoryService.storeDecisionMemory(
           employeeId,
@@ -201,15 +207,11 @@ class MemorySystemAPI {
     });
 
     // Search memories
-    this.app.post('/api/memory/search', async (req, res) => {
+    this.app.post('/api/memory/search', 
+      createValidationMiddleware(validateSearchRequest),
+      async (req, res) => {
       try {
         const { employeeId, query, options } = req.body;
-        
-        if (!employeeId || !query) {
-          return res.status(400).json({
-            error: 'Missing required fields: employeeId, query'
-          });
-        }
 
         const results = await this.memoryService.searchMemories(
           employeeId,
@@ -234,15 +236,11 @@ class MemorySystemAPI {
     });
 
     // Get relevant context for task
-    this.app.post('/api/memory/context', async (req, res) => {
+    this.app.post('/api/memory/context', 
+      createValidationMiddleware(validateSearchRequest),
+      async (req, res) => {
       try {
         const { employeeId, taskDescription, options } = req.body;
-        
-        if (!employeeId || !taskDescription) {
-          return res.status(400).json({
-            error: 'Missing required fields: employeeId, taskDescription'
-          });
-        }
 
         const context = await this.memoryService.getRelevantContext(
           employeeId,

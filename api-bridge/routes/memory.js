@@ -1,6 +1,6 @@
-const express = require('express');
-const axios = require('axios');
-const path = require('path');
+import express from 'express';
+import axios from 'axios';
+import path from 'path';
 
 const router = express.Router();
 
@@ -406,4 +406,4 @@ router.post('/schedule', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

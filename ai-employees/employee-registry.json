@@ -22,7 +22,7 @@
       ],
       "system_prompt_file": "corporate-prompts/project-manager.md",
       "current_projects": [],
-      "workload": 0,
+      "workload": 50,
       "performance_metrics": {
         "projects_completed": 0,
         "on_time_delivery": 100,
@@ -358,5 +358,5 @@
       "focus": "Documentation, design, and build systems"
     }
   },
-  "last_updated": "2025-07-06T00:00:00Z"
+  "last_updated": "2025-07-10T04:25:09.225Z"
 }

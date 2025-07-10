@@ -1,10 +1,9 @@
-import fs from 'fs';
-import path from 'path';
+import * as fs from 'fs';
+import * as path from 'path';
 import { EventEmitter } from 'events';
-import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Using a workaround for CommonJS compatibility
+const __dirname = path.dirname(new URL(import.meta.url).pathname).replace(/^\/(\w):/, '$1:');
 
 interface Employee {
   id: string;
@@ -13,7 +12,7 @@ interface Employee {
   department: string;
   level: string;
   hire_date: string;
-  status: 'active' | 'inactive' | 'busy' | 'maintenance';
+  status: 'active' | 'inactive' | 'busy' | 'maintenance' | 'offline';
   skills: string[];
   system_prompt_file: string;
   current_projects: string[];
@@ -47,7 +46,9 @@ export class AgentRegistry extends EventEmitter {
 
   constructor() {
     super();
-    this.registryPath = path.join(__dirname, '../../../../ai-employees/employee-registry.json');
+    // Fix path to handle Hebrew characters and go up to project root
+    const projectRoot = path.resolve(process.cwd(), '../..');
+    this.registryPath = path.join(projectRoot, 'ai-employees/employee-registry.json');
     this.loadRegistry();
   }
 
@@ -76,8 +77,8 @@ export class AgentRegistry extends EventEmitter {
     return Object.values(this.registry.employees);
   }
 
-  getEmployeeById(id: string): Employee | null {
-    return this.registry.employees[id] || null;
+  getEmployeeById(id: string): Employee | undefined {
+    return this.registry.employees[id];
   }
 
   getEmployeesByDepartment(department: string): Employee[] {
@@ -85,14 +86,15 @@ export class AgentRegistry extends EventEmitter {
   }
 
   getEmployeesBySkill(skill: string): Employee[] {
+    const lowerSkill = skill.toLowerCase();
     return Object.values(this.registry.employees).filter(emp => 
-      emp.skills.includes(skill) && emp.status === 'active'
+      emp.skills.some(s => s.toLowerCase() === lowerSkill)
     );
   }
 
   getAvailableEmployees(): Employee[] {
     return Object.values(this.registry.employees).filter(emp => 
-      emp.status === 'active' && emp.workload < 100
+      emp.status === 'active' && emp.workload < 80
     );
   }
 
@@ -126,20 +128,45 @@ export class AgentRegistry extends EventEmitter {
     return scoredEmployees.length > 0 ? scoredEmployees[0]!.employee : null;
   }
 
-  updateEmployeeWorkload(employeeId: string, workload: number): void {
-    if (this.registry.employees[employeeId]) {
-      this.registry.employees[employeeId].workload = Math.max(0, Math.min(100, workload));
-      this.saveRegistry();
-      this.emit('workload-updated', employeeId, workload);
+  updateEmployeeWorkload(employeeId: string, workload: number): boolean {
+    if (!this.registry.employees[employeeId] || 
+        isNaN(workload) || 
+        !isFinite(workload) || 
+        workload < 0 || 
+        workload > 100) {
+      return false;
     }
+    
+    const previousWorkload = this.registry.employees[employeeId].workload;
+    this.registry.employees[employeeId].workload = workload;
+    this.saveRegistry();
+    this.emit('workloadChanged', { 
+      employeeId, 
+      newWorkload: workload, 
+      previousWorkload 
+    });
+    return true;
   }
 
-  updateEmployeeStatus(employeeId: string, status: Employee['status']): void {
-    if (this.registry.employees[employeeId]) {
-      this.registry.employees[employeeId].status = status;
-      this.saveRegistry();
-      this.emit('status-updated', employeeId, status);
+  updateEmployeeStatus(employeeId: string, status: Employee['status']): boolean {
+    if (!this.registry.employees[employeeId] || !status) {
+      return false;
     }
+    
+    const validStatuses: Employee['status'][] = ['active', 'inactive', 'busy', 'maintenance', 'offline'];
+    if (!validStatuses.includes(status)) {
+      return false;
+    }
+    
+    const previousStatus = this.registry.employees[employeeId].status;
+    this.registry.employees[employeeId].status = status;
+    this.saveRegistry();
+    this.emit('employeeStatusChanged', { 
+      employeeId, 
+      newStatus: status, 
+      previousStatus 
+    });
+    return true;
   }
 
   assignProject(employeeId: string, projectId: string): void {
@@ -178,7 +205,114 @@ export class AgentRegistry extends EventEmitter {
 
   getDepartmentHead(department: string): Employee | null {
     const dept = this.registry.departments[department];
-    return dept ? this.getEmployeeById(dept.head) : null;
+    return dept ? (this.getEmployeeById(dept.head) || null) : null;
+  }
+
+  getAllDepartments(): string[] {
+    return Object.keys(this.registry.departments);
+  }
+
+  isEmployeeAvailable(employeeId: string): boolean {
+    const employee = this.getEmployeeById(employeeId);
+    return employee ? employee.status === 'active' && employee.workload < 80 : false;
+  }
+
+  currentTasks: Map<string, string[]> = new Map();
+
+  assignTask(employeeId: string, taskId: string): void {
+    if (!this.currentTasks.has(employeeId)) {
+      this.currentTasks.set(employeeId, []);
+    }
+    const tasks = this.currentTasks.get(employeeId)!;
+    if (!tasks.includes(taskId)) {
+      tasks.push(taskId);
+    }
+  }
+
+  completeTask(employeeId: string, taskId: string): void {
+    const tasks = this.currentTasks.get(employeeId);
+    if (tasks) {
+      const index = tasks.indexOf(taskId);
+      if (index > -1) {
+        tasks.splice(index, 1);
+        // Update performance metrics
+        const employee = this.getEmployeeById(employeeId);
+        if (employee) {
+          if (!employee.performance_metrics) {
+            employee.performance_metrics = {};
+          }
+          employee.performance_metrics['projects_completed'] = 
+            (employee.performance_metrics['projects_completed'] || 0) + 1;
+        }
+      }
+    }
+  }
+
+  getEmployeeMetrics(employeeId: string): any {
+    const employee = this.getEmployeeById(employeeId);
+    if (!employee) {
+      return null;
+    }
+    
+    const tasks = this.currentTasks.get(employeeId) || [];
+    return {
+      tasksCompleted: employee.performance_metrics?.['projects_completed'] || 0,
+      averageCompletionTime: employee.performance_metrics?.['average_completion_time'] || 0,
+      successRate: employee.performance_metrics?.['success_rate'] || 0,
+      currentWorkload: employee.workload,
+      currentTasks: tasks
+    };
+  }
+
+  buildTeamForTask(requiredSkills: string[]): Employee[] {
+    const availableEmployees = this.getAvailableEmployees();
+    const team: Employee[] = [];
+    const coveredSkills = new Set<string>();
+    
+    // First pass: try to cover all skills
+    for (const skill of requiredSkills) {
+      if (!coveredSkills.has(skill)) {
+        const employeesWithSkill = availableEmployees
+          .filter(emp => !team.includes(emp) && emp.skills.some(s => s.toLowerCase() === skill.toLowerCase()))
+          .sort((a, b) => a.workload - b.workload);
+        
+        if (employeesWithSkill.length > 0) {
+          const selected = employeesWithSkill[0];
+          if (selected) {
+            team.push(selected);
+            selected.skills.forEach(s => coveredSkills.add(s.toLowerCase()));
+          }
+        }
+      }
+    }
+    
+    return team;
+  }
+
+  getStatistics(): any {
+    const employees = this.getAllEmployees();
+    const availableEmployees = employees.filter(emp => emp.status === 'active' && emp.workload < 80);
+    const busyEmployees = employees.filter(emp => emp.status === 'busy');
+    const offlineEmployees = employees.filter(emp => emp.status === 'offline' || emp.status === 'inactive');
+    
+    const departmentBreakdown: Record<string, number> = {};
+    const skillDistribution: Record<string, number> = {};
+    
+    employees.forEach(emp => {
+      departmentBreakdown[emp.department] = (departmentBreakdown[emp.department] || 0) + 1;
+      emp.skills.forEach(skill => {
+        skillDistribution[skill] = (skillDistribution[skill] || 0) + 1;
+      });
+    });
+    
+    return {
+      totalEmployees: employees.length,
+      availableEmployees: availableEmployees.length,
+      busyEmployees: busyEmployees.length,
+      offlineEmployees: offlineEmployees.length,
+      departmentBreakdown,
+      skillDistribution
+    };
   }
 
   getCompanyInfo() {

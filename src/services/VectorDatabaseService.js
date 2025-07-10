@@ -30,6 +30,11 @@ export class VectorDatabaseService {
     try {
       this.logger.info('Initializing Vector Database Service...');
       
+      // Log the environment variable status for debugging
+      this.logger.info(`PINECONE_API_KEY present: ${!!process.env.PINECONE_API_KEY}`);
+      this.logger.info(`PINECONE_ENVIRONMENT: ${process.env.PINECONE_ENVIRONMENT}`);
+      this.logger.info(`PINECONE_INDEX_NAME: ${process.env.PINECONE_INDEX_NAME}`);
+      
       // Initialize Pinecone
       this.pinecone = new Pinecone({
         apiKey: process.env.PINECONE_API_KEY

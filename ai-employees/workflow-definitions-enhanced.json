@@ -1,0 +1,259 @@
+{
+  "software_development": {
+    "name": "Software Development Project",
+    "phases": [
+      {
+        "phase": "planning",
+        "phase_name": "Planning Phase",
+        "required_roles": ["Project Manager"],
+        "optional_roles": ["Technical Lead"],
+        "parallel": false,
+        "deliverables": ["project_plan", "requirements", "timeline"],
+        "description": "Define project scope, requirements, and timeline"
+      },
+      {
+        "phase": "architecture",
+        "phase_name": "Architecture Phase",
+        "required_roles": ["Technical Lead"],
+        "optional_roles": ["Senior Developer", "Security Engineer"],
+        "parallel": false,
+        "deliverables": ["technical_architecture", "system_design", "technology_stack"],
+        "description": "Design system architecture and technical approach"
+      },
+      {
+        "phase": "test_writing",
+        "phase_name": "Test Writing Phase",
+        "required_roles": ["QA Engineer", "Test Engineer"],
+        "optional_roles": ["Senior Developer"],
+        "parallel": true,
+        "deliverables": ["unit_tests", "integration_tests", "e2e_tests", "test_documentation"],
+        "description": "Write comprehensive tests BEFORE implementation (TDD)",
+        "instructions": "Write tests that define the expected behavior. Tests should fail initially since no implementation exists yet. Include unit tests, integration tests, and end-to-end tests."
+      },
+      {
+        "phase": "development",
+        "phase_name": "Development Phase",
+        "required_roles": ["Senior Developer"],
+        "optional_roles": ["Junior Developer"],
+        "parallel": true,
+        "deliverables": ["source_code", "passing_tests", "documentation"],
+        "description": "Implement code to make ALL tests pass",
+        "instructions": "Implement the functionality to make all tests pass. DO NOT stop until ALL tests are green. Run tests frequently and fix any failures."
+      },
+      {
+        "phase": "testing",
+        "phase_name": "Testing & QA Phase",
+        "required_roles": ["QA Engineer"],
+        "optional_roles": ["Test Engineer"],
+        "parallel": true,
+        "deliverables": ["test_results", "bug_reports", "quality_metrics"],
+        "description": "Run all tests and perform additional QA",
+        "instructions": "Run all test suites, perform manual testing, and verify quality. All tests must pass before proceeding."
+      },
+      {
+        "phase": "deployment",
+        "phase_name": "Deployment Phase",
+        "required_roles": ["DevOps Engineer"],
+        "optional_roles": ["Site Reliability Engineer"],
+        "parallel": false,
+        "deliverables": ["deployment_plan", "infrastructure", "monitoring"],
+        "description": "Deploy to production environment"
+      },
+      {
+        "phase": "quality_review",
+        "phase_name": "Quality Review Phase",
+        "required_roles": ["QA Director", "Project Manager"],
+        "optional_roles": ["Technical Lead"],
+        "parallel": false,
+        "deliverables": ["quality_assessment", "test_coverage_report", "go_no_go_decision"],
+        "description": "Final quality review including test coverage analysis"
+      },
+      {
+        "phase": "documentation",
+        "phase_name": "Documentation Phase",
+        "required_roles": ["Technical Writer"],
+        "optional_roles": [],
+        "parallel": true,
+        "deliverables": ["user_docs", "api_docs", "test_docs", "maintenance_guide"],
+        "description": "Create comprehensive documentation"
+      }
+    ]
+  },
+  "ui_ux_project": {
+    "name": "UI/UX Design Project",
+    "phases": [
+      {
+        "phase": "research",
+        "phase_name": "Research Phase",
+        "required_roles": ["UI/UX Designer"],
+        "optional_roles": ["Project Manager"],
+        "parallel": false,
+        "deliverables": ["user_research", "personas", "requirements"],
+        "description": "Conduct user research and define requirements"
+      },
+      {
+        "phase": "design",
+        "phase_name": "Design Phase",
+        "required_roles": ["UI/UX Designer"],
+        "optional_roles": [],
+        "parallel": false,
+        "deliverables": ["wireframes", "mockups", "design_system"],
+        "description": "Create visual designs and design system"
+      },
+      {
+        "phase": "prototyping",
+        "phase_name": "Prototyping Phase",
+        "required_roles": ["UI/UX Designer"],
+        "optional_roles": ["Senior Developer"],
+        "parallel": false,
+        "deliverables": ["interactive_prototype", "usability_tests"],
+        "description": "Build interactive prototypes"
+      },
+      {
+        "phase": "test_writing",
+        "phase_name": "Test Writing Phase",
+        "required_roles": ["QA Engineer"],
+        "optional_roles": ["Senior Developer"],
+        "parallel": false,
+        "deliverables": ["ui_tests", "accessibility_tests", "visual_regression_tests"],
+        "description": "Write UI/UX tests before implementation"
+      },
+      {
+        "phase": "implementation",
+        "phase_name": "Implementation Phase",
+        "required_roles": ["Senior Developer"],
+        "optional_roles": ["Junior Developer"],
+        "parallel": true,
+        "deliverables": ["frontend_code", "responsive_design", "accessibility", "passing_tests"],
+        "description": "Implement UI with all tests passing"
+      },
+      {
+        "phase": "quality_review",
+        "phase_name": "Quality Review Phase",
+        "required_roles": ["Project Manager", "UI/UX Designer"],
+        "optional_roles": ["Technical Lead"],
+        "parallel": false,
+        "deliverables": ["quality_assessment", "usability_report", "test_results"],
+        "description": "Review implementation quality and test results"
+      },
+      {
+        "phase": "documentation",
+        "phase_name": "Documentation Phase",
+        "required_roles": ["Technical Writer"],
+        "optional_roles": ["UI/UX Designer"],
+        "parallel": true,
+        "deliverables": ["style_guide", "component_docs", "usage_guidelines"],
+        "description": "Document UI components and usage"
+      }
+    ]
+  },
+  "infrastructure_project": {
+    "name": "Infrastructure Project",
+    "phases": [
+      {
+        "phase": "planning",
+        "phase_name": "Planning Phase",
+        "required_roles": ["DevOps Engineer"],
+        "optional_roles": ["Site Reliability Engineer"],
+        "parallel": false,
+        "deliverables": ["infrastructure_plan", "requirements", "architecture"],
+        "description": "Plan infrastructure requirements"
+      },
+      {
+        "phase": "security_review",
+        "phase_name": "Security Review Phase",
+        "required_roles": ["Security Engineer"],
+        "optional_roles": ["DevOps Engineer"],
+        "parallel": false,
+        "deliverables": ["security_assessment", "compliance_report", "recommendations"],
+        "description": "Review security requirements"
+      },
+      {
+        "phase": "test_writing",
+        "phase_name": "Test Writing Phase",
+        "required_roles": ["DevOps Engineer", "QA Engineer"],
+        "optional_roles": ["Site Reliability Engineer"],
+        "parallel": true,
+        "deliverables": ["infrastructure_tests", "compliance_tests", "performance_tests"],
+        "description": "Write infrastructure as code tests"
+      },
+      {
+        "phase": "implementation",
+        "phase_name": "Implementation Phase",
+        "required_roles": ["DevOps Engineer"],
+        "optional_roles": ["Site Reliability Engineer"],
+        "parallel": false,
+        "deliverables": ["infrastructure_code", "configurations", "passing_tests"],
+        "description": "Implement infrastructure with all tests passing"
+      },
+      {
+        "phase": "monitoring",
+        "phase_name": "Monitoring Setup Phase",
+        "required_roles": ["Site Reliability Engineer"],
+        "optional_roles": ["DevOps Engineer"],
+        "parallel": true,
+        "deliverables": ["monitoring_setup", "alerts", "dashboards"],
+        "description": "Set up monitoring and alerting"
+      },
+      {
+        "phase": "documentation",
+        "phase_name": "Documentation Phase",
+        "required_roles": ["Technical Writer"],
+        "optional_roles": ["DevOps Engineer"],
+        "parallel": true,
+        "deliverables": ["runbooks", "architecture_docs", "disaster_recovery"],
+        "description": "Document infrastructure and procedures"
+      }
+    ]
+  },
+  "testing_project": {
+    "name": "Testing & Quality Project",
+    "phases": [
+      {
+        "phase": "test_planning",
+        "phase_name": "Test Planning Phase",
+        "required_roles": ["QA Director"],
+        "optional_roles": ["QA Engineer"],
+        "parallel": false,
+        "deliverables": ["test_strategy", "test_plan", "quality_metrics"],
+        "description": "Define testing strategy and plan"
+      },
+      {
+        "phase": "test_writing",
+        "phase_name": "Test Writing Phase",
+        "required_roles": ["QA Engineer", "Test Engineer"],
+        "optional_roles": [],
+        "parallel": true,
+        "deliverables": ["test_suites", "test_cases", "test_data"],
+        "description": "Write comprehensive test suites"
+      },
+      {
+        "phase": "test_automation",
+        "phase_name": "Test Automation Phase",
+        "required_roles": ["Test Engineer"],
+        "optional_roles": ["Senior Developer"],
+        "parallel": true,
+        "deliverables": ["automated_tests", "ci_integration", "test_reports"],
+        "description": "Automate test execution"
+      },
+      {
+        "phase": "test_execution",
+        "phase_name": "Test Execution Phase",
+        "required_roles": ["QA Engineer", "Test Engineer"],
+        "optional_roles": [],
+        "parallel": true,
+        "deliverables": ["test_results", "bug_reports", "coverage_report"],
+        "description": "Execute all tests and report results"
+      },
+      {
+        "phase": "quality_assessment",
+        "phase_name": "Quality Assessment Phase",
+        "required_roles": ["QA Director"],
+        "optional_roles": ["Project Manager"],
+        "parallel": false,
+        "deliverables": ["quality_report", "recommendations", "sign_off"],
+        "description": "Assess overall quality and provide recommendations"
+      }
+    ]
+  }
+}

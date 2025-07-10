@@ -619,8 +619,12 @@ execute_corporate_workflow() {
                     if [ -n "$employee_id" ]; then
                         local task_prompt="Execute $phase_name phase for the current project. 
                         
-Read @system/todo.md for current tasks and @system/memory.md for context.
+Read @todo.md for current tasks and @memory.md for context.
 Follow your role-specific responsibilities for this phase.
+
+CRITICAL PHASE-SPECIFIC INSTRUCTIONS:
+$(get_phase_instructions "$phase_name")
+
 Update documentation with your progress when complete."
                         
                         execute_employee_task "$employee_id" "$phase_name phase" "$task_prompt"
@@ -639,8 +643,12 @@ Update documentation with your progress when complete."
                             echo -e "${BLUE}Auto-assigning $first_employee for role $role${NC}"
                             local task_prompt="Execute $phase_name phase for the current project as $role.
                             
-Read @system/todo.md for current tasks and @system/memory.md for context.
+Read @todo.md for current tasks and @memory.md for context.
 Follow your role-specific responsibilities for this phase.
+
+CRITICAL PHASE-SPECIFIC INSTRUCTIONS:
+$(get_phase_instructions "$phase_name")
+
 Update documentation with your progress when complete."
                             
                             execute_employee_task "$first_employee" "$phase_name phase" "$task_prompt"
@@ -685,10 +693,65 @@ monitor_corporate_workflow() {
     fi
 }
 
+# Get phase-specific instructions for better execution
+get_phase_instructions() {
+    local phase_name="$1"
+    
+    case "$phase_name" in
+        "Test Writing Phase")
+            echo "- Write comprehensive tests BEFORE any implementation exists
+- Tests should define the expected behavior and MUST fail initially
+- Include unit tests for individual functions/components
+- Include integration tests for component interactions
+- Include end-to-end tests for complete user workflows
+- Use proper test frameworks (Jest, Mocha, PyTest, etc.)
+- Document what each test is testing and why
+- DO NOT write any implementation code in this phase"
+            ;;
+        "Development Phase")
+            echo "- Run ALL tests first to see what needs to be implemented
+- Implement code to make ALL tests pass - DO NOT STOP until all tests are green
+- Run tests frequently during development (after each change)
+- Fix any test failures immediately before continuing
+- Do not modify tests to make them pass - fix the implementation instead
+- Commit only when ALL tests pass
+- Include the test results in your final report"
+            ;;
+        "Testing & QA Phase")
+            echo "- Run ALL test suites (unit, integration, e2e)
+- Verify test coverage is comprehensive (aim for >80%)
+- Perform additional manual testing beyond automated tests
+- Document any bugs found with reproduction steps
+- Run performance tests if applicable
+- Verify all quality metrics are met
+- ALL tests must pass before marking phase complete"
+            ;;
+        "Quality Review Phase")
+            echo "- Review test coverage reports
+- Ensure all tests are passing
+- Verify code meets quality standards
+- Check that TDD process was followed
+- Review test quality and completeness
+- Make go/no-go decision based on test results"
+            ;;
+        *)
+            echo "- Follow standard procedures for this phase
+- Maintain high quality standards
+- Document all decisions and progress"
+            ;;
+    esac
+}
+
 # Corporate task selection based on current project
 get_corporate_task_from_todo() {
-    if [ -f "system/todo.md" ]; then
+    if [ -f "todo.md" ]; then
         # Get first incomplete task
+        local first_task=$(grep -n "\[\s*\]" todo.md | head -1)
+        if [ -n "$first_task" ]; then
+            echo "$first_task" | cut -d':' -f2- | sed 's/^[ \t]*\[\s*\]\s*//'
+        fi
+    elif [ -f "system/todo.md" ]; then
+        # Fallback to system/todo.md for backward compatibility
         local first_task=$(grep -n "\[\s*\]" system/todo.md | head -1)
         if [ -n "$first_task" ]; then
             echo "$first_task" | cut -d':' -f2- | sed 's/^[ \t]*\[\s*\]\s*//'

@@ -32,6 +32,14 @@ class WorkflowRouter {
 
     loadWorkflows() {
         try {
+            // First try to load enhanced workflow definitions
+            const enhancedPath = path.join(__dirname, 'workflow-definitions-enhanced.json');
+            if (fs.existsSync(enhancedPath)) {
+                const data = fs.readFileSync(enhancedPath, 'utf8');
+                return JSON.parse(data);
+            }
+            
+            // Fall back to regular workflow definitions
             const data = fs.readFileSync(this.workflowsPath, 'utf8');
             return JSON.parse(data);
         } catch (error) {

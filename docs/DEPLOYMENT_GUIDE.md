@@ -1,27 +1,28 @@
-# AI Company Memory System - Deployment Guide
+# Multi-Agent Dashboard System - Deployment Guide
 
 ## Overview
 
-This guide provides comprehensive instructions for deploying the AI Company Memory System, including infrastructure setup, configuration, and monitoring procedures.
+This guide provides comprehensive instructions for deploying the Multi-Agent Dashboard System, including backend API services, frontend dashboard, and all supporting infrastructure components.
 
 ## Prerequisites
 
 ### System Requirements
 - **Node.js**: Version 18.x or higher
 - **npm**: Version 9.x or higher
-- **Redis**: Version 6.x or higher (for caching)
+- **Redis**: Version 6.x or higher (for task queue)
 - **Docker**: Version 20.x or higher (optional, for containerized deployment)
 - **Docker Compose**: Version 2.x or higher (optional)
+- **Claude Code CLI**: Latest version installed and configured
 
 ### External Services
-- **Pinecone Account**: Vector database service
+- **Pinecone Account**: Vector database service (for Memory API)
 - **OpenAI API Key**: For embedding generation (optional but recommended)
 
 ### Hardware Requirements
-- **CPU**: 2+ cores recommended
-- **Memory**: 4GB RAM minimum, 8GB recommended
-- **Storage**: 10GB available space
-- **Network**: Stable internet connection for API calls
+- **CPU**: 4+ cores recommended (for concurrent Claude processes)
+- **Memory**: 8GB RAM minimum, 16GB recommended
+- **Storage**: 20GB available space
+- **Network**: Stable internet connection for API calls and Claude Code
 
 ## Environment Setup
 
@@ -29,22 +30,71 @@ This guide provides comprehensive instructions for deploying the AI Company Memo
 
 ```bash
 # Navigate to project directory
-cd /path/to/ai-company-memory-system
+cd /path/to/multi-agent-dashboard
 
-# Install production dependencies
+# Install dashboard backend dependencies
+cd dashboard/backend
 npm ci --only=production
 
-# Or install all dependencies for development
-npm install
+# Install dashboard frontend dependencies
+cd ../frontend
+npm ci --only=production
+
+# Install Memory API dependencies (if not already running)
+cd ../../
+npm ci --only=production
 ```
 
 ### 2. Environment Configuration
 
+#### Dashboard Backend Environment (.env)
+Create a `.env` file in `dashboard/backend/`:
+
+```bash
+# API Configuration
+PORT=8080
+NODE_ENV=production
+LOG_LEVEL=info
+
+# Memory API Integration
+MEMORY_API_URL=http://localhost:3333
+API_BRIDGE_URL=http://localhost:3002
+
+# Redis Configuration (for task queue)
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+REDIS_DB=0
+
+# WebSocket Configuration
+FRONTEND_URL=http://localhost:3000
+WEBSOCKET_CORS_ORIGIN=*
+
+# Claude Code Configuration
+CLAUDE_CODE_PATH=claude
+CLAUDE_CODE_TIMEOUT=300000
+MAX_CONCURRENT_PROCESSES=20
+```
+
+#### Frontend Environment (.env)
+Create a `.env` file in `dashboard/frontend/`:
+
+```bash
+# API Configuration
+VITE_API_URL=http://localhost:8080
+VITE_WS_URL=ws://localhost:8080
+
+# UI Configuration
+VITE_APP_TITLE=Multi-Agent Dashboard
+VITE_REFRESH_INTERVAL=5000
+```
+
+#### Memory API Environment (.env)
 Create a `.env` file in the project root:
 
 ```bash
 # API Configuration
-API_PORT=3000
+API_PORT=3333
 CORS_ORIGIN=*
 LOG_LEVEL=info
 
@@ -91,8 +141,21 @@ ENCRYPTION_KEY=your_32_character_encryption_key_here
 # Start Redis server
 redis-server --daemonize yes
 
-# Start the Memory System API
-npm start
+# Start Memory API (in background)
+cd /path/to/project
+npm start &
+
+# Start API Bridge (if not already running)
+cd api-bridge
+node server.js &
+
+# Start Dashboard Backend
+cd dashboard/backend
+npm run dev &
+
+# Start Dashboard Frontend
+cd ../frontend
+npm run dev
 ```
 
 ### Option 2: Production Deployment with PM2
@@ -101,20 +164,22 @@ npm start
 # Install PM2 globally
 npm install -g pm2
 
-# Start services with PM2
+# Start all services with PM2
 pm2 start ecosystem.config.js
 
 # Monitor services
 pm2 monit
 
 # View logs
-pm2 logs memory-system
+pm2 logs dashboard-backend
+pm2 logs memory-api
+pm2 logs api-bridge
 ```
 
 ### Option 3: Docker Deployment
 
 ```bash
-# Build and start services
+# Build and start all services
 docker-compose up -d
 
 # View logs
@@ -132,11 +197,14 @@ Use the provided deployment script:
 # Make script executable
 chmod +x deploy.sh
 
-# Run deployment
+# Run full deployment
 ./deploy.sh
 
 # For Docker deployment
 DEPLOYMENT_MODE=docker ./deploy.sh
+
+# For production deployment
+DEPLOYMENT_MODE=production ./deploy.sh
 ```
 
 ## Configuration Files
@@ -145,23 +213,59 @@ DEPLOYMENT_MODE=docker ./deploy.sh
 
 ```javascript
 module.exports = {
-  apps: [{
-    name: 'memory-system',
-    script: 'src/index.js',
-    instances: 'max',
-    exec_mode: 'cluster',
-    env: {
-      NODE_ENV: 'production',
-      API_PORT: 3000
+  apps: [
+    {
+      name: 'dashboard-backend',
+      script: 'dashboard/backend/src/index.js',
+      instances: 1,
+      exec_mode: 'fork',
+      env: {
+        NODE_ENV: 'production',
+        PORT: 8080
+      },
+      error_file: './logs/dashboard-backend-error.log',
+      out_file: './logs/dashboard-backend-out.log',
+      log_file: './logs/dashboard-backend-combined.log',
+      max_memory_restart: '2G',
+      restart_delay: 1000,
+      max_restarts: 10,
+      min_uptime: '10s'
     },
-    error_file: './logs/pm2-error.log',
-    out_file: './logs/pm2-out.log',
-    log_file: './logs/pm2-combined.log',
-    max_memory_restart: '1G',
-    restart_delay: 1000,
-    max_restarts: 10,
-    min_uptime: '10s'
-  }]
+    {
+      name: 'memory-api',
+      script: 'src/index.js',
+      instances: 1,
+      exec_mode: 'fork',
+      env: {
+        NODE_ENV: 'production',
+        API_PORT: 3333
+      },
+      error_file: './logs/memory-api-error.log',
+      out_file: './logs/memory-api-out.log',
+      log_file: './logs/memory-api-combined.log',
+      max_memory_restart: '1G',
+      restart_delay: 1000,
+      max_restarts: 10,
+      min_uptime: '10s'
+    },
+    {
+      name: 'api-bridge',
+      script: 'api-bridge/server.js',
+      instances: 1,
+      exec_mode: 'fork',
+      env: {
+        NODE_ENV: 'production',
+        PORT: 3002
+      },
+      error_file: './logs/api-bridge-error.log',
+      out_file: './logs/api-bridge-out.log',
+      log_file: './logs/api-bridge-combined.log',
+      max_memory_restart: '512M',
+      restart_delay: 1000,
+      max_restarts: 10,
+      min_uptime: '10s'
+    }
+  ]
 };
 ```
 

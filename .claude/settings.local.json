@@ -104,7 +104,10 @@
       "Bash(do echo \"Employee $emp:\")",
       "Bash(./start.sh:*)",
       "Bash(tree:*)",
-      "Bash(do echo \"Testing port $port:\")"
+      "Bash(do echo \"Testing port $port:\")",
+      "Bash(./node_modules/.bin/vite:*)",
+      "Bash(npm:*)",
+      "Bash(sudo rm:*)"
     ],
     "deny": []
   }

@@ -1,11 +1,732 @@
-# AI Company Memory System API Documentation
+# Multi-Agent Dashboard API Documentation
 
 ## Overview
-
-The AI Company Memory System provides a comprehensive REST API for managing AI employee memories, enabling persistent context, knowledge sharing, and intelligent task assistance through vector-based semantic search.
+The Multi-Agent Dashboard API provides comprehensive endpoints for managing Claude Code processes, tasks, and AI employees in a distributed system. This RESTful API enables real-time monitoring, task distribution, and multi-agent coordination.
 
 ## Base URL
+```
+http://localhost:8080
+```
 
+## Authentication
+Currently, the API operates without authentication. This is suitable for development environments but should be secured for production use.
+
+## Response Format
+All API responses follow a consistent format:
+
+```json
+{
+  "success": boolean,
+  "data": any,
+  "error": string | undefined
+}
+```
+
+## Rate Limiting
+- Process management: 100 requests per minute
+- Task operations: 200 requests per minute
+- Employee queries: 500 requests per minute
+
+## Error Handling
+The API returns appropriate HTTP status codes:
+- `200` - Success
+- `201` - Created
+- `400` - Bad Request
+- `404` - Not Found
+- `500` - Internal Server Error
+
+---
+
+## Process Management Endpoints
+
+### GET /processes
+Retrieve all Claude Code processes.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "process_123",
+      "config": {
+        "role": "developer",
+        "systemPrompt": "You are a senior developer...",
+        "allowedTools": ["Bash", "Edit", "Write"],
+        "maxTurns": 20,
+        "workingDirectory": "/workspace"
+      },
+      "status": "running",
+      "createdAt": "2025-07-09T18:20:25.000Z",
+      "startedAt": "2025-07-09T18:20:26.000Z",
+      "employeeId": "emp_004",
+      "pid": 12345
+    }
+  ]
+}
+```
+
+### GET /processes/:id
+Retrieve a specific process by ID.
+
+**Parameters:**
+- `id` (string) - Process ID
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "process_123",
+    "status": "running",
+    "config": { ... },
+    "createdAt": "2025-07-09T18:20:25.000Z",
+    "employeeId": "emp_004"
+  }
+}
+```
+
+### POST /processes
+Create a new Claude Code process.
+
+**Request Body:**
+```json
+{
+  "role": "developer",
+  "systemPrompt": "You are a senior developer...",
+  "allowedTools": ["Bash", "Edit", "Write", "Read"],
+  "maxTurns": 20,
+  "workingDirectory": "/workspace",
+  "employeeId": "emp_004"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "processId": "process_123"
+  }
+}
+```
+
+### POST /processes/:id/stop
+Stop a running process.
+
+**Parameters:**
+- `id` (string) - Process ID
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Process stopped"
+}
+```
+
+### POST /processes/:id/restart
+Restart a stopped process.
+
+**Parameters:**
+- `id` (string) - Process ID
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Process restarted"
+}
+```
+
+### GET /processes/:id/logs
+Retrieve process logs.
+
+**Parameters:**
+- `id` (string) - Process ID
+- `limit` (query, optional) - Number of log entries (default: 100)
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "timestamp": "2025-07-09T18:20:25.000Z",
+      "level": "info",
+      "message": "Process started",
+      "processId": "process_123"
+    }
+  ]
+}
+```
+
+---
+
+## Task Management Endpoints
+
+### GET /tasks
+Retrieve all tasks.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "task_456",
+      "title": "Implement authentication",
+      "description": "Add JWT authentication to API",
+      "status": "pending",
+      "priority": "high",
+      "requiredSkills": ["nodejs", "authentication"],
+      "createdAt": "2025-07-09T18:20:25.000Z",
+      "assignedTo": null,
+      "estimatedDuration": 7200000
+    }
+  ]
+}
+```
+
+### GET /tasks/:id
+Retrieve a specific task by ID.
+
+**Parameters:**
+- `id` (string) - Task ID
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "task_456",
+    "title": "Implement authentication",
+    "status": "in_progress",
+    "assignedTo": "emp_004",
+    "processId": "process_123",
+    "startedAt": "2025-07-09T18:20:30.000Z"
+  }
+}
+```
+
+### POST /tasks
+Create a new task.
+
+**Request Body:**
+```json
+{
+  "title": "Implement authentication",
+  "description": "Add JWT authentication to API",
+  "priority": "high",
+  "requiredSkills": ["nodejs", "authentication"],
+  "estimatedDuration": 7200000,
+  "data": {
+    "files": ["/src/auth.js"],
+    "requirements": "Use JWT tokens"
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "taskId": "task_456"
+  }
+}
+```
+
+### POST /tasks/:id/assign
+Assign a task to an employee.
+
+**Parameters:**
+- `id` (string) - Task ID
+
+**Request Body:**
+```json
+{
+  "employeeId": "emp_004"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Task assigned"
+}
+```
+
+### DELETE /tasks/:id
+Cancel a task.
+
+**Parameters:**
+- `id` (string) - Task ID
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Task cancelled"
+}
+```
+
+---
+
+## Employee Management Endpoints
+
+### GET /employees
+Retrieve all AI employees.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "emp_004",
+      "name": "Sam Senior Developer",
+      "department": "Development",
+      "skills": ["nodejs", "typescript", "react"],
+      "status": "available",
+      "currentWorkload": 45,
+      "maxWorkload": 100,
+      "currentProjects": ["proj_001"],
+      "performance": {
+        "tasksCompleted": 23,
+        "averageCompletionTime": 5400000,
+        "successRate": 0.95
+      }
+    }
+  ]
+}
+```
+
+### GET /employees/:id
+Retrieve a specific employee by ID.
+
+**Parameters:**
+- `id` (string) - Employee ID
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "emp_004",
+    "name": "Sam Senior Developer",
+    "status": "busy",
+    "currentWorkload": 75,
+    "currentProjects": ["proj_001", "proj_002"]
+  }
+}
+```
+
+### GET /employees/department/:department
+Retrieve employees by department.
+
+**Parameters:**
+- `department` (string) - Department name
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "emp_004",
+      "name": "Sam Senior Developer",
+      "department": "Development",
+      "status": "available"
+    }
+  ]
+}
+```
+
+### GET /employees/skill/:skill
+Retrieve employees by skill.
+
+**Parameters:**
+- `skill` (string) - Skill name
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "emp_004",
+      "name": "Sam Senior Developer",
+      "skills": ["nodejs", "typescript", "react"],
+      "status": "available"
+    }
+  ]
+}
+```
+
+### GET /employees/available
+Retrieve available employees only.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "emp_004",
+      "name": "Sam Senior Developer",
+      "currentWorkload": 45,
+      "status": "available"
+    }
+  ]
+}
+```
+
+### POST /employees/:id/workload
+Update employee workload.
+
+**Parameters:**
+- `id` (string) - Employee ID
+
+**Request Body:**
+```json
+{
+  "workload": 65
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Workload updated"
+}
+```
+
+### POST /employees/:id/status
+Update employee status.
+
+**Parameters:**
+- `id` (string) - Employee ID
+
+**Request Body:**
+```json
+{
+  "status": "busy"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Status updated"
+}
+```
+
+### POST /employees/:id/assign-project
+Assign a project to an employee.
+
+**Parameters:**
+- `id` (string) - Employee ID
+
+**Request Body:**
+```json
+{
+  "projectId": "proj_003"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Project assigned"
+}
+```
+
+### POST /employees/find-best-match
+Find the best employee for a task.
+
+**Request Body:**
+```json
+{
+  "requiredSkills": ["nodejs", "authentication"],
+  "priority": "high"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "employee": {
+      "id": "emp_004",
+      "name": "Sam Senior Developer",
+      "matchScore": 0.92,
+      "estimatedWaitTime": 1800000
+    },
+    "recommendation": {
+      "score": 0.92,
+      "reasons": ["High skill match", "Available immediately", "Good performance history"]
+    }
+  }
+}
+```
+
+### GET /departments
+Retrieve all departments.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "name": "Development",
+      "employeeCount": 4,
+      "averageWorkload": 62.5
+    },
+    {
+      "name": "Operations",
+      "employeeCount": 3,
+      "averageWorkload": 48.3
+    }
+  ]
+}
+```
+
+### GET /departments/:department/stats
+Retrieve department statistics.
+
+**Parameters:**
+- `department` (string) - Department name
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "name": "Development",
+    "employeeCount": 4,
+    "averageWorkload": 62.5,
+    "totalCapacity": 400,
+    "utilization": 0.625,
+    "availableEmployees": 2
+  }
+}
+```
+
+---
+
+## Statistics Endpoints
+
+### GET /stats/processes
+Retrieve process statistics.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "total": 8,
+    "running": 5,
+    "stopped": 2,
+    "errored": 1
+  }
+}
+```
+
+### GET /stats/tasks
+Retrieve task statistics.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "pending": 12,
+    "inProgress": 5,
+    "completed": 23,
+    "failed": 2
+  }
+}
+```
+
+### GET /stats/queue
+Retrieve queue statistics.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "waiting": 12,
+    "active": 5,
+    "completed": 23,
+    "failed": 2,
+    "delayed": 1,
+    "paused": 0
+  }
+}
+```
+
+---
+
+## WebSocket Events
+
+The API also provides real-time updates via WebSocket connections on the same port.
+
+### Connection
+```javascript
+const socket = io('http://localhost:8080');
+```
+
+### Event Types
+
+#### Process Events
+- `process_update` - Process status changes
+- `log_stream` - Real-time log output
+
+#### Task Events
+- `task_update` - Task status changes
+- `task_assigned` - Task assignment updates
+
+#### Employee Events
+- `agents_update` - Employee status changes
+- `employee_stats` - Performance metric updates
+
+#### System Events
+- `system_metrics` - System health metrics (every 5 seconds)
+
+### Example WebSocket Usage
+```javascript
+// Subscribe to process updates
+socket.emit('subscribe_process', 'process_123');
+
+// Listen for log streams
+socket.on('log_stream', (data) => {
+  console.log(`[${data.processId}] ${data.logEntry.message}`);
+});
+
+// Listen for system metrics
+socket.on('system_metrics', (metrics) => {
+  console.log('System health:', metrics);
+});
+```
+
+---
+
+## Integration Examples
+
+### Starting a Development Task
+```javascript
+// 1. Find the best developer
+const response = await fetch('/employees/find-best-match', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    requiredSkills: ['nodejs', 'react'],
+    priority: 'high'
+  })
+});
+const { data: bestMatch } = await response.json();
+
+// 2. Create the task
+const taskResponse = await fetch('/tasks', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    title: 'Build user dashboard',
+    description: 'Create React dashboard for user management',
+    priority: 'high',
+    requiredSkills: ['nodejs', 'react'],
+    estimatedDuration: 14400000
+  })
+});
+const { data: task } = await taskResponse.json();
+
+// 3. Assign the task
+await fetch(`/tasks/${task.taskId}/assign`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    employeeId: bestMatch.employee.id
+  })
+});
+```
+
+### Monitoring System Health
+```javascript
+// Get overall system statistics
+const [processStats, taskStats, employees] = await Promise.all([
+  fetch('/stats/processes').then(r => r.json()),
+  fetch('/stats/tasks').then(r => r.json()),
+  fetch('/employees').then(r => r.json())
+]);
+
+console.log('System Health:', {
+  processes: processStats.data,
+  tasks: taskStats.data,
+  employees: employees.data.length
+});
+```
+
+---
+
+## Error Codes and Troubleshooting
+
+### Common Error Responses
+
+#### 404 - Resource Not Found
+```json
+{
+  "success": false,
+  "error": "Process not found"
+}
+```
+
+#### 500 - Internal Server Error
+```json
+{
+  "success": false,
+  "error": "Failed to create process: spawn ENOENT"
+}
+```
+
+### Troubleshooting Tips
+
+1. **Process Creation Fails**: Ensure Claude Code CLI is installed and accessible
+2. **Task Assignment Errors**: Verify employee exists and has required skills
+3. **WebSocket Connection Issues**: Check CORS settings and firewall rules
+4. **Performance Degradation**: Monitor system metrics endpoint for resource usage
+
+---
+
+## Rate Limits and Performance
+
+### Request Limits
+- **Process Management**: 100 requests/minute
+- **Task Operations**: 200 requests/minute  
+- **Employee Queries**: 500 requests/minute
+
+### Performance Targets
+- **API Response Time**: < 200ms for all endpoints
+- **WebSocket Latency**: < 50ms for real-time updates
+- **Process Startup Time**: < 3 seconds for Claude Code processes
+
+### Monitoring
+Use the `/stats/*` endpoints to monitor system performance and capacity planning.
+
+---
+
+## AI Company Memory System API
+
+The dashboard integrates with the AI Company Memory System API for persistent context management.
+
+### Base URL
 ```
 http://localhost:3333
 ```

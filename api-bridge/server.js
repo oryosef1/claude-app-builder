@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import winston from 'winston';
-import WebSocket from 'ws';
+import { WebSocketServer } from 'ws';
 import http from 'http';
 import net from 'net';
 import { writeFileSync } from 'fs';
@@ -36,7 +36,7 @@ const logger = winston.createLogger({
 
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocketServer({ server });
 
 // Rate limiting - Increased for dashboard usage
 const limiter = rateLimit({

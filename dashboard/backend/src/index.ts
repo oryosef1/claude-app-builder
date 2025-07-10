@@ -8,6 +8,7 @@ import winston from 'winston';
 import fetch from 'node-fetch';
 import { ProcessManager } from './core/ProcessManager.js';
 import { TaskQueue } from './core/TaskQueue.js';
+import { AgentRegistry } from './core/AgentRegistry.js';
 import { DashboardServer, createAPIRouter } from './api/server.js';
 import { AIEmployee } from './types/index.js';
 
@@ -194,12 +195,8 @@ app.get('/api/status', (_req, res) => {
 
 app.get('/api/employees', async (_req, res) => {
   try {
-    const response = await fetch(`${envConfig.API_BRIDGE_URL}/api/employees`);
-    if (!response.ok) {
-      throw new Error(`API Bridge returned ${response.status}`);
-    }
-    const employees = await response.json();
-    res.json(employees);
+    const employees = agentRegistry.getAllEmployees();
+    res.json({ success: true, data: employees });
   } catch (error) {
     logger.error('Failed to fetch employees:', error);
     res.status(500).json({
@@ -211,28 +208,41 @@ app.get('/api/employees', async (_req, res) => {
 
 // Initialize core components
 const processManager = new ProcessManager(logger);
-const taskQueue = new TaskQueue(logger);
-const dashboardServer = new DashboardServer(server, processManager, taskQueue, logger);
+const agentRegistry = new AgentRegistry();
+const taskQueue = new TaskQueue(logger, agentRegistry);
+const dashboardServer = new DashboardServer(server, processManager, taskQueue, agentRegistry, logger);
 
-// Load employees from API Bridge
+// Load employees from Agent Registry
 async function loadEmployees(): Promise<void> {
   try {
-    const response = await fetch(`${envConfig.API_BRIDGE_URL}/api/employees`);
-    if (response.ok) {
-      const employees = await response.json() as AIEmployee[];
-      await processManager.loadEmployees(employees);
-      await taskQueue.loadEmployees(employees);
-      logger.info(`Loaded ${employees.length} employees into system`);
-    } else {
-      logger.warn('Failed to load employees from API Bridge');
-    }
+    const registryEmployees = agentRegistry.getAllEmployees();
+    const aiEmployees: AIEmployee[] = registryEmployees.map(emp => ({
+      id: emp.id,
+      name: emp.name,
+      role: emp.role,
+      department: emp.department,
+      skills: emp.skills,
+      status: emp.status === 'active' ? 'available' : emp.status === 'busy' ? 'busy' : 'offline',
+      performance: {
+        tasksCompleted: emp.performance_metrics['tasks_completed'] || 0,
+        averageResponseTime: emp.performance_metrics['average_response_time'] || 0,
+        successRate: emp.performance_metrics['success_rate'] || 0
+      },
+      systemPrompt: emp.system_prompt_file,
+      tools: [],
+      createdAt: new Date(emp.hire_date),
+      lastActive: new Date()
+    }));
+    await processManager.loadEmployees(aiEmployees);
+    await taskQueue.loadEmployees(aiEmployees);
+    logger.info(`Loaded ${aiEmployees.length} employees into system from Agent Registry`);
   } catch (error) {
     logger.error('Error loading employees:', error);
   }
 }
 
 // Setup API routes
-const apiRouter = createAPIRouter(processManager, taskQueue, logger);
+const apiRouter = createAPIRouter(processManager, taskQueue, agentRegistry, logger);
 app.use('/api', apiRouter);
 
 app.use((req, res) => {

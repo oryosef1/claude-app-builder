@@ -4,6 +4,7 @@ import { Router } from 'express';
 import winston from 'winston';
 import { ProcessManager } from '../core/ProcessManager.js';
 import { TaskQueue } from '../core/TaskQueue.js';
+import { AgentRegistry } from '../core/AgentRegistry.js';
 import { 
   WebSocketMessage, 
   SystemMetrics, 
@@ -15,6 +16,7 @@ export class DashboardServer {
   private io: SocketIOServer;
   private processManager: ProcessManager;
   private taskQueue: TaskQueue;
+  private agentRegistry: AgentRegistry;
   private logger: winston.Logger;
   private connectedClients: Map<string, ClientInfo> = new Map();
   private metricsInterval: NodeJS.Timeout | null = null;
@@ -24,10 +26,12 @@ export class DashboardServer {
     httpServer: HTTPServer,
     processManager: ProcessManager,
     taskQueue: TaskQueue,
+    agentRegistry: AgentRegistry,
     logger: winston.Logger
   ) {
     this.processManager = processManager;
     this.taskQueue = taskQueue;
+    this.agentRegistry = agentRegistry;
     this.logger = logger;
 
     this.io = new SocketIOServer(httpServer, {
@@ -42,6 +46,7 @@ export class DashboardServer {
     this.setupSocketHandlers();
     this.setupProcessManagerListeners();
     this.setupTaskQueueListeners();
+    this.setupAgentRegistryListeners();
     this.startMetricsBroadcast();
   }
 
@@ -94,6 +99,16 @@ export class DashboardServer {
 
       socket.on('request_metrics', () => {
         this.sendSystemMetrics(socket);
+      });
+
+      socket.on('request_employees', () => {
+        const employees = this.agentRegistry.getAllEmployees();
+        socket.emit('employees_data', employees);
+      });
+
+      socket.on('request_employee_stats', () => {
+        const stats = this.agentRegistry.getDepartmentWorkloadStats();
+        socket.emit('employee_stats', stats);
       });
 
       socket.on('process_command', async (data: { processId: string; command: string }) => {
@@ -198,6 +213,56 @@ export class DashboardServer {
     });
   }
 
+  private setupAgentRegistryListeners(): void {
+    this.agentRegistry.on('registry-updated', () => {
+      this.broadcastMessage('agents_update', {
+        type: 'registry_updated',
+        employees: this.agentRegistry.getAllEmployees()
+      });
+    });
+
+    this.agentRegistry.on('workload-updated', (employeeId: string, workload: number) => {
+      this.broadcastMessage('agents_update', {
+        type: 'workload_updated',
+        employeeId,
+        workload
+      });
+    });
+
+    this.agentRegistry.on('status-updated', (employeeId: string, status: string) => {
+      this.broadcastMessage('agents_update', {
+        type: 'status_updated',
+        employeeId,
+        status
+      });
+    });
+
+    this.agentRegistry.on('project-assigned', (employeeId: string, projectId: string) => {
+      this.broadcastMessage('agents_update', {
+        type: 'project_assigned',
+        employeeId,
+        projectId
+      });
+    });
+
+    this.agentRegistry.on('project-removed', (employeeId: string, projectId: string) => {
+      this.broadcastMessage('agents_update', {
+        type: 'project_removed',
+        employeeId,
+        projectId
+      });
+    });
+
+    this.agentRegistry.on('performance-updated', (employeeId: string, metric: string, value: number) => {
+      this.broadcastMessage('agents_update', {
+        type: 'performance_updated',
+        employeeId,
+        metric,
+        value
+      });
+    });
+  }
+
   private startMetricsBroadcast(): void {
     this.metricsInterval = setInterval(() => {
       this.broadcastSystemMetrics();
@@ -217,6 +282,8 @@ export class DashboardServer {
   private async collectSystemMetrics(): Promise<SystemMetrics> {
     const processStats = this.processManager.getProcessStats();
     const taskStats = this.taskQueue.getTaskStats();
+    const employees = this.agentRegistry.getAllEmployees();
+    const availableEmployees = this.agentRegistry.getAvailableEmployees();
 
     return {
       timestamp: new Date(),
@@ -238,10 +305,10 @@ export class DashboardServer {
         uptime: process.uptime()
       },
       employees: {
-        total: 0, // Will be populated when employees are loaded
-        available: 0,
-        busy: 0,
-        offline: 0
+        total: employees.length,
+        available: availableEmployees.length,
+        busy: employees.filter(emp => emp.status === 'busy').length,
+        offline: employees.filter(emp => emp.status === 'inactive').length
       }
     };
   }
@@ -289,6 +356,7 @@ export class DashboardServer {
 export function createAPIRouter(
   processManager: ProcessManager,
   taskQueue: TaskQueue,
+  agentRegistry: AgentRegistry,
   logger: winston.Logger
 ): Router {
   const router = Router();
@@ -443,6 +511,163 @@ export function createAPIRouter(
       res.json({ success: true, message: 'Task cancelled' });
     } catch (error) {
       logger.error('Error cancelling task:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  // Employee management endpoints
+  router.get('/employees', (_req, res) => {
+    try {
+      const employees = agentRegistry.getAllEmployees();
+      res.json({ success: true, data: employees });
+    } catch (error) {
+      logger.error('Error getting employees:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  router.get('/employees/:id', (req, res) => {
+    try {
+      const employee = agentRegistry.getEmployeeById(req.params.id);
+      if (!employee) {
+        res.status(404).json({ success: false, error: 'Employee not found' });
+        return;
+      }
+      res.json({ success: true, data: employee });
+    } catch (error) {
+      logger.error('Error getting employee:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  router.get('/employees/department/:department', (req, res) => {
+    try {
+      const employees = agentRegistry.getEmployeesByDepartment(req.params.department);
+      res.json({ success: true, data: employees });
+    } catch (error) {
+      logger.error('Error getting employees by department:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  router.get('/employees/skill/:skill', (req, res) => {
+    try {
+      const employees = agentRegistry.getEmployeesBySkill(req.params.skill);
+      res.json({ success: true, data: employees });
+    } catch (error) {
+      logger.error('Error getting employees by skill:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  router.get('/employees/available', (_req, res) => {
+    try {
+      const employees = agentRegistry.getAvailableEmployees();
+      res.json({ success: true, data: employees });
+    } catch (error) {
+      logger.error('Error getting available employees:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  router.post('/employees/:id/workload', (req, res) => {
+    try {
+      const { workload } = req.body;
+      agentRegistry.updateEmployeeWorkload(req.params.id, workload);
+      res.json({ success: true, message: 'Workload updated' });
+    } catch (error) {
+      logger.error('Error updating employee workload:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  router.post('/employees/:id/status', (req, res) => {
+    try {
+      const { status } = req.body;
+      agentRegistry.updateEmployeeStatus(req.params.id, status);
+      res.json({ success: true, message: 'Status updated' });
+    } catch (error) {
+      logger.error('Error updating employee status:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  router.post('/employees/:id/assign-project', (req, res) => {
+    try {
+      const { projectId } = req.body;
+      agentRegistry.assignProject(req.params.id, projectId);
+      res.json({ success: true, message: 'Project assigned' });
+    } catch (error) {
+      logger.error('Error assigning project:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  router.post('/employees/find-best-match', (req, res) => {
+    try {
+      const { requiredSkills, priority } = req.body;
+      const employee = agentRegistry.findBestEmployeeForTask(requiredSkills, priority);
+      res.json({ success: true, data: employee });
+    } catch (error) {
+      logger.error('Error finding best employee match:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  router.get('/departments', (_req, res) => {
+    try {
+      const departments = agentRegistry.getDepartments();
+      res.json({ success: true, data: departments });
+    } catch (error) {
+      logger.error('Error getting departments:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  router.get('/departments/:department/stats', (req, res) => {
+    try {
+      const stats = agentRegistry.getDepartmentWorkloadStats();
+      const departmentStats = stats[req.params.department];
+      if (!departmentStats) {
+        res.status(404).json({ success: false, error: 'Department not found' });
+        return;
+      }
+      res.json({ success: true, data: departmentStats });
+    } catch (error) {
+      logger.error('Error getting department stats:', error);
       res.status(500).json({ 
         success: false, 
         error: error instanceof Error ? error.message : 'Unknown error' 

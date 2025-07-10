@@ -21,9 +21,9 @@
 
 ### Accessing the Dashboard
 1. Open your web browser
-2. Navigate to `http://localhost:8080` (or your configured URL)
-3. Log in with your credentials
-4. The dashboard will load automatically
+2. Navigate to `http://localhost:3000` (frontend) which connects to `http://localhost:8080` (backend)
+3. The dashboard will load automatically (no authentication required in current version)
+4. Check the connection status indicator in the top-right corner
 
 ### Initial Setup
 1. **First Login**: Contact your system administrator for initial credentials
@@ -66,11 +66,11 @@ The dashboard features a sidebar navigation with six main sections:
 - Export functionality
 - Error tracking
 
-#### ⚙️ **Settings**
-- User preferences
-- System configuration
-- Notification settings
-- Security options
+#### ⚙️ **System**
+- System health monitoring
+- Service status
+- Performance metrics
+- Configuration
 
 ### Dashboard Components
 

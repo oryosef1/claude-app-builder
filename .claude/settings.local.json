@@ -107,7 +107,13 @@
       "Bash(do echo \"Testing port $port:\")",
       "Bash(./node_modules/.bin/vite:*)",
       "Bash(npm:*)",
-      "Bash(sudo rm:*)"
+      "Bash(sudo rm:*)",
+      "Bash(cd:*)",
+      "Bash(cd:*)",
+      "Bash(cd \"/mnt/c/Users/בית/Downloads/poe helper/corporate-prompts\")",
+      "Bash(do echo \"=== $file ===\")",
+      "Bash(do echo -n \"$file: \")",
+      "Bash(./update-memory-sections.sh:*)"
     ],
     "deny": []
   }

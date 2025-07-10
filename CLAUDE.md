@@ -8,6 +8,7 @@
 4. **FOLLOW PROJECT STRUCTURE** - Read @ARCHITECTURE.md and create projects in separate directories (dashboard/, api/, etc.), NEVER mix with system files in root
 5. **Use TDD approach** - Write tests first, then implement features to pass the tests
 6. **Reference system files** - Use @ARCHITECTURE.md, @memory.md, @todo.md, @workflow.md for context
+7. **USE POWERSHELL FOR WINDOWS SERVICES** - When working with Windows services or encountering WSL networking issues, always use PowerShell commands instead of bash/WSL
 
 ## System Overview
 
@@ -333,3 +334,168 @@ The workflow uses Sonnet model by default. If you need a different model, it can
 - **Cross-reference**: Connect related work and mention dependencies
 
 ALWAYS update @memory.md and @todo.md after completing your assigned role!
+
+## PowerShell Usage Guidelines
+
+### When to Use PowerShell Instead of WSL/Bash
+
+1. **Service Management**: Starting, stopping, or testing Windows services (Node.js servers, APIs, etc.)
+2. **Network Testing**: When WSL cannot connect to localhost services running on Windows
+3. **Process Management**: Checking Windows processes, ports, and services
+4. **File Operations**: When dealing with Windows-specific paths or permissions
+
+### Common PowerShell Commands for Development
+
+```powershell
+# Start a Node.js service
+Start-Process node -ArgumentList "src/index.js" -WindowStyle Hidden
+
+# Test API endpoints
+Invoke-WebRequest -Uri http://localhost:3333/health -Method GET
+
+# Send POST requests with JSON
+$body = @{
+    key = "value"
+} | ConvertTo-Json
+Invoke-WebRequest -Uri http://localhost:3333/api/endpoint -Method POST -Body $body -ContentType "application/json"
+
+# Check if port is in use
+netstat -an | Select-String "3333"
+
+# Find Node.js processes
+Get-Process node
+
+# Kill Node.js processes
+Stop-Process -Name node -Force
+```
+
+### WSL to PowerShell Conversion
+
+When encountering WSL networking issues, convert commands:
+
+**WSL/Bash**:
+```bash
+curl http://localhost:3333/health
+```
+
+**PowerShell**:
+```powershell
+Invoke-WebRequest -Uri http://localhost:3333/health -Method GET
+```
+
+**WSL/Bash**:
+```bash
+node src/index.js &
+```
+
+**PowerShell**:
+```powershell
+Start-Process node -ArgumentList "src/index.js" -WindowStyle Hidden
+```
+
+### Testing Services from PowerShell
+
+Always create PowerShell test scripts (.ps1 files) for testing Windows services:
+1. Use proper error handling with try/catch blocks
+2. Format output with Write-Host and colors
+3. Convert JSON responses properly with ConvertFrom-Json
+4. Handle Windows paths correctly
+
+### Important Notes
+
+- WSL cannot reliably connect to Windows localhost services
+- Always test Windows services from PowerShell or Windows Command Prompt
+- Use PowerShell scripts for deployment and testing automation
+- Document PowerShell commands in memory.md for future reference
+
+## Memory Storage Requirements
+
+**IMPORTANT**: The automatic memory storage system has been disabled. All AI employees must manually save important memories after completing significant tasks.
+
+### When to Save Memories
+
+Save memories for:
+- **Important Decisions**: Architecture choices, technology selections, design patterns
+- **Problem Solutions**: How you solved complex issues or bugs  
+- **Learning Experiences**: New techniques, patterns, or approaches discovered
+- **Project Context**: Key requirements, constraints, or business rules
+- **Error Resolutions**: How you fixed specific errors or issues
+- **Best Practices**: Coding standards, patterns, or methodologies adopted
+- **Team Insights**: Important discussions, feedback, or collaboration outcomes
+
+### How to Store Memories
+
+Use PowerShell to store memories to the Memory API (typically on port 3335):
+
+```powershell
+# Store an experience memory
+$memory = @{
+    employeeId = "emp_XXX"  # Your employee ID
+    content = "Detailed description of what you learned or accomplished"
+    context = @{
+        project = "Project name"
+        task = "Task description"
+        technologies = @("Tech1", "Tech2")
+    }
+    metadata = @{
+        importance = 8  # 1-10 scale
+        category = "category_name"
+        tags = @("tag1", "tag2")
+    }
+} | ConvertTo-Json -Depth 10
+
+Invoke-WebRequest -Uri http://localhost:3335/api/memory/experience -Method POST -Body $memory -ContentType "application/json"
+```
+
+### Memory Types
+
+- **experience**: `/api/memory/experience` - Personal experiences, lessons learned, problem-solving approaches
+- **knowledge**: `/api/memory/knowledge` - Technical facts, documentation, how-to guides, best practices
+- **decision**: `/api/memory/decision` - Architecture decisions, technology choices, design rationale
+
+### Best Practices
+
+1. **Save Promptly**: Store memories immediately after completing significant tasks
+2. **Be Specific**: Include code snippets, error messages, and specific solutions
+3. **Add Context**: Always include project name, task description, and relevant background
+4. **Set Importance**: Use 7-10 for significant items, 4-6 for useful info, 1-3 for minor details
+5. **Use Categories**: Maintain consistent categories (bug_fix, architecture_decision, performance_optimization, etc.)
+
+### Example Memory Storage Scenarios
+
+#### After Solving a Complex Bug:
+```powershell
+$memory = @{
+    employeeId = "emp_004"
+    content = "Fixed WebSocket disconnection issue by implementing heartbeat mechanism and proper error handling"
+    context = @{
+        bug_description = "WebSocket connections dropping after 60 seconds of inactivity"
+        root_cause = "Missing heartbeat implementation"
+        solution = "Added ping/pong mechanism with 30-second intervals"
+    }
+    metadata = @{
+        importance = 8
+        category = "bug_fix"
+        time_saved = "6 hours of future debugging"
+    }
+} | ConvertTo-Json -Depth 10
+```
+
+#### After Making an Architecture Decision:
+```powershell
+$memory = @{
+    employeeId = "emp_002"
+    content = "Chose Redis for caching layer due to superior performance and built-in data structures"
+    context = @{
+        alternatives_considered = @("Memcached", "In-memory cache", "Database caching")
+        decision_factors = @("Performance", "Scalability", "Data structure support")
+        expected_impact = "50% reduction in API response times"
+    }
+    metadata = @{
+        importance = 9
+        category = "architecture_decision"
+    }
+} | ConvertTo-Json -Depth 10
+```
+
+Remember: Your memories contribute to the collective intelligence of the AI team!

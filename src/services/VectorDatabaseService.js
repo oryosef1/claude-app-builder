@@ -300,12 +300,10 @@ export class VectorDatabaseService {
       // Convert to array and ensure 384 dimensions (all-MiniLM-L6-v2 model)
       const embeddingArray = Array.from(embedding.data);
       
-      // Pad to 1536 dimensions for consistency with Pinecone index
-      while (embeddingArray.length < 1536) {
-        embeddingArray.push(0);
-      }
+      // Ensure 384 dimensions (all-MiniLM-L6-v2 model dimension)
+      // No padding needed - the model outputs exactly 384 dimensions
       
-      return embeddingArray.slice(0, 1536);
+      return embeddingArray;
     } catch (error) {
       this.logger.error('Failed to generate embedding:', error);
       throw error;
@@ -331,12 +329,8 @@ export class VectorDatabaseService {
       // Convert to array and ensure proper dimensions
       const embeddingArray = Array.from(embedding.data);
       
-      // Pad to 1536 dimensions for consistency
-      while (embeddingArray.length < 1536) {
-        embeddingArray.push(0);
-      }
-      
-      return embeddingArray.slice(0, 1536);
+      // Return the 384-dimensional embedding as-is
+      return embeddingArray;
     } catch (error) {
       this.logger.error('Failed to generate task-specific embedding:', error);
       throw error;
@@ -824,7 +818,7 @@ export class VectorDatabaseService {
       
       // Query all memories for the employee
       const queryResponse = await this.index.namespace(namespace).query({
-        vector: new Array(1536).fill(0), // Dummy vector for metadata-only query
+        vector: new Array(384).fill(0), // Dummy vector for metadata-only query
         topK: options.limit || 1000,
         includeMetadata: true,
         includeValues: false

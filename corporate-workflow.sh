@@ -531,12 +531,12 @@ EOF
         node "$PERFORMANCE_TRACKER" record "$employee_id" <(echo "{"id":"task_$(date +%s)","title":"$task_description","complexity":2}") "$results_file" >/dev/null 2>&1
         rm -f "$results_file"
         
-        # NEW: Store AI output in memory for persistent learning (Task 5.3)
-        local ai_output=""
-        if [ -f "$temp_output_file" ]; then
-            ai_output=$(cat "$temp_output_file")
-        fi
-        store_employee_memory "$employee_id" "$task_description" "$ai_output" "true" "$duration"
+        # DISABLED: Automatic memory storage - workers should manually save important memories
+        # local ai_output=""
+        # if [ -f "$temp_output_file" ]; then
+        #     ai_output=$(cat "$temp_output_file")
+        # fi
+        # store_employee_memory "$employee_id" "$task_description" "$ai_output" "true" "$duration"
         
         # Clean up temp file
         rm -f "$temp_output_file"
@@ -552,8 +552,8 @@ EOF
             if echo "$error_content" | grep -q "thinking.*blocks.*cannot be modified"; then
                 log_corporate "ERROR" "$department" "$employee_name" "API Error: Thinking blocks modification issue - retrying with clean prompt (${duration}s)"
                 
-                # NEW: Store API error as experience memory for learning (Task 5.3)
-                store_employee_memory "$employee_id" "$task_description" "API Error: Thinking blocks modification issue encountered. Task skipped to avoid workflow failure." "false" "$duration"
+                # DISABLED: Automatic memory storage - workers should manually save important memories
+                # store_employee_memory "$employee_id" "$task_description" "API Error: Thinking blocks modification issue encountered. Task skipped to avoid workflow failure." "false" "$duration"
                 
                 # Clean up and return success to avoid workflow failure
                 rm -f "$temp_output_file"
@@ -567,12 +567,12 @@ EOF
             log_corporate "ERROR" "$department" "$employee_name" "Task failed with exit code: $exit_code (${duration}s)"
         fi
         
-        # NEW: Store failed task as experience memory for learning (Task 5.3)
-        local error_output=""
-        if [ -f "$temp_output_file" ]; then
-            error_output=$(cat "$temp_output_file")
-        fi
-        store_employee_memory "$employee_id" "$task_description" "Task failed with exit code $exit_code. Error: $error_output" "false" "$duration"
+        # DISABLED: Automatic memory storage - workers should manually save important memories
+        # local error_output=""
+        # if [ -f "$temp_output_file" ]; then
+        #     error_output=$(cat "$temp_output_file")
+        # fi
+        # store_employee_memory "$employee_id" "$task_description" "Task failed with exit code $exit_code. Error: $error_output" "false" "$duration"
         
         # Clean up temp file
         rm -f "$temp_output_file"

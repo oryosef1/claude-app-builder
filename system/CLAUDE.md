@@ -333,3 +333,95 @@ The workflow uses Sonnet model by default. If you need a different model, it can
 - **Cross-reference**: Connect related work and mention dependencies
 
 ALWAYS update @memory.md and @todo.md after completing your assigned role!
+
+## Memory Storage Requirements
+
+**IMPORTANT**: The automatic memory storage system has been disabled. All AI employees must manually save important memories after completing significant tasks.
+
+### When to Save Memories
+
+Save memories for:
+- **Important Decisions**: Architecture choices, technology selections, design patterns
+- **Problem Solutions**: How you solved complex issues or bugs  
+- **Learning Experiences**: New techniques, patterns, or approaches discovered
+- **Project Context**: Key requirements, constraints, or business rules
+- **Error Resolutions**: How you fixed specific errors or issues
+- **Best Practices**: Coding standards, patterns, or methodologies adopted
+- **Team Insights**: Important discussions, feedback, or collaboration outcomes
+
+### How to Store Memories
+
+Use PowerShell to store memories to the Memory API (typically on port 3335):
+
+```powershell
+# Store an experience memory
+$memory = @{
+    employeeId = "emp_XXX"  # Your employee ID
+    content = "Detailed description of what you learned or accomplished"
+    context = @{
+        project = "Project name"
+        task = "Task description"
+        technologies = @("Tech1", "Tech2")
+    }
+    metadata = @{
+        importance = 8  # 1-10 scale
+        category = "category_name"
+        tags = @("tag1", "tag2")
+    }
+} | ConvertTo-Json -Depth 10
+
+Invoke-WebRequest -Uri http://localhost:3335/api/memory/experience -Method POST -Body $memory -ContentType "application/json"
+```
+
+### Memory Types
+
+- **experience**: `/api/memory/experience` - Personal experiences, lessons learned, problem-solving approaches
+- **knowledge**: `/api/memory/knowledge` - Technical facts, documentation, how-to guides, best practices
+- **decision**: `/api/memory/decision` - Architecture decisions, technology choices, design rationale
+
+### Best Practices
+
+1. **Save Promptly**: Store memories immediately after completing significant tasks
+2. **Be Specific**: Include code snippets, error messages, and specific solutions
+3. **Add Context**: Always include project name, task description, and relevant background
+4. **Set Importance**: Use 7-10 for significant items, 4-6 for useful info, 1-3 for minor details
+5. **Use Categories**: Maintain consistent categories (bug_fix, architecture_decision, performance_optimization, etc.)
+
+### Example Memory Storage Scenarios
+
+#### After Solving a Complex Bug:
+```powershell
+$memory = @{
+    employeeId = "emp_004"
+    content = "Fixed WebSocket disconnection issue by implementing heartbeat mechanism and proper error handling"
+    context = @{
+        bug_description = "WebSocket connections dropping after 60 seconds of inactivity"
+        root_cause = "Missing heartbeat implementation"
+        solution = "Added ping/pong mechanism with 30-second intervals"
+    }
+    metadata = @{
+        importance = 8
+        category = "bug_fix"
+        time_saved = "6 hours of future debugging"
+    }
+} | ConvertTo-Json -Depth 10
+```
+
+#### After Making an Architecture Decision:
+```powershell
+$memory = @{
+    employeeId = "emp_002"
+    content = "Chose Redis for caching layer due to superior performance and built-in data structures"
+    context = @{
+        alternatives_considered = @("Memcached", "In-memory cache", "Database caching")
+        decision_factors = @("Performance", "Scalability", "Data structure support")
+        expected_impact = "50% reduction in API response times"
+    }
+    metadata = @{
+        importance = 9
+        category = "architecture_decision"
+    }
+} | ConvertTo-Json -Depth 10
+```
+
+Remember: Your memories contribute to the collective intelligence of the AI team!

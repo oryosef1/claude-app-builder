@@ -16,9 +16,21 @@ logs/
 temp-archive/
 dump.rdb
 
+# Test artifacts
+coverage/
+test-results/
+*.test-results.json
+task-results-*.json
+test-results-*.json
+junit.xml
+.nyc_output/
+
 # Temporary workflow files
 workflow-workflow_*.json
 test_*.json
+.corporate-workflow-state.json
+current-project.json
+project-routing.json
 
 # Port discovery files
 .api-bridge-port

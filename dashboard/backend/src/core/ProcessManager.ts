@@ -337,6 +337,28 @@ export class ProcessManager extends EventEmitter {
     this.processes.clear();
     this.logger.info('ProcessManager cleaned up');
   }
+
+  getProcessesByEmployee(employeeId: string): ClaudeProcess[] {
+    const processes: ClaudeProcess[] = [];
+    this.processes.forEach(({ process }) => {
+      if (process.employeeId === employeeId) {
+        processes.push(process);
+      }
+    });
+    return processes;
+  }
+
+  sendToProcess(processId: string, data: any): void {
+    const processInfo = this.processes.get(processId);
+    if (!processInfo || !processInfo.childProcess) {
+      throw new Error(`Process ${processId} not found or not running`);
+    }
+
+    const message = JSON.stringify(data) + '\n';
+    processInfo.childProcess.stdin?.write(message);
+    
+    this.logger.info(`Sent message to process ${processId}:`, data);
+  }
 }
 
 interface ProcessInfo {

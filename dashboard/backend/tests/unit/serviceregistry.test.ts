@@ -1,9 +1,15 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import winston from 'winston';
-import { ServiceRegistry } from '../../src/config/ServiceRegistry.js';
 
-// Mock fetch
-global.fetch = vi.fn();
+// Mock node-fetch before importing ServiceRegistry
+vi.mock('node-fetch', () => ({
+  default: vi.fn()
+}));
+
+import { ServiceRegistry } from '../../src/config/ServiceRegistry.js';
+import fetch from 'node-fetch';
+
+const mockFetch = vi.mocked(fetch);
 
 describe('ServiceRegistry', () => {
   let registry: ServiceRegistry;
@@ -82,7 +88,6 @@ describe('ServiceRegistry', () => {
 
   describe('Health Checks', () => {
     test('should check service health successfully', async () => {
-      const mockFetch = vi.mocked(global.fetch);
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ status: 'healthy' })
@@ -102,7 +107,6 @@ describe('ServiceRegistry', () => {
     });
 
     test('should handle health check failure', async () => {
-      const mockFetch = vi.mocked(global.fetch);
       mockFetch.mockRejectedValueOnce(new Error('Connection refused'));
       
       const healthUpdateHandler = vi.fn();
@@ -117,7 +121,6 @@ describe('ServiceRegistry', () => {
     });
 
     test('should handle non-ok response', async () => {
-      const mockFetch = vi.mocked(global.fetch);
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 503
@@ -135,7 +138,7 @@ describe('ServiceRegistry', () => {
 
   describe('Service Discovery', () => {
     test('should discover services on common ports', async () => {
-      const mockFetch = vi.mocked(global.fetch);
+      
       
       // First call fails (port 3333)
       mockFetch.mockRejectedValueOnce(new Error('Connection refused'));
@@ -162,7 +165,7 @@ describe('ServiceRegistry', () => {
     });
 
     test('should skip discovery if service type mismatch', async () => {
-      const mockFetch = vi.mocked(global.fetch);
+      
       
       // Returns wrong service type
       mockFetch.mockResolvedValue({
@@ -212,7 +215,7 @@ describe('ServiceRegistry', () => {
 
   describe('Health Check Intervals', () => {
     test('should start and stop health checks', async () => {
-      const mockFetch = vi.mocked(global.fetch);
+      
       mockFetch.mockResolvedValue({
         ok: true,
         json: async () => ({ status: 'healthy' })
@@ -227,7 +230,6 @@ describe('ServiceRegistry', () => {
       
       // Advance timer
       vi.advanceTimersByTime(1000);
-      await vi.runAllTimersAsync();
       
       expect(mockFetch).toHaveBeenCalledTimes(4); // 2 more checks
       
@@ -235,7 +237,6 @@ describe('ServiceRegistry', () => {
       
       // Advance timer again
       vi.advanceTimersByTime(1000);
-      await vi.runAllTimersAsync();
       
       // No more calls
       expect(mockFetch).toHaveBeenCalledTimes(4);
@@ -267,7 +268,7 @@ describe('ServiceRegistry', () => {
     });
 
     test('should emit service-health-updated event', async () => {
-      const mockFetch = vi.mocked(global.fetch);
+      
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ status: 'healthy' })

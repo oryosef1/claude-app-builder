@@ -117,6 +117,7 @@
       "Bash(powershell.exe -ExecutionPolicy Bypass -File \"test/start-memory-with-env.ps1\")",
       "Bash(npx tsx:*)",
       "WebFetch(domain:docs.anthropic.com)",
+      "Bash(cd:*)",
       "Bash(cd:*)"
     ],
     "deny": []

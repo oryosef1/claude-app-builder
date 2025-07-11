@@ -338,15 +338,6 @@ export class ProcessManager extends EventEmitter {
     this.logger.info('ProcessManager cleaned up');
   }
 
-  getProcessesByEmployee(employeeId: string): ClaudeProcess[] {
-    const processes: ClaudeProcess[] = [];
-    this.processes.forEach(({ process }) => {
-      if (process.employeeId === employeeId) {
-        processes.push(process);
-      }
-    });
-    return processes;
-  }
 
   sendToProcess(processId: string, data: any): void {
     const processInfo = this.processes.get(processId);

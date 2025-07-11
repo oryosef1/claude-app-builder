@@ -306,7 +306,7 @@ export class TaskQueue extends EventEmitter {
     }
   }
 
-  private updateTaskStatus(taskId: string, status: Task['status']): void {
+  async updateTaskStatus(taskId: string, status: Task['status']): Promise<void> {
     const task = this.activeTasks.get(taskId);
     if (task) {
       task.status = status;
@@ -345,6 +345,21 @@ export class TaskQueue extends EventEmitter {
     this.emit('task_created', { taskId, task });
     
     return taskId;
+  }
+
+  // Alias for createTask - accepts a full Task object and returns the task ID
+  async addTask(task: Task): Promise<string> {
+    // If task already has an ID, use it
+    if (task.id && !this.activeTasks.has(task.id)) {
+      this.activeTasks.set(task.id, task);
+      this.logger.info(`Added task ${task.id}: ${task.title}`);
+      this.emit('task_created', { taskId: task.id, task });
+      return task.id;
+    }
+    
+    // Otherwise create a new task
+    const { id, createdAt, status, retryCount, ...taskData } = task;
+    return this.createTask(taskData);
   }
 
   async assignTask(taskId: string, employeeId?: string): Promise<void> {
@@ -471,6 +486,11 @@ export class TaskQueue extends EventEmitter {
 
   getAllTasks(): Task[] {
     return Array.from(this.activeTasks.values());
+  }
+
+  // Alias for getAllTasks to match expected API
+  async getTasks(): Promise<Task[]> {
+    return this.getAllTasks();
   }
 
   getTaskHistory(limit: number = 100): Task[] {

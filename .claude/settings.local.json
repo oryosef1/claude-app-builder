@@ -115,7 +115,8 @@
       "Bash(do echo -n \"$file: \")",
       "Bash(./update-memory-sections.sh:*)",
       "Bash(powershell.exe -ExecutionPolicy Bypass -File \"test/start-memory-with-env.ps1\")",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "WebFetch(domain:docs.anthropic.com)"
     ],
     "deny": []
   }

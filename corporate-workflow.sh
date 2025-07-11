@@ -37,6 +37,17 @@ load_env() {
 # Load environment variables
 load_env
 
+# Source memory integration functions
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+if [ -f "$SCRIPT_DIR/corporate-memory-integration.sh" ]; then
+    source "$SCRIPT_DIR/corporate-memory-integration.sh"
+else
+    echo -e "${YELLOW}Warning: Memory integration not available${NC}"
+    # Define stub functions if memory integration is not available
+    load_employee_context() { echo ""; }
+    store_employee_memory() { return 0; }
+fi
+
 # Corporate logging function
 log_corporate() {
     local level="$1"
@@ -531,12 +542,12 @@ EOF
         node "$PERFORMANCE_TRACKER" record "$employee_id" <(echo "{"id":"task_$(date +%s)","title":"$task_description","complexity":2}") "$results_file" >/dev/null 2>&1
         rm -f "$results_file"
         
-        # DISABLED: Automatic memory storage - workers should manually save important memories
-        # local ai_output=""
-        # if [ -f "$temp_output_file" ]; then
-        #     ai_output=$(cat "$temp_output_file")
-        # fi
-        # store_employee_memory "$employee_id" "$task_description" "$ai_output" "true" "$duration"
+        # Store successful task completion in memory
+        local ai_output=""
+        if [ -f "$temp_output_file" ]; then
+            ai_output=$(cat "$temp_output_file")
+        fi
+        store_employee_memory "$employee_id" "$task_description" "$ai_output" "true" "$duration"
         
         # Clean up temp file
         rm -f "$temp_output_file"
@@ -552,8 +563,8 @@ EOF
             if echo "$error_content" | grep -q "thinking.*blocks.*cannot be modified"; then
                 log_corporate "ERROR" "$department" "$employee_name" "API Error: Thinking blocks modification issue - retrying with clean prompt (${duration}s)"
                 
-                # DISABLED: Automatic memory storage - workers should manually save important memories
-                # store_employee_memory "$employee_id" "$task_description" "API Error: Thinking blocks modification issue encountered. Task skipped to avoid workflow failure." "false" "$duration"
+                # Store API error in memory for debugging
+                store_employee_memory "$employee_id" "$task_description" "API Error: Thinking blocks modification issue encountered. Task skipped to avoid workflow failure." "false" "$duration"
                 
                 # Clean up and return success to avoid workflow failure
                 rm -f "$temp_output_file"

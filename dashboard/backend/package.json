@@ -12,7 +12,11 @@
     "lint": "eslint src/**/*.ts",
     "format": "prettier --write src/**/*.ts",
     "test": "vitest",
-    "test:coverage": "vitest --coverage"
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "test:coverage:strict": "vitest run --coverage --config vitest.config.coverage.ts",
+    "test:watch": "vitest --watch",
+    "test:run": "vitest run"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",

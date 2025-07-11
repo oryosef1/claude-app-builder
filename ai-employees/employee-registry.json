@@ -134,7 +134,7 @@
       "department": "Development",
       "level": "Mid",
       "hire_date": "2025-07-06",
-      "status": "active",
+      "status": "busy",
       "skills": [
         "test_strategy",
         "automation",
@@ -142,8 +142,10 @@
         "risk_analysis"
       ],
       "system_prompt_file": "corporate-prompts/qa-engineer.md",
-      "current_projects": [],
-      "workload": 30,
+      "current_projects": [
+        "9293f284-5d28-42c1-89c4-8238b14b729f"
+      ],
+      "workload": 31,
       "performance_metrics": {
         "test_coverage": 100,
         "automation_rate": 100,
@@ -359,5 +361,5 @@
       "focus": "Documentation, design, and build systems"
     }
   },
-  "last_updated": "2025-07-11T02:36:44.646Z"
+  "last_updated": "2025-07-11T03:14:15.078Z"
 }

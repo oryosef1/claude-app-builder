@@ -143,7 +143,9 @@
       ],
       "system_prompt_file": "corporate-prompts/qa-engineer.md",
       "current_projects": [
-        "9293f284-5d28-42c1-89c4-8238b14b729f"
+        "9293f284-5d28-42c1-89c4-8238b14b729f",
+        "dd989da4-6234-487f-90da-ac6f2bb9bd45",
+        "10fcce59-c51f-4ef4-8138-ba566a3dac98"
       ],
       "workload": 31,
       "performance_metrics": {
@@ -361,5 +363,5 @@
       "focus": "Documentation, design, and build systems"
     }
   },
-  "last_updated": "2025-07-11T03:14:15.078Z"
+  "last_updated": "2025-07-11T03:22:37.123Z"
 }

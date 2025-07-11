@@ -13,7 +13,7 @@
       "department": "Executive",
       "level": "Senior",
       "hire_date": "2025-07-06",
-      "status": "active",
+      "status": "busy",
       "skills": [
         "sprint_planning",
         "resource_allocation",
@@ -22,12 +22,13 @@
       ],
       "system_prompt_file": "corporate-prompts/project-manager.md",
       "current_projects": [],
-      "workload": 50,
+      "workload": 75,
       "performance_metrics": {
         "projects_completed": 0,
         "on_time_delivery": 100,
         "client_satisfaction": 100,
-        "team_efficiency": 100
+        "team_efficiency": 100,
+        "success_rate": 95
       }
     },
     "emp_002": {
@@ -46,7 +47,7 @@
       ],
       "system_prompt_file": "corporate-prompts/technical-lead.md",
       "current_projects": [],
-      "workload": 0,
+      "workload": 85,
       "performance_metrics": {
         "architecture_decisions": 0,
         "system_reliability": 100,
@@ -61,7 +62,7 @@
       "department": "Executive",
       "level": "Senior",
       "hire_date": "2025-07-06",
-      "status": "active",
+      "status": "busy",
       "skills": [
         "quality_standards",
         "release_approval",
@@ -94,7 +95,7 @@
       ],
       "system_prompt_file": "corporate-prompts/senior-developer.md",
       "current_projects": [],
-      "workload": 0,
+      "workload": 85,
       "performance_metrics": {
         "features_delivered": 0,
         "code_quality_score": 100,
@@ -109,7 +110,7 @@
       "department": "Development",
       "level": "Junior",
       "hire_date": "2025-07-06",
-      "status": "active",
+      "status": "busy",
       "skills": [
         "feature_implementation",
         "testing",
@@ -142,7 +143,7 @@
       ],
       "system_prompt_file": "corporate-prompts/qa-engineer.md",
       "current_projects": [],
-      "workload": 0,
+      "workload": 30,
       "performance_metrics": {
         "test_coverage": 100,
         "automation_rate": 100,
@@ -166,7 +167,7 @@
       ],
       "system_prompt_file": "corporate-prompts/test-engineer.md",
       "current_projects": [],
-      "workload": 0,
+      "workload": 20,
       "performance_metrics": {
         "tests_executed": 0,
         "bugs_found": 0,
@@ -190,7 +191,7 @@
       ],
       "system_prompt_file": "corporate-prompts/devops-engineer.md",
       "current_projects": [],
-      "workload": 0,
+      "workload": 40,
       "performance_metrics": {
         "deployment_success": 100,
         "pipeline_efficiency": 100,
@@ -205,7 +206,7 @@
       "department": "Operations",
       "level": "Senior",
       "hire_date": "2025-07-06",
-      "status": "active",
+      "status": "busy",
       "skills": [
         "reliability",
         "monitoring",
@@ -238,7 +239,7 @@
       ],
       "system_prompt_file": "corporate-prompts/security-engineer.md",
       "current_projects": [],
-      "workload": 0,
+      "workload": 85,
       "performance_metrics": {
         "vulnerabilities_found": 0,
         "security_score": 100,
@@ -253,7 +254,7 @@
       "department": "Support",
       "level": "Mid",
       "hire_date": "2025-07-06",
-      "status": "active",
+      "status": "busy",
       "skills": [
         "documentation",
         "api_docs",
@@ -286,7 +287,7 @@
       ],
       "system_prompt_file": "corporate-prompts/ui-ux-designer.md",
       "current_projects": [],
-      "workload": 0,
+      "workload": 85,
       "performance_metrics": {
         "designs_delivered": 0,
         "user_satisfaction": 100,
@@ -301,7 +302,7 @@
       "department": "Support",
       "level": "Mid",
       "hire_date": "2025-07-06",
-      "status": "active",
+      "status": "busy",
       "skills": [
         "build_systems",
         "dependency_management",
@@ -358,5 +359,5 @@
       "focus": "Documentation, design, and build systems"
     }
   },
-  "last_updated": "2025-07-10T04:25:09.225Z"
+  "last_updated": "2025-07-11T00:01:54.325Z"
 }

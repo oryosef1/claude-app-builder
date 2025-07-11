@@ -13,11 +13,11 @@ describe('Dashboard Backend Integration Tests', () => {
   
   beforeAll(async () => {
     // Start the dashboard backend
-    process.env.PORT = PORT.toString();
+    process.env['PORT'] = PORT.toString();
     
     // Import and start the server
     const serverModule = await import('../../src/index');
-    app = serverModule.app;
+    app = serverModule.default;
     server = serverModule.server;
     
     // Wait for server to be ready
@@ -230,7 +230,7 @@ describe('Dashboard Backend Integration Tests', () => {
           systemPrompt: 'Test',
           task: 'WebSocket test'
         })
-        .then(res => {
+        .then((res: any) => {
           // Stop process after test
           setTimeout(() => {
             request(app).post(`/api/processes/${res.body.id}/stop`).send();
@@ -283,7 +283,7 @@ describe('Dashboard Backend Integration Tests', () => {
       );
       
       const responses = await Promise.all(promises);
-      const rateLimited = responses.some(r => r.status === 429);
+      const rateLimited = responses.some((r: any) => r.status === 429);
       
       // Should have some rate limited responses
       expect(rateLimited).toBe(true);
@@ -324,7 +324,7 @@ describe('Dashboard Backend Integration Tests', () => {
       const duration = Date.now() - startTime;
       
       // All should succeed
-      responses.forEach(r => expect(r.status).toBe(200));
+      responses.forEach((r: any) => expect(r.status).toBe(200));
       
       // Should complete in reasonable time (< 2 seconds)
       expect(duration).toBeLessThan(2000);

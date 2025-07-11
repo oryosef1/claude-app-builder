@@ -6,9 +6,9 @@ import path from 'path';
 dotenv.config({ path: path.join(__dirname, '../.env.test') });
 
 // Set test environment
-process.env.NODE_ENV = 'test';
-process.env.DASHBOARD_PORT = '8081'; // Different port for tests
-process.env.REDIS_DB = '15'; // Separate Redis DB for tests
+process.env['NODE_ENV'] = 'test';
+process.env['DASHBOARD_PORT'] = '8081'; // Different port for tests
+process.env['REDIS_DB'] = '15'; // Separate Redis DB for tests
 
 // Mock winston logger for cleaner test output
 jest.mock('winston', () => ({

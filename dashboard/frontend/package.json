@@ -7,7 +7,10 @@
     "build": "npx vite build",
     "build-with-types": "npx vue-tsc --noEmit && npx vite build",
     "preview": "npx vite preview",
-    "type-check": "npx vue-tsc --noEmit"
+    "type-check": "npx vue-tsc --noEmit",
+    "test": "npx vitest",
+    "test:unit": "npx vitest run tests/unit",
+    "test:integration": "npx vitest run tests/integration"
   },
   "dependencies": {
     "axios": "^1.4.0",
@@ -21,11 +24,14 @@
   "devDependencies": {
     "@types/node": "^20.5.0",
     "@vitejs/plugin-vue": "^4.6.2",
+    "@vue/test-utils": "^2.4.6",
     "autoprefixer": "^10.4.15",
+    "happy-dom": "^12.10.3",
     "postcss": "^8.4.29",
     "tailwindcss": "^3.3.3",
     "typescript": "^5.1.6",
     "vite": "^4.5.14",
+    "vitest": "^1.6.1",
     "vue-tsc": "^1.8.8"
   }
 }

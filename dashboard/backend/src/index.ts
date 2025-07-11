@@ -241,9 +241,16 @@ async function loadEmployees(): Promise<void> {
   }
 }
 
+// Import additional routes at the top
+import { createAdditionalRoutes } from './api/routes.js';
+
 // Setup API routes
 const apiRouter = createAPIRouter(processManager, taskQueue, agentRegistry, logger);
 app.use('/api', apiRouter);
+
+// Add additional routes for E2E tests
+const additionalRoutes = createAdditionalRoutes(agentRegistry);
+app.use('/api', additionalRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
@@ -293,3 +300,4 @@ server.listen(PORT, async () => {
 });
 
 export default app;
+export { server };

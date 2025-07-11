@@ -113,7 +113,9 @@
       "Bash(cd \"/mnt/c/Users/בית/Downloads/poe helper/corporate-prompts\")",
       "Bash(do echo \"=== $file ===\")",
       "Bash(do echo -n \"$file: \")",
-      "Bash(./update-memory-sections.sh:*)"
+      "Bash(./update-memory-sections.sh:*)",
+      "Bash(powershell.exe -ExecutionPolicy Bypass -File \"test/start-memory-with-env.ps1\")",
+      "Bash(npx tsx:*)"
     ],
     "deny": []
   }

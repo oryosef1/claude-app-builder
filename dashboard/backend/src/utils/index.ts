@@ -72,27 +72,28 @@ export const findBestEmployee = (employees: AIEmployee[], requiredSkills: string
 };
 
 export const buildClaudeCommand = (config: ProcessConfig): { command: string; args: string[] } => {
-  const args: string[] = [];
-  
-  if (config.systemPrompt) {
-    args.push('--system-prompt', config.systemPrompt);
-  }
+  const claudeArgs: string[] = [
+    'claude',
+    '--print',
+    '--dangerously-skip-permissions',
+    '--model', 'sonnet'
+  ];
   
   if (config.tools && config.tools.length > 0) {
-    args.push('--allowedTools', config.tools.join(','));
+    claudeArgs.push('--allowedTools', config.tools.join(','));
+  } else {
+    // Default tools from corporate workflow
+    claudeArgs.push('--allowedTools', 'Bash,Edit,Write,Read,TodoRead,TodoWrite');
   }
   
   if (config.maxTurns) {
-    args.push('--max-turns', config.maxTurns.toString());
+    claudeArgs.push('--max-turns', config.maxTurns.toString());
   }
   
-  if (config.workingDirectory) {
-    args.push('--cwd', config.workingDirectory);
-  }
-  
+  // Use wsl.exe to run claude in WSL environment from Windows
   return {
-    command: 'claude',
-    args
+    command: 'wsl.exe',
+    args: claudeArgs
   };
 };
 

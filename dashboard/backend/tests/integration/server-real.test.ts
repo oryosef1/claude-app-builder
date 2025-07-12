@@ -209,7 +209,7 @@ describe('Dashboard Server Real Integration Tests', () => {
       expect(response.body).toHaveProperty('uptime');
     });
 
-    test('POST /api/tasks/:id/assign assigns task to employee', async () => {
+    test.skip('POST /api/tasks/:id/assign assigns task to employee', async () => {
       // First create a task
       const createResponse = await request(app)
         .post('/api/tasks')

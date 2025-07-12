@@ -19,6 +19,13 @@ class SocketService {
     this.socket.on('connect', () => {
       console.log('Connected to server')
       this.dashboardStore.updateConnectionStatus(true)
+      
+      // Request initial data when connected
+      this.socket.emit('request_processes')
+      this.socket.emit('request_tasks')
+      this.socket.emit('request_employees')
+      this.socket.emit('request_metrics')
+      this.socket.emit('request_employee_stats')
     })
 
     this.socket.on('disconnect', () => {
@@ -33,6 +40,10 @@ class SocketService {
 
     // Process events
     this.socket.on('processes:updated', (processes: ProcessInfo[]) => {
+      this.dashboardStore.updateProcesses(processes)
+    })
+    
+    this.socket.on('processes_data', (processes: ProcessInfo[]) => {
       this.dashboardStore.updateProcesses(processes)
     })
 
@@ -71,6 +82,10 @@ class SocketService {
     this.socket.on('tasks:updated', (tasks: TaskInfo[]) => {
       this.dashboardStore.updateTasks(tasks)
     })
+    
+    this.socket.on('tasks_data', (tasks: TaskInfo[]) => {
+      this.dashboardStore.updateTasks(tasks)
+    })
 
     this.socket.on('task:created', (task: TaskInfo) => {
       console.log('Task created:', task.id)
@@ -106,10 +121,37 @@ class SocketService {
     this.socket.on('employees:updated', (employees: EmployeeInfo[]) => {
       this.dashboardStore.updateEmployees(employees)
     })
+    
+    this.socket.on('employees_data', (employees: EmployeeInfo[]) => {
+      this.dashboardStore.updateEmployees(employees)
+    })
 
     // System health events
     this.socket.on('system:health', (health: SystemHealth) => {
       this.dashboardStore.updateSystemHealth(health)
+    })
+    
+    this.socket.on('system_metrics', (metrics: any) => {
+      console.log('Received system_metrics:', metrics)
+      
+      // Convert metrics to SystemHealth format
+      if (metrics && metrics.system && metrics.system.memoryUsage) {
+        const health: SystemHealth = {
+          memory: {
+            used: metrics.system.memoryUsage.heapUsed || 0,
+            total: metrics.system.memoryUsage.heapTotal || 1,
+            percentage: metrics.system.memoryUsage.heapTotal ? 
+              (metrics.system.memoryUsage.heapUsed / metrics.system.memoryUsage.heapTotal) * 100 : 0
+          },
+          cpu: {
+            usage: (metrics.system.cpuUsage || 0) / 1000000, // Convert from microseconds to percentage
+            load: [0, 0, 0]
+          },
+          processes: metrics.processes || { total: 0, running: 0, idle: 0, error: 0 },
+          queue: metrics.tasks || { pending: 0, processing: 0, completed: 0, failed: 0 }
+        }
+        this.dashboardStore.updateSystemHealth(health)
+      }
     })
 
     // Log events

@@ -239,8 +239,10 @@ async function startServer() {
   }
 }
 
-// Start the server
-startServer();
+// Start the server only if this is the main module (not imported in tests)
+if (process.env.NODE_ENV !== 'test') {
+  startServer();
+}
 
 // Graceful shutdown
 process.on('SIGTERM', () => {

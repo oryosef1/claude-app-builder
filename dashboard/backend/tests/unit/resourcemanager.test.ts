@@ -136,6 +136,10 @@ describe('ResourceManager', () => {
   describe('Load Balancing Strategies', () => {
     describe('Round Robin', () => {
       it('should select employee with least tasks', async () => {
+        // Manually trigger resource update to ensure task counts are correct
+        // This simulates the periodic update that would normally happen
+        resourceManager['updateResourceUsage']();
+        
         const task: Task = {
           id: 'task_1',
           title: 'Test Task',
@@ -147,7 +151,7 @@ describe('ResourceManager', () => {
         };
 
         const employeeId = await resourceManager.getBestEmployee(task);
-        expect(employeeId).toBe('emp_003'); // Lowest workload
+        expect(employeeId).toBe('emp_003'); // Has 0 tasks vs emp_001 with 2 tasks
       });
     });
 
@@ -157,6 +161,9 @@ describe('ResourceManager', () => {
       });
 
       it('should select employee with lowest resource usage', async () => {
+        // Manually trigger resource update to ensure load calculations are correct
+        resourceManager['updateResourceUsage']();
+        
         const task: Task = {
           id: 'task_1',
           title: 'Test Task',

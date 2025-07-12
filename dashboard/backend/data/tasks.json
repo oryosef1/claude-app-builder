@@ -1,0 +1,15 @@
+[
+  {
+    "id": "4d7dfe31-3d1b-4eb2-a6ce-5faf4df601bc",
+    "status": "pending",
+    "createdAt": "2025-07-12T02:55:41.670Z",
+    "retryCount": 0,
+    "title": "review",
+    "description": "do a review on the project, make a review-project.md file with what needed in review",
+    "priority": "high",
+    "assignedTo": "emp_006",
+    "updatedAt": "2025-07-12T02:55:41.670Z",
+    "progress": 0,
+    "maxRetries": 3
+  }
+]

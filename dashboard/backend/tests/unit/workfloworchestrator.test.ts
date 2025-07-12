@@ -246,7 +246,11 @@ describe('WorkflowOrchestrator', () => {
           status: 'completed',
           createdAt: new Date()
         };
-        taskCompletedHandler(task);
+        // Call the handler and wait for any async operations
+        await taskCompletedHandler(task);
+        
+        // Allow event loop to process
+        await new Promise(resolve => setImmediate(resolve));
       }
 
       expect(stepCompletedHandler).toHaveBeenCalled();
@@ -285,7 +289,10 @@ describe('WorkflowOrchestrator', () => {
           status: 'completed',
           createdAt: new Date()
         };
-        taskCompletedHandler(task);
+        await taskCompletedHandler(task);
+        
+        // Allow event loop to process
+        await new Promise(resolve => setImmediate(resolve));
       }
 
       expect(workflowCompletedHandler).toHaveBeenCalled();
@@ -324,7 +331,10 @@ describe('WorkflowOrchestrator', () => {
           status: 'failed',
           createdAt: new Date()
         };
-        taskFailedHandler(task);
+        await taskFailedHandler(task);
+        
+        // Allow event loop to process
+        await new Promise(resolve => setImmediate(resolve));
       }
 
       expect(stepFailedHandler).toHaveBeenCalled();

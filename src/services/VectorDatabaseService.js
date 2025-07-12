@@ -41,18 +41,18 @@ export class VectorDatabaseService {
       });
 
       // Initialize Free Embedding Model
-      this.logger.info('Loading free embedding model...');
-      this.embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+      try {
+        this.logger.info('Loading free embedding model...');
+        this.embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+        this.logger.info('Embedding model loaded successfully');
+      } catch (embeddingError) {
+        this.logger.error('Failed to load embedding model:', embeddingError);
+        throw new Error(`Embedding model initialization failed: ${embeddingError.message}`);
+      }
 
-      // Initialize Redis cache
-      this.redis = createClient({
-        socket: {
-          host: process.env.REDIS_HOST || 'localhost',
-          port: process.env.REDIS_PORT || 6379
-        }
-      });
-
-      await this.redis.connect();
+      // Initialize Redis cache (optional - disabled for now)
+      this.redis = null;
+      this.logger.info('Redis cache disabled - running without cache');
 
       // Get Pinecone index
       this.index = this.pinecone.Index(process.env.PINECONE_INDEX_NAME);
@@ -78,6 +78,21 @@ export class VectorDatabaseService {
   }
 
   /**
+   * Safe Redis operation wrapper
+   */
+  async safeRedisOp(operation, fallback = null) {
+    if (!this.redis) {
+      return fallback;
+    }
+    try {
+      return await operation();
+    } catch (error) {
+      this.logger.warn('Redis operation failed:', error.message);
+      return fallback;
+    }
+  }
+
+  /**
    * Verify all database connections
    */
   async verifyConnections() {
@@ -90,9 +105,11 @@ export class VectorDatabaseService {
       const testEmbedding = await this.embedder('test');
       this.logger.info('Free embedding model verified');
 
-      // Test Redis connection
-      await this.redis.ping();
-      this.logger.info('Redis connection verified');
+      // Test Redis connection if available
+      if (this.redis) {
+        await this.redis.ping();
+        this.logger.info('Redis connection verified');
+      }
 
       return true;
     } catch (error) {
@@ -123,7 +140,9 @@ export class VectorDatabaseService {
       };
 
       // Store namespace metadata in Redis
-      await this.redis.hSet(`namespace:${namespace}`, namespaceMetadata);
+      if (this.redis) {
+        await this.redis.hSet(`namespace:${namespace}`, namespaceMetadata);
+      }
 
       // Create initial permissions
       await this.createNamespacePermissions(namespace, role, department);
@@ -750,7 +769,6 @@ export class VectorDatabaseService {
       level: process.env.LOG_LEVEL || 'info',
       format: winston.format.combine(
         winston.format.timestamp(),
-        winston.format.errors({ stack: true }),
         winston.format.json()
       ),
       transports: [

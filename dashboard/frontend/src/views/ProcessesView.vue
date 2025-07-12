@@ -33,11 +33,11 @@
         <div class="space-y-3">
           <div class="flex justify-between text-sm">
             <span class="text-gray-500">CPU:</span>
-            <span class="font-medium">{{ process.cpu.toFixed(1) }}%</span>
+            <span class="font-medium">{{ (process.cpu || 0).toFixed(1) }}%</span>
           </div>
           <div class="flex justify-between text-sm">
             <span class="text-gray-500">Memory:</span>
-            <span class="font-medium">{{ (process.memory / 1024 / 1024).toFixed(1) }}MB</span>
+            <span class="font-medium">{{ ((process.memory || 0) / 1024 / 1024).toFixed(1) }}MB</span>
           </div>
           <div class="flex justify-between text-sm">
             <span class="text-gray-500">Uptime:</span>
@@ -69,6 +69,12 @@
             class="btn btn-warning text-xs"
           >
             Restart
+          </button>
+          <button 
+            @click="deleteProcess(process.id)"
+            class="btn btn-error btn-outline text-xs"
+          >
+            Delete
           </button>
         </div>
       </div>
@@ -184,9 +190,14 @@ function getStatusClass(status: ProcessInfo['status']): string {
 }
 
 function formatUptime(seconds: number): string {
+  // Handle undefined, null, or NaN values
+  if (!seconds || isNaN(seconds)) {
+    return '0s'
+  }
+  
   const hours = Math.floor(seconds / 3600)
   const minutes = Math.floor((seconds % 3600) / 60)
-  const secs = seconds % 60
+  const secs = Math.floor(seconds % 60)
   
   if (hours > 0) {
     return `${hours}h ${minutes}m`
@@ -249,6 +260,20 @@ async function restartProcess(id: string) {
     dashboardStore.updateProcesses(processes)
   } catch (error) {
     console.error('Failed to restart process:', error)
+  }
+}
+
+async function deleteProcess(id: string) {
+  if (confirm('Are you sure you want to delete this process?')) {
+    try {
+      await apiService.deleteProcess(id)
+      
+      // Refresh processes
+      const processes = await apiService.getProcesses()
+      dashboardStore.updateProcesses(processes)
+    } catch (error) {
+      console.error('Failed to delete process:', error)
+    }
   }
 }
 </script>

@@ -118,7 +118,27 @@
       "Bash(npx tsx:*)",
       "WebFetch(domain:docs.anthropic.com)",
       "Bash(cd:*)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(cd:*)",
+      "Bash(cd:*)",
+      "Bash(cd:*)",
+      "Bash(cd:*)",
+      "Bash(cd /mnt/c/Users/בית/Downloads/poe helper/dashboard/backend)",
+      "Bash(cd:*)",
+      "Bash(touch:*)",
+      "Bash(claude mcp:*)",
+      "Bash(mysql:*)",
+      "Bash(sudo service:*)",
+      "Bash(/usr/bin/git status)",
+      "Bash(git.exe status)",
+      "Bash(git.exe diff dashboard/backend/src/core/ProcessManager.ts)",
+      "Bash(git.exe diff dashboard/backend/src/core/TaskQueue.ts)",
+      "Bash(git.exe diff dashboard/frontend/src/views/ProcessesView.vue)",
+      "Bash(git.exe diff dashboard/frontend/src/views/TasksView.vue)",
+      "Bash(git.exe diff dashboard/frontend/src/services/api.ts)",
+      "Bash(git.exe diff dashboard/backend/src/api/server.ts)",
+      "Bash(git.exe add dashboard/backend/src/core/ProcessManager.ts dashboard/backend/src/core/TaskQueue.ts dashboard/backend/src/api/server.ts dashboard/backend/src/types/index.ts dashboard/frontend/src/views/ProcessesView.vue dashboard/frontend/src/views/TasksView.vue dashboard/frontend/src/services/api.ts)",
+      "Bash(wsl.exe git add:*)"
     ],
     "deny": []
   }

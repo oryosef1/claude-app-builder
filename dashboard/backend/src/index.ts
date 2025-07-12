@@ -11,6 +11,7 @@ import { TaskQueue } from './core/TaskQueue.js';
 import { AgentRegistry } from './core/AgentRegistry.js';
 import { DashboardServer, createAPIRouter } from './api/server.js';
 import { AIEmployee } from './types/index.js';
+import { PersistenceService } from './core/PersistenceService.js';
 
 dotenv.config();
 
@@ -210,6 +211,7 @@ app.get('/api/employees', async (_req, res) => {
 const processManager = new ProcessManager(logger);
 const agentRegistry = new AgentRegistry();
 const taskQueue = new TaskQueue(logger, agentRegistry);
+processManager.setTaskQueue(taskQueue); // Set taskQueue reference
 const dashboardServer = new DashboardServer(server, processManager, taskQueue, agentRegistry, logger);
 
 // Load employees from Agent Registry
@@ -292,6 +294,28 @@ server.listen(PORT, async () => {
   logger.info(`Dashboard backend server running on port ${PORT}`);
   logger.info(`Environment: ${process.env['NODE_ENV'] || 'development'}`);
   logger.info(`Memory usage: ${JSON.stringify(process.memoryUsage())}`);
+  
+  // Create a persistence service to load data
+  const persistenceService = new PersistenceService(logger);
+  await persistenceService.initialize();
+  
+  // Load persisted data
+  const persistedTasks = await persistenceService.loadTasks();
+  const persistedProcesses = await persistenceService.loadProcesses();
+  
+  if (persistedTasks.length > 0) {
+    logger.info(`Loading ${persistedTasks.length} persisted tasks`);
+    for (const task of persistedTasks) {
+      await taskQueue.addTask(task);
+    }
+  }
+  
+  if (persistedProcesses.length > 0) {
+    logger.info(`Loading ${persistedProcesses.length} persisted processes`);
+    for (const process of persistedProcesses) {
+      processManager.addPersistedProcess(process);
+    }
+  }
   
   // Load employees after server starts
   await loadEmployees();

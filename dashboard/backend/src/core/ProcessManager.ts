@@ -1,22 +1,27 @@
 import { spawn, ChildProcess } from 'child_process';
 import { EventEmitter } from 'events';
+import { readFileSync } from 'fs';
 import winston from 'winston';
 import { 
   ClaudeProcess, 
   AIEmployee, 
   ProcessConfig, 
-  LogEntry
+  LogEntry,
+  Task
 } from '../types/index.js';
 import { 
   generateId, 
   buildClaudeCommand, 
   delay
 } from '../utils/index.js';
+import { PersistenceService } from './PersistenceService.js';
 
 export class ProcessManager extends EventEmitter {
   private processes: Map<string, ProcessInfo> = new Map();
   private employees: Map<string, AIEmployee> = new Map();
   private logger: winston.Logger;
+  private persistenceService: PersistenceService;
+  private taskQueue: any; // Will be set after initialization
   private healthCheckInterval: NodeJS.Timeout | null = null;
   private readonly maxProcesses: number = 20;
   private readonly processTimeout: number = 300000; // 5 minutes
@@ -25,13 +30,24 @@ export class ProcessManager extends EventEmitter {
   constructor(logger: winston.Logger) {
     super();
     this.logger = logger;
+    this.persistenceService = new PersistenceService(logger);
+    this.persistenceService.initialize();
     this.startHealthChecks();
+  }
+
+  setTaskQueue(taskQueue: any): void {
+    this.taskQueue = taskQueue;
   }
 
   private startHealthChecks(): void {
     this.healthCheckInterval = setInterval(() => {
       this.checkProcessHealth();
     }, this.heartbeatInterval);
+  }
+
+  private async saveProcesses(): Promise<void> {
+    const processes = Array.from(this.processes.values()).map(info => info.process);
+    await this.persistenceService.saveProcesses(processes);
   }
 
   private async checkProcessHealth(): Promise<void> {
@@ -88,6 +104,23 @@ export class ProcessManager extends EventEmitter {
     this.logger.info(`Loaded ${employees.length} employees`);
   }
 
+  addPersistedProcess(process: ClaudeProcess): void {
+    // Add a persisted process back to the manager (but don't spawn it)
+    // Mark it as stopped since we can't reconnect to the child process
+    process.status = 'stopped';
+    process.stoppedAt = process.stoppedAt || new Date();
+    
+    this.processes.set(process.id, {
+      process,
+      childProcess: null,
+      config: {} as ProcessConfig, // Empty config for persisted processes
+      logs: []
+    });
+    
+    this.emit('process_updated', process);
+    this.logger.info(`Added persisted process ${process.id} with status: ${process.status}`);
+  }
+
   async createProcess(config: ProcessConfig): Promise<string> {
     if (this.processes.size >= this.maxProcesses) {
       throw new Error(`Maximum number of processes (${this.maxProcesses}) reached`);
@@ -107,6 +140,8 @@ export class ProcessManager extends EventEmitter {
 
     const claudeProcess: ClaudeProcess = {
       id: processId,
+      name: config.task?.title || employee.name,
+      role: employee.role,
       employeeId: config.employeeId,
       pid: 0,
       status: 'starting',
@@ -115,7 +150,9 @@ export class ProcessManager extends EventEmitter {
       createdAt: new Date(),
       restarts: 0,
       memoryUsage: 0,
-      cpuUsage: 0
+      cpuUsage: 0,
+      taskId: config.task?.id,
+      errorCount: 0
     };
 
     this.processes.set(processId, {
@@ -128,6 +165,10 @@ export class ProcessManager extends EventEmitter {
     try {
       await this.startProcess(processId);
       this.logger.info(`Created process ${processId} for employee ${config.employeeId}`);
+      
+      // Save to persistence
+      await this.saveProcesses();
+      
       return processId;
     } catch (error) {
       this.processes.delete(processId);
@@ -159,6 +200,21 @@ export class ProcessManager extends EventEmitter {
       claudeProcess.lastHeartbeat = new Date();
 
       processInfo.childProcess = childProcess;
+
+      // If we have a task, build the full prompt and send it to Claude
+      if (config.task) {
+        const employee = this.employees.get(config.employeeId);
+        if (employee) {
+          // Build the full prompt like corporate workflow
+          const fullPrompt = this.buildFullPrompt(employee, config, config.task);
+          
+          // Send the prompt to Claude via stdin
+          if (childProcess.stdin) {
+            childProcess.stdin.write(fullPrompt);
+            childProcess.stdin.end();
+          }
+        }
+      }
 
       childProcess.stdout?.on('data', (data) => {
         this.handleProcessOutput(processId, 'stdout', data.toString());
@@ -220,6 +276,21 @@ export class ProcessManager extends EventEmitter {
     this.logger.info(`Process ${processId} exited with code ${code}, signal ${signal}`);
     
     this.emit('process_stopped', { processId, claudeProcess, code, signal });
+    
+    // Update associated task status if process completed successfully
+    if (code === 0 && claudeProcess.config?.task && this.taskQueue) {
+      const task = this.taskQueue.getTask(claudeProcess.config.task.id);
+      if (task && task.status === 'in_progress') {
+        task.status = 'completed';
+        task.completedAt = new Date();
+        task.progress = 100;
+        this.taskQueue.updateTaskStatus(task.id, 'completed');
+        this.logger.info(`Task ${task.id} completed successfully`);
+      }
+    }
+    
+    // Save to persistence
+    this.saveProcesses();
 
     if (code !== 0 && claudeProcess.restarts < 3) {
       this.logger.warn(`Process ${processId} crashed, attempting restart...`);
@@ -321,6 +392,27 @@ export class ProcessManager extends EventEmitter {
     };
   }
 
+  async deleteProcess(processId: string): Promise<void> {
+    const processInfo = this.processes.get(processId);
+    if (!processInfo) {
+      throw new Error(`Process ${processId} not found`);
+    }
+
+    // Stop the process if it's running
+    if (processInfo.process.status === 'running') {
+      await this.stopProcess(processId);
+    }
+
+    // Remove from memory
+    this.processes.delete(processId);
+    
+    // Update persistence
+    await this.saveProcesses();
+    
+    this.logger.info(`Deleted process ${processId}`);
+    this.emit('process_deleted', { processId });
+  }
+
   async cleanup(): Promise<void> {
     if (this.healthCheckInterval) {
       clearTimeout(this.healthCheckInterval);
@@ -349,6 +441,52 @@ export class ProcessManager extends EventEmitter {
     processInfo.childProcess.stdin?.write(message);
     
     this.logger.info(`Sent message to process ${processId}:`, data);
+  }
+
+  private buildFullPrompt(employee: AIEmployee, config: ProcessConfig, task: Task): string {
+    // Load system prompt content from file if provided
+    let systemPromptContent = '';
+    if (config.systemPrompt) {
+      try {
+        const systemPromptPath = config.systemPrompt.startsWith('/') 
+          ? config.systemPrompt 
+          : `/mnt/c/Users/Projects/ai-agency/${config.systemPrompt}`;
+        
+        systemPromptContent = readFileSync(systemPromptPath, 'utf8');
+      } catch (error) {
+        this.logger.error(`Failed to read system prompt file: ${config.systemPrompt}`, error);
+        systemPromptContent = employee.systemPrompt || '';
+      }
+    } else {
+      systemPromptContent = employee.systemPrompt || '';
+    }
+
+    // Build the full prompt like corporate workflow
+    const fullPrompt = `CORPORATE CONTEXT:
+You are ${employee.name}, a ${employee.role} at Claude AI Software Company.
+Department: ${employee.department}
+Task: ${task.title}
+
+TASK DETAILS:
+Title: ${task.title}
+Description: ${task.description}
+Priority: ${task.priority}
+Skills Required: ${task.skillsRequired?.join(', ') || 'General'}
+
+CORPORATE STANDARDS:
+- Follow company coding standards and architectural guidelines
+- Collaborate effectively with other AI employees
+- Document decisions and progress in memory.md
+- Maintain high quality and professional standards
+- Update system/todo.md with task progress
+
+SYSTEM PROMPT:
+${systemPromptContent}
+
+USER REQUEST:
+${task.description}`;
+
+    return fullPrompt;
   }
 }
 

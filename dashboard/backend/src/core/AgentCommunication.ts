@@ -99,6 +99,11 @@ export class AgentCommunication extends EventEmitter {
     if (typeof fullMessage.to === 'string') {
       if (fullMessage.to === 'broadcast') {
         await this.broadcastMessage(fullMessage);
+      } else if (fullMessage.to.startsWith('channel:')) {
+        // Channel message
+        const channelName = fullMessage.to.substring(8);
+        this.logger.info(`Channel message from ${fullMessage.from} to ${channelName}`);
+        await this.sendToChannelByName(channelName, fullMessage);
       } else {
         await this.deliverToAgent(fullMessage.to, fullMessage);
       }
@@ -109,11 +114,23 @@ export class AgentCommunication extends EventEmitter {
       ));
     }
 
-    this.emit('message-sent', fullMessage);
+    this.emit('message-sent', { message: fullMessage });
     return fullMessage.id;
   }
 
   private async deliverToAgent(employeeId: string, message: AgentMessage): Promise<void> {
+    // Check if recipient exists
+    const recipient = this.registry.getEmployee(employeeId);
+    if (!recipient) {
+      this.logger.warn(`Recipient ${employeeId} not found`);
+      return;
+    }
+
+    // Log the message
+    if (message.type === 'info' || message.type === 'notification') {
+      this.logger.info(`Direct message from ${message.from} to ${employeeId}`);
+    }
+
     // Check if agent has an active process
     const processes = this.processManager.getProcessesByEmployee(employeeId);
     const activeProcess = processes.find(p => p.status === 'running');
@@ -131,15 +148,38 @@ export class AgentCommunication extends EventEmitter {
         this.messageQueues.set(employeeId, []);
       }
       this.messageQueues.get(employeeId)!.push(message);
+      this.logger.info(`Message queued for offline employee ${employeeId}`);
       this.emit('message-queued', { employeeId, message });
     }
   }
 
   private async broadcastMessage(message: AgentMessage): Promise<void> {
+    this.logger.info(`Broadcast message from ${message.from}`);
     const employees = this.registry.getAllEmployees();
     await Promise.all(employees.map(emp => 
       this.deliverToAgent(emp.id, message)
     ));
+  }
+
+  private async sendToChannelByName(channelName: string, message: AgentMessage): Promise<void> {
+    // Try to find channel by name or ID
+    let channel = this.channels.get(`dept-${channelName.toLowerCase()}`);
+    
+    if (!channel) {
+      channel = Array.from(this.channels.values()).find(
+        ch => ch.name.toLowerCase().includes(channelName.toLowerCase()) || 
+              ch.id.toLowerCase().includes(channelName.toLowerCase())
+      );
+    }
+    
+    if (channel) {
+      // Send to all channel members
+      await Promise.all(channel.members.map(memberId => 
+        this.deliverToAgent(memberId, message)
+      ));
+    } else {
+      this.logger.warn(`Channel ${channelName} not found`);
+    }
   }
 
   // Get pending messages for an agent
@@ -176,6 +216,7 @@ export class AgentCommunication extends EventEmitter {
     };
 
     this.collaborations.set(collaboration.id, collaboration);
+    this.logger.info(`Created collaboration ${collaboration.id} on topic: ${topic}`);
 
     // Notify all participants
     await this.sendMessage({
@@ -209,11 +250,18 @@ export class AgentCommunication extends EventEmitter {
   }
 
   // Get active collaborations for an employee
-  getActiveCollaborations(employeeId: string): CollaborationRequest[] {
-    return Array.from(this.collaborations.values()).filter(
-      collab => collab.participants.includes(employeeId) && 
-                collab.status === 'active'
-    );
+  getActiveCollaborations(employeeId?: string): CollaborationRequest[] {
+    if (employeeId) {
+      return Array.from(this.collaborations.values()).filter(
+        collab => collab.participants.includes(employeeId) && 
+                  (collab.status === 'active' || collab.status === 'in_progress')
+      );
+    } else {
+      // Return all active/in_progress collaborations
+      return Array.from(this.collaborations.values()).filter(
+        collab => collab.status === 'active' || collab.status === 'in_progress'
+      );
+    }
   }
 
   // Create a direct channel between agents
@@ -275,10 +323,13 @@ export class AgentCommunication extends EventEmitter {
   // Get communication metrics
   getMetrics(): {
     totalMessages: number;
+    directMessages: number;
+    broadcastMessages: number;
     queuedMessages: number;
     activeChannels: number;
     activeCollaborations: number;
     messagesByPriority: Record<string, number>;
+    messagesByEmployee: Record<string, number>;
   } {
     const messagesByPriority: Record<string, number> = {
       urgent: 0,
@@ -287,8 +338,25 @@ export class AgentCommunication extends EventEmitter {
       low: 0
     };
 
+    const messagesByEmployee: Record<string, number> = {};
+    let directMessages = 0;
+    let broadcastMessages = 0;
+
     this.messages.forEach(msg => {
       messagesByPriority[msg.priority]++;
+      
+      // Count by employee
+      if (!messagesByEmployee[msg.from]) {
+        messagesByEmployee[msg.from] = 0;
+      }
+      messagesByEmployee[msg.from]++;
+      
+      // Count message types
+      if (msg.to === 'broadcast') {
+        broadcastMessages++;
+      } else if (typeof msg.to === 'string' && !msg.to.startsWith('channel:')) {
+        directMessages++;
+      }
     });
 
     let queuedMessages = 0;
@@ -298,11 +366,14 @@ export class AgentCommunication extends EventEmitter {
 
     return {
       totalMessages: this.messages.size,
+      directMessages,
+      broadcastMessages,
       queuedMessages,
       activeChannels: this.channels.size,
       activeCollaborations: Array.from(this.collaborations.values())
         .filter(c => c.status === 'active').length,
-      messagesByPriority
+      messagesByPriority,
+      messagesByEmployee
     };
   }
 
@@ -342,6 +413,80 @@ export class AgentCommunication extends EventEmitter {
       if (messages.length > 0) {
         this.logger.info(`Delivering ${messages.length} queued messages to ${employeeId}`);
         messages.forEach(msg => this.deliverToAgent(employeeId, msg));
+      }
+    }
+  }
+
+  // Subscribe an employee to a channel
+  subscribeToChannel(employeeId: string, channelName: string): void {
+    // Try to find channel by name, ID, or partial match
+    const channel = Array.from(this.channels.values()).find(ch => 
+      ch.name.toLowerCase() === channelName.toLowerCase() ||
+      ch.id.toLowerCase() === channelName.toLowerCase() ||
+      ch.name.toLowerCase().includes(channelName.toLowerCase()) ||
+      ch.id.toLowerCase().includes(channelName.toLowerCase())
+    );
+    
+    if (channel && !channel.members.includes(employeeId)) {
+      channel.members.push(employeeId);
+      this.logger.info(`Employee ${employeeId} subscribed to channel ${channelName}`);
+    }
+  }
+
+  // Unsubscribe an employee from a channel
+  unsubscribeFromChannel(employeeId: string, channelName: string): void {
+    // Try to find channel by name, ID, or partial match
+    const channel = Array.from(this.channels.values()).find(ch => 
+      ch.name.toLowerCase() === channelName.toLowerCase() ||
+      ch.id.toLowerCase() === channelName.toLowerCase() ||
+      ch.name.toLowerCase().includes(channelName.toLowerCase()) ||
+      ch.id.toLowerCase().includes(channelName.toLowerCase())
+    );
+    
+    if (channel) {
+      channel.members = channel.members.filter(id => id !== employeeId);
+      this.logger.info(`Employee ${employeeId} unsubscribed from channel ${channelName}`);
+    }
+  }
+
+  // Get messages for a specific employee
+  getMessagesForEmployee(employeeId: string): AgentMessage[] {
+    return Array.from(this.messages.values()).filter(msg => {
+      if (typeof msg.to === 'string') {
+        return msg.to === employeeId || msg.from === employeeId;
+      } else if (Array.isArray(msg.to)) {
+        return msg.to.includes(employeeId) || msg.from === employeeId;
+      }
+      return false;
+    });
+  }
+
+  // Get queued messages for an offline employee
+  getQueuedMessages(employeeId: string): AgentMessage[] {
+    return this.messageQueues.get(employeeId) || [];
+  }
+
+  // Mark a message as read
+  markAsRead(messageId: string, employeeId: string): void {
+    const message = this.messages.get(messageId);
+    if (message) {
+      if (!message.metadata) {
+        message.metadata = {};
+      }
+      if (!message.metadata.readBy) {
+        message.metadata.readBy = [];
+      }
+      if (!message.metadata.readBy.includes(employeeId)) {
+        message.metadata.readBy.push(employeeId);
+      }
+      
+      // Remove from queue if exists
+      const queue = this.messageQueues.get(employeeId);
+      if (queue) {
+        const index = queue.findIndex(msg => msg.id === messageId);
+        if (index >= 0) {
+          queue.splice(index, 1);
+        }
       }
     }
   }

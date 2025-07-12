@@ -12,11 +12,13 @@ import {
   delay
 } from '../utils/index.js';
 import { AgentRegistry } from './AgentRegistry.js';
+import { PersistenceService } from './PersistenceService.js';
 
 export class TaskQueue extends EventEmitter {
   private taskQueue: Queue;
   private logger: winston.Logger;
   private agentRegistry: AgentRegistry;
+  private persistenceService: PersistenceService;
   private employees: Map<string, AIEmployee> = new Map();
   private activeTasks: Map<string, Task> = new Map();
   private taskHistory: Task[] = [];
@@ -35,6 +37,8 @@ export class TaskQueue extends EventEmitter {
     super();
     this.logger = logger;
     this.agentRegistry = agentRegistry;
+    this.persistenceService = new PersistenceService(logger);
+    this.persistenceService.initialize();
     
     const queueOptions: QueueOptions = {
       redis: redisConfig || {
@@ -298,12 +302,20 @@ export class TaskQueue extends EventEmitter {
     }
   }
 
+  private async saveTasks(): Promise<void> {
+    const allTasks = [...Array.from(this.activeTasks.values()), ...this.taskHistory];
+    await this.persistenceService.saveTasks(allTasks);
+  }
+
   private moveToHistory(task: Task): void {
     this.taskHistory.push({ ...task });
     
     if (this.taskHistory.length > this.maxHistorySize) {
       this.taskHistory = this.taskHistory.slice(-Math.floor(this.maxHistorySize * 0.8));
     }
+    
+    // Save tasks after moving to history
+    this.saveTasks();
   }
 
   async updateTaskStatus(taskId: string, status: Task['status']): Promise<void> {
@@ -315,8 +327,36 @@ export class TaskQueue extends EventEmitter {
         task.assignedAt = new Date();
       }
       
+      // Save tasks after status update
+      await this.saveTasks();
+      
       this.emit('task_status_updated', { taskId, status });
     }
+  }
+
+  async updateTask(taskId: string, updates: Partial<Task>): Promise<Task> {
+    const task = this.activeTasks.get(taskId);
+    if (!task) {
+      throw new Error(`Task ${taskId} not found`);
+    }
+
+    // Update allowed fields
+    const allowedUpdates = ['title', 'description', 'priority', 'skillsRequired', 'estimatedDuration', 'tags', 'metadata'];
+    Object.keys(updates).forEach(key => {
+      if (allowedUpdates.includes(key)) {
+        (task as any)[key] = (updates as any)[key];
+      }
+    });
+
+    task.updatedAt = new Date();
+
+    // Save tasks after update
+    await this.saveTasks();
+
+    this.logger.info(`Updated task ${taskId}`);
+    this.emit('task_updated', { taskId, updates });
+
+    return task;
   }
 
   async loadEmployees(employees: AIEmployee[]): Promise<void> {
@@ -344,6 +384,9 @@ export class TaskQueue extends EventEmitter {
     this.logger.info(`Created task ${taskId}: ${task.title}`);
     this.emit('task_created', { taskId, task });
     
+    // Save tasks after creation
+    await this.saveTasks();
+    
     return taskId;
   }
 
@@ -354,6 +397,10 @@ export class TaskQueue extends EventEmitter {
       this.activeTasks.set(task.id, task);
       this.logger.info(`Added task ${task.id}: ${task.title}`);
       this.emit('task_created', { taskId: task.id, task });
+      
+      // Save tasks after adding
+      await this.saveTasks();
+      
       return task.id;
     }
     
@@ -463,11 +510,22 @@ export class TaskQueue extends EventEmitter {
       throw new Error(`Cannot cancel task ${taskId} in status ${task.status}`);
     }
 
-    const jobs = await this.taskQueue.getJobs(['waiting', 'active', 'delayed']);
-    const job = jobs.find(j => j.data.taskId === taskId);
-    
-    if (job) {
-      await job.remove();
+    // Try to remove from Bull queue, but don't fail if it hangs
+    try {
+      const jobs = await Promise.race([
+        this.taskQueue.getJobs(['waiting', 'active', 'delayed']),
+        new Promise<any[]>((_, reject) => 
+          setTimeout(() => reject(new Error('Queue timeout')), 2000)
+        )
+      ]);
+      
+      const job = jobs.find(j => j.data.taskId === taskId);
+      if (job) {
+        await job.remove();
+      }
+    } catch (error) {
+      this.logger.warn(`Could not remove job from queue: ${error}`);
+      // Continue anyway - the important part is removing from activeTasks
     }
 
     // Free up employee resources using AgentRegistry
@@ -478,6 +536,9 @@ export class TaskQueue extends EventEmitter {
     this.activeTasks.delete(taskId);
     this.logger.info(`Cancelled task ${taskId}`);
     this.emit('task_cancelled', { taskId });
+    
+    // Save tasks after cancellation
+    await this.saveTasks();
   }
 
   getTask(taskId: string): Task | null {

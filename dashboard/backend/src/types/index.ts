@@ -19,6 +19,8 @@ export interface AIEmployee {
 
 export interface ClaudeProcess {
   id: string;
+  name?: string;
+  role?: string;
   employeeId: string;
   pid: number;
   status: 'starting' | 'running' | 'stopping' | 'stopped' | 'error';
@@ -32,6 +34,8 @@ export interface ClaudeProcess {
   memoryUsage: number;
   cpuUsage: number;
   lastHeartbeat?: Date;
+  taskId?: string;
+  errorCount?: number;
 }
 
 export interface Task {
@@ -112,6 +116,7 @@ export interface ProcessConfig {
     cpu?: number;
     timeout?: number;
   };
+  task?: Task;  // Optional task to assign to the process
 }
 
 export interface LogEntry {

@@ -75,8 +75,27 @@ const dashboardStore = useDashboardStore()
 
 const connected = computed(() => dashboardStore.connected)
 
-onMounted(() => {
+onMounted(async () => {
   socketService.connect()
+  
+  // Also fetch initial data via REST API
+  try {
+    const { apiService } = await import('./services/api')
+    
+    // Fetch initial data
+    const [processes, tasks, employees] = await Promise.all([
+      apiService.getProcesses(),
+      apiService.getTasks(),
+      apiService.getEmployees()
+    ])
+    
+    // Update store with initial data
+    dashboardStore.updateProcesses(processes)
+    dashboardStore.updateTasks(tasks)
+    dashboardStore.updateEmployees(employees)
+  } catch (error) {
+    console.error('Failed to fetch initial data:', error)
+  }
 })
 
 onUnmounted(() => {

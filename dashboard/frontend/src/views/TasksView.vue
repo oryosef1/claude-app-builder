@@ -192,6 +192,75 @@
         </form>
       </div>
     </div>
+
+    <!-- Edit Task Modal -->
+    <div v-if="showEditModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg p-6 w-full max-w-md">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Edit Task</h3>
+        
+        <form @submit.prevent="saveTask">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+              <input 
+                v-model="editingTask.title"
+                type="text" 
+                class="w-full border border-gray-300 rounded-md px-3 py-2"
+                required
+              />
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <textarea 
+                v-model="editingTask.description"
+                rows="3"
+                class="w-full border border-gray-300 rounded-md px-3 py-2"
+              />
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+              <select 
+                v-model="editingTask.priority"
+                class="w-full border border-gray-300 rounded-md px-3 py-2"
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+              </select>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Skills Required</label>
+              <input 
+                v-model="skillsInput"
+                type="text" 
+                class="w-full border border-gray-300 rounded-md px-3 py-2"
+                placeholder="Comma-separated skills"
+              />
+            </div>
+          </div>
+          
+          <div class="mt-6 flex justify-end space-x-3">
+            <button 
+              type="button"
+              @click="showEditModal = false"
+              class="btn btn-secondary"
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit"
+              class="btn btn-primary"
+            >
+              Save
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -210,12 +279,21 @@ const filterStatus = ref('')
 const filterPriority = ref('')
 
 const showCreateModal = ref(false)
+const showEditModal = ref(false)
 const newTask = ref({
   title: '',
   description: '',
   priority: 'medium' as 'low' | 'medium' | 'high',
   assignedTo: ''
 })
+const editingTask = ref({
+  id: '',
+  title: '',
+  description: '',
+  priority: 'medium' as 'low' | 'medium' | 'high' | 'urgent',
+  skillsRequired: [] as string[]
+})
+const skillsInput = ref('')
 
 const filteredTasks = computed(() => {
   let filtered = tasks.value
@@ -310,8 +388,39 @@ async function assignTask(taskId: string) {
 }
 
 async function editTask(task: TaskInfo) {
-  // This would open an edit modal
-  console.log('Edit task:', task.id)
+  editingTask.value = {
+    id: task.id,
+    title: task.title,
+    description: task.description || '',
+    priority: task.priority,
+    skillsRequired: task.skillsRequired || []
+  }
+  skillsInput.value = editingTask.value.skillsRequired.join(', ')
+  showEditModal.value = true
+}
+
+async function saveTask() {
+  try {
+    const skills = skillsInput.value
+      .split(',')
+      .map(s => s.trim())
+      .filter(s => s.length > 0)
+    
+    await apiService.updateTask(editingTask.value.id, {
+      title: editingTask.value.title,
+      description: editingTask.value.description,
+      priority: editingTask.value.priority,
+      skillsRequired: skills
+    })
+    
+    showEditModal.value = false
+    
+    // Refresh tasks
+    const tasks = await apiService.getTasks()
+    dashboardStore.updateTasks(tasks)
+  } catch (error) {
+    console.error('Failed to update task:', error)
+  }
 }
 
 async function deleteTask(taskId: string) {

@@ -110,7 +110,7 @@
       "department": "Development",
       "level": "Junior",
       "hire_date": "2025-07-06",
-      "status": "busy",
+      "status": "active",
       "skills": [
         "feature_implementation",
         "testing",
@@ -134,7 +134,7 @@
       "department": "Development",
       "level": "Mid",
       "hire_date": "2025-07-06",
-      "status": "busy",
+      "status": "active",
       "skills": [
         "test_strategy",
         "automation",
@@ -164,9 +164,36 @@
         "e0bed6e8-7b34-40da-a867-f0a335e1b06c",
         "5fd0bec1-3151-4afc-8a0f-aa30d8fa9471",
         "cd2504b4-2b9e-4a2b-9e50-51434e589f12",
-        "6634e798-4c3c-4b6c-9667-087b1c3c8d01"
+        "6634e798-4c3c-4b6c-9667-087b1c3c8d01",
+        "e169434d-88ac-400a-91a1-e203bb191583",
+        "3bb6634c-ab12-43a6-9803-bba4cbe752c0",
+        "0508419b-5a7c-4b6b-a54c-39a7e1082860",
+        "71fe2d90-f42c-40a6-9604-be5a3d5acdca",
+        "c685e3f2-24a6-4c12-aed0-7a313dd51399",
+        "123489c0-c1e2-42b6-86bc-6d7dffb98d07",
+        "3467b1a3-3893-4367-9e76-5ed021b71ea7",
+        "871851a2-82e3-4eaf-a35a-9a2419784955",
+        "7793e50c-29e5-4e28-9bcf-d454fd5f1a11",
+        "09d9da9f-9045-4d9f-8b28-bb904bd8db31",
+        "f0026f4c-1730-478c-8821-42db240b14cf",
+        "41fadbdf-ac39-4ea6-b23a-c82041328fce",
+        "0d9d9bfc-68e1-42f0-94cc-67255ebb7455",
+        "3befed95-442b-428c-9deb-aabbb0097434",
+        "c5ef7aca-fc9b-4477-aa9d-5ac9ed0fbd67",
+        "bcedc9ee-8ade-4a13-9ab4-b519f735f289",
+        "8eee1873-98c6-47dd-baf1-81ced3b58723",
+        "4f0deb76-3cb5-453d-87b4-2296a36d251f",
+        "6ac0a46c-0917-49ed-b2a7-20be5b8e4160",
+        "dcb596fb-de4c-47c3-bfe1-790a6ac6c62b",
+        "1e3119e0-ee79-4dfe-9c18-2c53011bc13a",
+        "1a971e3b-5530-4e67-801e-0129867b6466",
+        "24e4e81c-5b50-48c6-b5e1-f6bb18521686",
+        "84e795e8-036b-457f-88af-ffd092936d90",
+        "308da27a-0431-4bbd-a150-6bf7dd333e0e",
+        "5dfd84cb-6aa6-494a-aff9-5aa7b66b0a96",
+        "9357bb78-6b67-4c9b-8473-ffe1a7e873b5"
       ],
-      "workload": 31,
+      "workload": 30,
       "performance_metrics": {
         "test_coverage": 100,
         "automation_rate": 100,
@@ -382,5 +409,5 @@
       "focus": "Documentation, design, and build systems"
     }
   },
-  "last_updated": "2025-07-11T10:21:20.320Z"
+  "last_updated": "2025-07-12T03:37:39.358Z"
 }

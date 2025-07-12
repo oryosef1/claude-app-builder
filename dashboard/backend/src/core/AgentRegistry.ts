@@ -46,9 +46,43 @@ export class AgentRegistry extends EventEmitter {
 
   constructor() {
     super();
-    // Fix path to handle Hebrew characters and go up to project root
-    const projectRoot = path.resolve(process.cwd(), '../..');
-    this.registryPath = path.join(projectRoot, 'ai-employees/employee-registry.json');
+    // Fix path to handle various execution contexts
+    const currentDir = process.cwd();
+    let projectRoot: string;
+    
+    // Check multiple possible locations for the employee registry
+    const possiblePaths = [
+      // When run from dashboard/backend
+      path.resolve(currentDir, '..', '..', 'ai-employees', 'employee-registry.json'),
+      // When run from project root
+      path.resolve(currentDir, 'ai-employees', 'employee-registry.json'),
+      // When run from tests or other subdirectories
+      path.resolve(currentDir, '..', 'ai-employees', 'employee-registry.json'),
+      // Using __dirname relative path
+      path.resolve(__dirname, '..', '..', '..', '..', 'ai-employees', 'employee-registry.json'),
+      // Alternative __dirname path
+      path.resolve(__dirname, '..', '..', '..', '..', '..', 'ai-employees', 'employee-registry.json')
+    ];
+    
+    // Find the first existing path
+    let foundPath: string | null = null;
+    for (const testPath of possiblePaths) {
+      try {
+        if (fs.existsSync(testPath)) {
+          foundPath = testPath;
+          break;
+        }
+      } catch (e) {
+        // Continue to next path
+      }
+    }
+    
+    if (!foundPath) {
+      console.error('Could not find employee-registry.json in any of these locations:', possiblePaths);
+      throw new Error('Failed to locate employee registry file');
+    }
+    
+    this.registryPath = foundPath;
     this.loadRegistry();
   }
 
@@ -321,7 +355,13 @@ export class AgentRegistry extends EventEmitter {
 
   getSystemPromptPath(employeeId: string): string | null {
     const employee = this.getEmployeeById(employeeId);
-    return employee ? path.join(__dirname, '../../../../', employee.system_prompt_file) : null;
+    if (!employee) return null;
+    
+    // Get the directory of the registry file and use it as base
+    const registryDir = path.dirname(this.registryPath);
+    const projectRoot = path.dirname(registryDir);
+    
+    return path.join(projectRoot, employee.system_prompt_file);
   }
 
   // Advanced skill matching with weighted preferences

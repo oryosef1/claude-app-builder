@@ -87,7 +87,8 @@ vi.mock('winston', () => ({
       combine: vi.fn(),
       timestamp: vi.fn(),
       printf: vi.fn(),
-      colorize: vi.fn()
+      colorize: vi.fn(),
+      json: vi.fn()
     },
     transports: {
       Console: vi.fn(),

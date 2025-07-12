@@ -46,13 +46,13 @@
           
           <div class="flex justify-between text-sm">
             <span class="text-gray-500">Performance:</span>
-            <span class="font-medium">{{ employee.performanceScore.toFixed(1) }}%</span>
+            <span class="font-medium">{{ (employee.performanceScore || 0).toFixed(1) }}%</span>
           </div>
           
           <div class="w-full bg-gray-200 rounded-full h-2">
             <div 
               class="bg-success-600 h-2 rounded-full" 
-              :style="{ width: employee.performanceScore + '%' }"
+              :style="{ width: (employee.performanceScore || 0) + '%' }"
             ></div>
           </div>
         </div>

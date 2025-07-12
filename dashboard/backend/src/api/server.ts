@@ -365,7 +365,14 @@ export function createAPIRouter(
   router.get('/processes', (_req, res) => {
     try {
       const processes = processManager.getAllProcesses();
-      res.json({ success: true, data: processes });
+      // Add uptime calculation to each process
+      const processesWithUptime = processes.map(process => ({
+        ...process,
+        uptime: process.startedAt && process.status === 'running' 
+          ? Math.floor((Date.now() - new Date(process.startedAt).getTime()) / 1000)
+          : 0
+      }));
+      res.json({ success: true, data: processesWithUptime });
     } catch (error) {
       logger.error('Error getting processes:', error);
       res.status(500).json({ 
@@ -382,7 +389,14 @@ export function createAPIRouter(
         res.status(404).json({ success: false, error: 'Process not found' });
         return;
       }
-      res.json({ success: true, data: process });
+      // Add uptime calculation
+      const processWithUptime = {
+        ...process,
+        uptime: process.startedAt && process.status === 'running' 
+          ? Math.floor((Date.now() - new Date(process.startedAt).getTime()) / 1000)
+          : 0
+      };
+      res.json({ success: true, data: processWithUptime });
     } catch (error) {
       logger.error('Error getting process:', error);
       res.status(500).json({ 
@@ -425,6 +439,73 @@ export function createAPIRouter(
       res.json({ success: true, message: 'Process restarted' });
     } catch (error) {
       logger.error('Error restarting process:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  router.delete('/processes/:id', async (req, res) => {
+    try {
+      await processManager.deleteProcess(req.params.id);
+      res.json({ success: true, message: 'Process deleted' });
+    } catch (error) {
+      logger.error('Error deleting process:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  // Create process with task assignment
+  router.post('/processes/create-with-task', async (req, res) => {
+    try {
+      const { taskId, employeeId } = req.body;
+      
+      // Get the task
+      const task = taskQueue.getTask(taskId);
+      if (!task) {
+        res.status(404).json({ success: false, error: 'Task not found' });
+        return;
+      }
+      
+      // Get employee info
+      const employee = agentRegistry.getEmployeeById(employeeId || task.assignedTo);
+      if (!employee) {
+        res.status(404).json({ success: false, error: 'Employee not found' });
+        return;
+      }
+      
+      // Create process config with task
+      const config: ProcessConfig = {
+        employeeId: employee.id,
+        systemPrompt: `corporate-prompts/${employee.role.toLowerCase().replace(/ /g, '-')}.md`,
+        tools: (employee as any).tools || [],
+        maxTurns: 20,
+        task: task
+      };
+      
+      // Create the process
+      const processId = await processManager.createProcess(config);
+      
+      // Update task status
+      task.status = 'in_progress';
+      task.processId = processId;
+      task.assignedAt = new Date();
+      task.startedAt = new Date();
+      
+      res.status(201).json({ 
+        success: true, 
+        data: { 
+          processId,
+          taskId: task.id,
+          employeeId: employee.id
+        } 
+      });
+    } catch (error) {
+      logger.error('Error creating process with task:', error);
       res.status(500).json({ 
         success: false, 
         error: error instanceof Error ? error.message : 'Unknown error' 

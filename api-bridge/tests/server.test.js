@@ -47,7 +47,7 @@ vi.mock('./routes/system.js', () => ({
 }));
 
 // Import server after mocks are set up
-import app from '../server.js';
+import { app } from '../server.js';
 
 describe('API Bridge Server - Comprehensive Tests', () => {
   let server;

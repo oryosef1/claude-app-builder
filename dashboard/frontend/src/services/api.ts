@@ -41,8 +41,18 @@ export const apiService = {
 
   // Process management
   async getProcesses(): Promise<ProcessInfo[]> {
-    const response = await api.get('/api/processes')
-    return response.data
+    try {
+      const response = await api.get('/api/processes')
+      // Handle both wrapped and unwrapped responses
+      if (response.data && response.data.data) {
+        return response.data.data
+      }
+      return response.data || []
+    } catch (error) {
+      console.error('Failed to get processes:', error)
+      // Return empty array if endpoint doesn't exist yet
+      return []
+    }
   },
 
   async getProcess(id: string): Promise<ProcessInfo> {
@@ -65,8 +75,17 @@ export const apiService = {
 
   // Task management
   async getTasks(): Promise<TaskInfo[]> {
-    const response = await api.get('/api/tasks')
-    return response.data
+    try {
+      const response = await api.get('/api/tasks')
+      // Handle both wrapped and unwrapped responses
+      if (response.data && response.data.data) {
+        return response.data.data
+      }
+      return response.data || []
+    } catch (error) {
+      console.error('Failed to get tasks:', error)
+      return []
+    }
   },
 
   async getTask(id: string): Promise<TaskInfo> {
@@ -90,8 +109,33 @@ export const apiService = {
 
   // Employee management
   async getEmployees(): Promise<EmployeeInfo[]> {
-    const response = await api.get('/api/employees')
-    return response.data
+    try {
+      const response = await api.get('/api/employees')
+      let employees = []
+      
+      // Handle wrapped response format
+      if (response.data && response.data.data) {
+        employees = response.data.data
+      } else {
+        employees = response.data || []
+      }
+      
+      // Transform backend data to frontend format
+      return employees.map((emp: any) => ({
+        id: emp.id,
+        name: emp.name,
+        role: emp.role,
+        department: emp.department,
+        skills: emp.skills || [],
+        availability: emp.current_projects?.length > 0 ? 'busy' : 'available',
+        currentTasks: emp.current_projects?.length || 0,
+        maxTasks: 5, // Default max tasks
+        performanceScore: emp.performance_metrics?.success_rate || 0
+      }))
+    } catch (error) {
+      console.error('Failed to get employees:', error)
+      return []
+    }
   },
 
   async getEmployee(id: string): Promise<EmployeeInfo> {
@@ -109,6 +153,10 @@ export const apiService = {
   async getLogs(limit: number = 100) {
     const response = await api.get(`/api/logs?limit=${limit}`)
     return response.data
+  },
+
+  async deleteProcess(id: string): Promise<void> {
+    await api.delete(`/api/processes/${id}`)
   }
 }
 

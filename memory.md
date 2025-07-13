@@ -129,6 +129,26 @@ wget -qO- http://localhost:3002/health  # API Bridge
 - **API Endpoints**: All 6 core endpoints validated and functional
 - **WebSocket**: Real-time communication ready
 
+### Bug Fix: Task Creation Crashes (2025-07-13) ✅ COMPLETE
+- **Issue**: Task creation crashes when opening multiple scenarios or exceeding text limits
+- **Root Causes Identified**:
+  1. Redis connection failures (ECONNREFUSED 127.0.0.1:6379)
+  2. No text length validation for task descriptions
+  3. Memory leaks from unlimited task history growth
+  4. Missing frontend input validation
+- **Fixes Implemented**:
+  - **Redis Fallback**: Graceful degradation to in-memory task processing when Redis unavailable
+  - **Text Validation**: Server-side limits (200 chars title, 10,000 chars description)
+  - **Memory Management**: Aggressive task history cleanup with lightweight task copies
+  - **Frontend Validation**: Real-time character counting, visual indicators, form validation
+  - **Error Handling**: Comprehensive validation with user-friendly error messages
+- **Technical Changes**:
+  - TaskQueue.ts: Added validateTaskData() method and Redis null safety
+  - TaskAssignment.vue: Added character limits, validation indicators, form validation
+  - Implemented in-memory task processing as Redis fallback
+  - Added periodic garbage collection hints for memory cleanup
+- **Status**: All task creation crashes resolved, system stable with/without Redis
+
 ### Deployment Status (2025-07-08)
 - **Backend Deployment**: ✅ Complete - Dashboard backend successfully deployed on port 8080
 - **Service Health**: All critical services healthy (Memory API, API Bridge, Redis)

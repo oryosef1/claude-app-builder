@@ -51,8 +51,8 @@
             </div>
           </div>
           <div class="ml-3">
-            <p class="text-sm font-medium text-gray-500">Available Employees</p>
-            <p class="text-2xl font-semibold text-gray-900">{{ availableEmployees.length }}</p>
+            <p class="text-sm font-medium text-gray-500">Total Employees</p>
+            <p class="text-2xl font-semibold text-gray-900">{{ employees.length }}</p>
           </div>
         </div>
       </div>
@@ -149,8 +149,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useDashboardStore } from '../stores/dashboard'
+import { apiService } from '../services/api'
 import type { LogEntry } from '../types'
 
 const dashboardStore = useDashboardStore()
@@ -158,11 +159,28 @@ const dashboardStore = useDashboardStore()
 const runningProcesses = computed(() => dashboardStore.runningProcesses)
 const pendingTasks = computed(() => dashboardStore.pendingTasks)
 const availableEmployees = computed(() => dashboardStore.availableEmployees)
+const employees = computed(() => dashboardStore.employees)
 const systemStatus = computed(() => dashboardStore.systemStatus)
 const systemHealth = computed(() => dashboardStore.systemHealth)
 const lastUpdated = computed(() => dashboardStore.lastUpdated)
 
 const recentLogs = computed(() => dashboardStore.logs.slice(0, 10))
+
+onMounted(async () => {
+  try {
+    const [employeesData, processesData, tasksData] = await Promise.all([
+      apiService.getEmployees(),
+      apiService.getProcesses(),
+      apiService.getTasks()
+    ])
+    
+    dashboardStore.updateEmployees(employeesData)
+    dashboardStore.updateProcesses(processesData)
+    dashboardStore.updateTasks(tasksData)
+  } catch (error) {
+    console.error('Failed to load dashboard data:', error)
+  }
+})
 
 const systemStatusColor = computed(() => {
   switch (systemStatus.value) {

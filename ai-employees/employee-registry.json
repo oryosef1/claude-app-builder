@@ -110,7 +110,7 @@
       "department": "Development",
       "level": "Junior",
       "hire_date": "2025-07-06",
-      "status": "active",
+      "status": "busy",
       "skills": [
         "feature_implementation",
         "testing",
@@ -409,5 +409,5 @@
       "focus": "Documentation, design, and build systems"
     }
   },
-  "last_updated": "2025-07-13T01:57:00.841Z"
+  "last_updated": "2025-07-13T03:32:56.025Z"
 }

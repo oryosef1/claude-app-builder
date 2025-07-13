@@ -23,6 +23,8 @@
             <option value="pending">Pending</option>
             <option value="running">Running</option>
             <option value="completed">Completed</option>
+            <option value="resolved">Resolved</option>
+            <option value="reopened">Reopened</option>
             <option value="failed">Failed</option>
           </select>
         </div>
@@ -34,6 +36,7 @@
             class="border border-gray-300 rounded-md px-3 py-2"
           >
             <option value="">All Priority</option>
+            <option value="urgent">Urgent</option>
             <option value="high">High</option>
             <option value="medium">Medium</option>
             <option value="low">Low</option>
@@ -101,7 +104,21 @@
                   Assign
                 </button>
                 <button 
-                  v-if="task.status !== 'completed'"
+                  v-if="task.status === 'completed'"
+                  @click="resolveTask(task)"
+                  class="btn btn-success text-xs"
+                >
+                  Resolve
+                </button>
+                <button 
+                  v-if="task.status === 'completed' || task.status === 'resolved'"
+                  @click="reopenTask(task)"
+                  class="btn btn-warning text-xs"
+                >
+                  Reopen
+                </button>
+                <button 
+                  v-if="task.status !== 'completed' && task.status !== 'resolved'"
                   @click="editTask(task)"
                   class="btn btn-secondary text-xs"
                 >
@@ -157,6 +174,7 @@
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
+                <option value="urgent">Urgent</option>
               </select>
             </div>
             
@@ -261,6 +279,96 @@
         </form>
       </div>
     </div>
+
+    <!-- Resolve Task Modal -->
+    <div v-if="showResolveModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg p-6 w-full max-w-md">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Resolve Task</h3>
+        <p class="text-sm text-gray-600 mb-4">{{ resolvingTask.title }}</p>
+        
+        <form @submit.prevent="confirmResolve">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Resolution Comment (Optional)</label>
+              <textarea 
+                v-model="resolvingTask.comment"
+                rows="3"
+                class="w-full border border-gray-300 rounded-md px-3 py-2"
+                placeholder="Add any final notes about this task completion..."
+              ></textarea>
+            </div>
+          </div>
+          
+          <div class="mt-6 flex justify-end space-x-3">
+            <button 
+              type="button"
+              @click="showResolveModal = false"
+              class="btn btn-secondary"
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit"
+              class="btn btn-success"
+            >
+              Resolve Task
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Reopen Task Modal -->
+    <div v-if="showReopenModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg p-6 w-full max-w-md">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Reopen Task</h3>
+        <p class="text-sm text-gray-600 mb-4">{{ reopeningTask.title }}</p>
+        
+        <form @submit.prevent="confirmReopen">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Reason for Reopening *</label>
+              <textarea 
+                v-model="reopeningTask.reason"
+                rows="3"
+                class="w-full border border-gray-300 rounded-md px-3 py-2"
+                placeholder="Explain why this task needs to be reopened..."
+                required
+              ></textarea>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Reassign To</label>
+              <select 
+                v-model="reopeningTask.assignTo"
+                class="w-full border border-gray-300 rounded-md px-3 py-2"
+              >
+                <option value="">Keep current assignment</option>
+                <option v-for="employee in availableEmployees" :key="employee.id" :value="employee.id">
+                  {{ employee.name }} - {{ employee.role }}
+                </option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="mt-6 flex justify-end space-x-3">
+            <button 
+              type="button"
+              @click="showReopenModal = false"
+              class="btn btn-secondary"
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit"
+              class="btn btn-warning"
+            >
+              Reopen Task
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -280,10 +388,12 @@ const filterPriority = ref('')
 
 const showCreateModal = ref(false)
 const showEditModal = ref(false)
+const showResolveModal = ref(false)
+const showReopenModal = ref(false)
 const newTask = ref({
   title: '',
   description: '',
-  priority: 'medium' as 'low' | 'medium' | 'high',
+  priority: 'medium' as 'low' | 'medium' | 'high' | 'urgent',
   assignedTo: ''
 })
 const editingTask = ref({
@@ -292,6 +402,17 @@ const editingTask = ref({
   description: '',
   priority: 'medium' as 'low' | 'medium' | 'high' | 'urgent',
   skillsRequired: [] as string[]
+})
+const resolvingTask = ref({
+  id: '',
+  title: '',
+  comment: ''
+})
+const reopeningTask = ref({
+  id: '',
+  title: '',
+  reason: '',
+  assignTo: ''
 })
 const skillsInput = ref('')
 
@@ -307,8 +428,8 @@ const filteredTasks = computed(() => {
   }
   
   return filtered.sort((a, b) => {
-    const priorityOrder = { high: 3, medium: 2, low: 1 }
-    return priorityOrder[b.priority] - priorityOrder[a.priority]
+    const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 }
+    return (priorityOrder[b.priority] || 1) - (priorityOrder[a.priority] || 1)
   })
 })
 
@@ -331,6 +452,8 @@ function getStatusClass(status: TaskInfo['status']): string {
     case 'pending': return 'status-pending'
     case 'running': return 'status-running'
     case 'completed': return 'status-running bg-success-100 text-success-800'
+    case 'resolved': return 'bg-green-100 text-green-800'
+    case 'reopened': return 'bg-yellow-100 text-yellow-800'
     case 'failed': return 'status-error'
     default: return 'status-idle'
   }
@@ -338,6 +461,7 @@ function getStatusClass(status: TaskInfo['status']): string {
 
 function getPriorityClass(priority: TaskInfo['priority']): string {
   switch (priority) {
+    case 'urgent': return 'bg-red-100 text-red-800'
     case 'high': return 'bg-error-100 text-error-800'
     case 'medium': return 'bg-warning-100 text-warning-800'
     case 'low': return 'bg-gray-100 text-gray-800'
@@ -361,7 +485,9 @@ async function createTask() {
       status: 'pending' as const,
       createdAt: new Date(),
       updatedAt: new Date(),
-      progress: 0
+      progress: 0,
+      skillsRequired: [],
+      estimatedDuration: 0
     }
     
     await apiService.createTask(taskData)
@@ -386,8 +512,8 @@ async function assignTask(taskId: string) {
   try {
     console.log('Assign task:', taskId)
     
-    // Create process with the task using the working endpoint
-    const processData = await apiService.createProcessWithTask(taskId, 'emp_004')
+    // Create process with the task using the working endpoint - let backend use task's assignedTo
+    const processData = await apiService.createProcessWithTask(taskId)
     
     console.log('Process created:', processData)
     
@@ -451,6 +577,64 @@ async function deleteTask(taskId: string) {
     } catch (error) {
       console.error('Failed to delete task:', error)
     }
+  }
+}
+
+async function resolveTask(task: TaskInfo) {
+  resolvingTask.value = {
+    id: task.id,
+    title: task.title,
+    comment: ''
+  }
+  showResolveModal.value = true
+}
+
+async function confirmResolve() {
+  try {
+    await apiService.resolveTask(resolvingTask.value.id, resolvingTask.value.comment)
+    
+    showResolveModal.value = false
+    resolvingTask.value = { id: '', title: '', comment: '' }
+    
+    // Refresh tasks
+    const tasks = await apiService.getTasks()
+    dashboardStore.updateTasks(tasks)
+  } catch (error) {
+    console.error('Failed to resolve task:', error)
+  }
+}
+
+async function reopenTask(task: TaskInfo) {
+  reopeningTask.value = {
+    id: task.id,
+    title: task.title,
+    reason: '',
+    assignTo: task.assignedTo || ''
+  }
+  showReopenModal.value = true
+}
+
+async function confirmReopen() {
+  try {
+    if (!reopeningTask.value.reason) {
+      alert('Please provide a reason for reopening the task')
+      return
+    }
+    
+    await apiService.reopenTask(
+      reopeningTask.value.id, 
+      reopeningTask.value.reason,
+      reopeningTask.value.assignTo || undefined
+    )
+    
+    showReopenModal.value = false
+    reopeningTask.value = { id: '', title: '', reason: '', assignTo: '' }
+    
+    // Refresh tasks
+    const tasks = await apiService.getTasks()
+    dashboardStore.updateTasks(tasks)
+  } catch (error) {
+    console.error('Failed to reopen task:', error)
   }
 }
 </script>

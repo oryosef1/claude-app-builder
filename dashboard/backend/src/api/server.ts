@@ -656,10 +656,47 @@ export function createAPIRouter(
 
   router.delete('/tasks/:id', async (req, res) => {
     try {
-      await taskQueue.cancelTask(req.params.id);
-      res.json({ success: true, message: 'Task cancelled' });
+      await taskQueue.deleteTask(req.params.id);
+      res.json({ success: true, message: 'Task deleted' });
     } catch (error) {
-      logger.error('Error cancelling task:', error);
+      logger.error('Error deleting task:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  // Resolve task endpoint
+  router.post('/tasks/:id/resolve', async (req, res) => {
+    try {
+      const { comment } = req.body;
+      await taskQueue.resolveTask(req.params.id, comment);
+      res.json({ success: true, message: 'Task resolved' });
+    } catch (error) {
+      logger.error('Error resolving task:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  // Reopen task endpoint
+  router.post('/tasks/:id/reopen', async (req, res) => {
+    try {
+      const { reason, assignTo } = req.body;
+      if (!reason) {
+        res.status(400).json({ 
+          success: false, 
+          error: 'Reason is required when reopening a task' 
+        });
+        return;
+      }
+      await taskQueue.reopenTask(req.params.id, reason, assignTo);
+      res.json({ success: true, message: 'Task reopened' });
+    } catch (error) {
+      logger.error('Error reopening task:', error);
       res.status(500).json({ 
         success: false, 
         error: error instanceof Error ? error.message : 'Unknown error' 

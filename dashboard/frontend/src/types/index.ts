@@ -16,14 +16,27 @@ export interface TaskInfo {
   id: string;
   title: string;
   description: string;
-  status: 'pending' | 'running' | 'completed' | 'failed';
-  priority: 'low' | 'medium' | 'high';
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'resolved' | 'reopened';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
   assignedTo?: string;
   createdAt: Date;
   updatedAt: Date;
   estimatedDuration?: number;
   completedAt?: Date;
+  resolvedAt?: Date;
+  reopenedAt?: Date;
   progress: number;
+  comments?: TaskComment[];
+  skillsRequired?: string[];
+}
+
+export interface TaskComment {
+  id: string;
+  text: string;
+  authorId: string;
+  authorName: string;
+  createdAt: Date;
+  type: 'general' | 'reopen_reason' | 'resolution';
 }
 
 export interface EmployeeInfo {

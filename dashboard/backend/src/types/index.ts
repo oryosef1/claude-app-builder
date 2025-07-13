@@ -43,7 +43,7 @@ export interface Task {
   title: string;
   description: string;
   priority: 'low' | 'medium' | 'high' | 'urgent';
-  status: 'pending' | 'assigned' | 'in_progress' | 'completed' | 'failed';
+  status: 'pending' | 'assigned' | 'in_progress' | 'completed' | 'failed' | 'resolved' | 'reopened';
   assignedTo?: string;
   processId?: string;
   skillsRequired: string[];
@@ -51,11 +51,23 @@ export interface Task {
   assignedAt?: Date;
   startedAt?: Date;
   completedAt?: Date;
+  resolvedAt?: Date;
+  reopenedAt?: Date;
   estimatedDuration: number;
   actualDuration?: number;
   result?: TaskResult;
   retryCount: number;
   maxRetries: number;
+  comments: TaskComment[];
+}
+
+export interface TaskComment {
+  id: string;
+  text: string;
+  authorId: string;
+  authorName: string;
+  createdAt: Date;
+  type: 'general' | 'reopen_reason' | 'resolution';
 }
 
 export interface TaskResult {

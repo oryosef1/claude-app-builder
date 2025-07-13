@@ -3,6 +3,18 @@ import type { ProcessInfo, TaskInfo, EmployeeInfo, SystemHealth } from '../types
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
+// Map backend employee status to frontend availability
+function mapEmployeeStatus(status: string): 'available' | 'busy' | 'offline' {
+  switch (status) {
+    case 'active': return 'available'
+    case 'busy': return 'busy'
+    case 'inactive': 
+    case 'offline':
+    case 'maintenance': return 'offline'
+    default: return 'available'
+  }
+}
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
@@ -115,6 +127,14 @@ export const apiService = {
     await api.delete(`/api/tasks/${id}`)
   },
 
+  async resolveTask(id: string, comment?: string): Promise<void> {
+    await api.post(`/api/tasks/${id}/resolve`, { comment })
+  },
+
+  async reopenTask(id: string, reason: string, assignTo?: string): Promise<void> {
+    await api.post(`/api/tasks/${id}/reopen`, { reason, assignTo })
+  },
+
   // Employee management
   async getEmployees(): Promise<EmployeeInfo[]> {
     try {
@@ -135,7 +155,7 @@ export const apiService = {
         role: emp.role,
         department: emp.department,
         skills: emp.skills || [],
-        availability: emp.current_projects?.length > 0 ? 'busy' : 'available',
+        availability: mapEmployeeStatus(emp.status),
         currentTasks: emp.current_projects?.length || 0,
         maxTasks: 5, // Default max tasks
         performanceScore: emp.performance_metrics?.success_rate || 0

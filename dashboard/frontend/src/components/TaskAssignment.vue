@@ -150,23 +150,48 @@
         <form @submit.prevent="createTask">
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                Title
+                <span class="text-xs text-gray-500">
+                  ({{ newTask.title.length }}/200 characters)
+                </span>
+              </label>
               <input 
                 v-model="newTask.title"
                 type="text" 
+                maxlength="200"
                 class="w-full border border-gray-300 rounded-md px-3 py-2"
+                :class="{ 'border-red-500': newTask.title.length > 200 }"
                 required
+                placeholder="Enter a concise task title..."
               />
+              <div v-if="newTask.title.length > 180" class="text-xs text-amber-600 mt-1">
+                Warning: Approaching character limit
+              </div>
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                Description
+                <span class="text-xs text-gray-500">
+                  ({{ newTask.description.length }}/10000 characters)
+                </span>
+              </label>
               <textarea 
                 v-model="newTask.description"
                 rows="3"
+                maxlength="10000"
                 class="w-full border border-gray-300 rounded-md px-3 py-2"
+                :class="{ 'border-red-500': newTask.description.length > 10000 }"
                 required
+                placeholder="Describe the task in detail..."
               ></textarea>
+              <div v-if="newTask.description.length > 9500" class="text-xs text-amber-600 mt-1">
+                Warning: Approaching character limit
+              </div>
+              <div v-if="newTask.description.length > 10000" class="text-xs text-red-600 mt-1">
+                Error: Description too long (max 10,000 characters)
+              </div>
             </div>
             
             <div>
@@ -228,6 +253,20 @@
             </div>
           </div>
           
+          <!-- Validation Summary -->
+          <div v-if="!isFormValid" class="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+            <h4 class="text-sm font-medium text-red-800 mb-2">Please fix the following issues:</h4>
+            <ul class="text-xs text-red-700 space-y-1">
+              <li v-if="newTask.title.trim().length === 0">• Title is required</li>
+              <li v-if="newTask.title.length > 200">• Title too long (max 200 characters)</li>
+              <li v-if="newTask.description.trim().length === 0">• Description is required</li>
+              <li v-if="newTask.description.length > 10000">• Description too long (max 10,000 characters)</li>
+              <li v-if="newTask.requiredSkills.length > 20">• Too many skills (max 20)</li>
+              <li v-if="newTask.estimatedDuration <= 0">• Estimated duration must be greater than 0</li>
+              <li v-if="newTask.estimatedDuration > 24">• Estimated duration too long (max 24 hours)</li>
+            </ul>
+          </div>
+          
           <div class="mt-6 flex justify-end space-x-3">
             <button 
               type="button"
@@ -238,7 +277,9 @@
             </button>
             <button 
               type="submit"
-              class="btn btn-primary"
+              class="btn"
+              :class="isFormValid ? 'btn-primary' : 'btn-secondary opacity-50 cursor-not-allowed'"
+              :disabled="!isFormValid"
             >
               Create Task
             </button>
@@ -294,6 +335,16 @@ const employeeRecommendations = computed(() => {
     .sort((a, b) => b.score - a.score)
 })
 
+const isFormValid = computed(() => {
+  return newTask.value.title.trim().length > 0 &&
+         newTask.value.title.length <= 200 &&
+         newTask.value.description.trim().length > 0 &&
+         newTask.value.description.length <= 10000 &&
+         newTask.value.requiredSkills.length <= 20 &&
+         newTask.value.estimatedDuration > 0 &&
+         newTask.value.estimatedDuration <= 24
+})
+
 function selectTask(task: TaskInfo) {
   selectedTask.value = task
 }
@@ -340,6 +391,11 @@ function balanceWorkload() {
 }
 
 function createTask() {
+  // Validate form before submission
+  if (!isFormValid.value) {
+    return;
+  }
+  
   const taskData = {
     ...newTask.value,
     status: 'pending' as const,

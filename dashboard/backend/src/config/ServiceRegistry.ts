@@ -22,14 +22,14 @@ export class ServiceRegistry extends EventEmitter {
     // Initialize with environment URLs or defaults
     this.registerService('memory-api', {
       name: 'Memory API',
-      url: process.env.MEMORY_API_URL || 'http://localhost:3333',
+      url: process.env['MEMORY_API_URL'] || 'http://localhost:3333',
       status: 'unknown',
       lastCheck: new Date()
     });
     
     this.registerService('api-bridge', {
       name: 'API Bridge',
-      url: process.env.API_BRIDGE_URL || 'http://localhost:3002',
+      url: process.env['API_BRIDGE_URL'] || 'http://localhost:3002',
       status: 'unknown',
       lastCheck: new Date()
     });
@@ -47,7 +47,7 @@ export class ServiceRegistry extends EventEmitter {
     try {
       const start = Date.now();
       const response = await fetch(`${service.url}/health`, {
-        timeout: 5000
+        signal: AbortSignal.timeout(5000)
       });
       
       const responseTime = Date.now() - start;
@@ -79,10 +79,10 @@ export class ServiceRegistry extends EventEmitter {
       for (const port of ports) {
         const url = `http://localhost:${port}`;
         try {
-          const response = await fetch(`${url}/health`, { timeout: 1000 });
+          const response = await fetch(`${url}/health`, { signal: AbortSignal.timeout(1000) });
           
           if (response.ok) {
-            const data = await response.json();
+            const data = await response.json() as any;
             
             // Verify it's the right service
             if (serviceId === 'memory-api' && data.service === 'memory-api') {

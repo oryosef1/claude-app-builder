@@ -120,14 +120,14 @@ export class AgentCommunication extends EventEmitter {
 
   private async deliverToAgent(employeeId: string, message: AgentMessage): Promise<void> {
     // Check if recipient exists
-    const recipient = this.registry.getEmployee(employeeId);
+    const recipient = this.registry.getEmployeeById(employeeId);
     if (!recipient) {
       this.logger.warn(`Recipient ${employeeId} not found`);
       return;
     }
 
     // Log the message
-    if (message.type === 'info' || message.type === 'notification') {
+    if (message.type === 'notification') {
       this.logger.info(`Direct message from ${message.from} to ${employeeId}`);
     }
 

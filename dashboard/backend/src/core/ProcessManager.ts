@@ -60,12 +60,21 @@ export class ProcessManager extends EventEmitter {
         try {
           const memoryUsage = await this.getProcessMemoryUsage(childProcess.pid!);
           
-          claudeProcess.memoryUsage = memoryUsage;
-          claudeProcess.lastHeartbeat = new Date();
-          
-          if (now - claudeProcess.lastHeartbeat.getTime() > this.processTimeout) {
-            this.logger.warn(`Process ${processId} timed out, restarting...`);
-            await this.restartProcess(processId);
+          // If memory usage is 0, the process likely doesn't exist anymore
+          if (memoryUsage === 0) {
+            this.logger.info(`Process ${processId} (PID ${childProcess.pid}) no longer exists, marking as stopped`);
+            claudeProcess.status = 'stopped';
+            claudeProcess.stoppedAt = new Date();
+            this.emit('process_stopped', { processId, claudeProcess, code: null, signal: null });
+            await this.saveProcesses();
+          } else {
+            claudeProcess.memoryUsage = memoryUsage;
+            claudeProcess.lastHeartbeat = new Date();
+            
+            if (now - claudeProcess.lastHeartbeat.getTime() > this.processTimeout) {
+              this.logger.warn(`Process ${processId} timed out, restarting...`);
+              await this.restartProcess(processId);
+            }
           }
         } catch (error) {
           this.logger.error(`Health check failed for process ${processId}:`, error);
@@ -76,7 +85,11 @@ export class ProcessManager extends EventEmitter {
 
   private async getProcessMemoryUsage(pid: number): Promise<number> {
     return new Promise((resolve, reject) => {
-      const ps = spawn('ps', ['-p', pid.toString(), '-o', 'rss=']);
+      // Use Windows-compatible process checking via PowerShell
+      const ps = spawn('powershell.exe', [
+        '-Command', 
+        `Get-Process -Id ${pid} -ErrorAction SilentlyContinue | Select-Object -ExpandProperty WorkingSet64`
+      ]);
       let output = '';
       
       ps.stdout.on('data', (data) => {
@@ -84,15 +97,20 @@ export class ProcessManager extends EventEmitter {
       });
       
       ps.on('close', (code) => {
-        if (code === 0) {
-          const memory = parseInt(output.trim()) * 1024; // Convert KB to bytes
-          resolve(memory || 0);
+        if (code === 0 && output.trim()) {
+          const memory = parseInt(output.trim()) || 0; // Already in bytes
+          resolve(memory);
         } else {
-          reject(new Error(`ps command failed with code ${code}`));
+          // Process doesn't exist, return 0
+          resolve(0);
         }
       });
       
-      ps.on('error', reject);
+      ps.on('error', (error) => {
+        // If PowerShell fails, just return 0 instead of rejecting
+        this.logger.warn(`PowerShell process check failed for PID ${pid}:`, error);
+        resolve(0);
+      });
     });
   }
 
@@ -132,11 +150,30 @@ export class ProcessManager extends EventEmitter {
     }
 
     const processId = generateId();
-    const { command, args } = buildClaudeCommand({
-      ...config,
-      systemPrompt: config.systemPrompt || employee.systemPrompt,
-      tools: config.tools || employee.tools
-    });
+    let command: string;
+    let args: string[];
+    
+    if (config.task) {
+      // If we have a task, build the full prompt and use bash to pipe it to Claude
+      const fullPrompt = this.buildFullPrompt(employee, config, config.task);
+      const escapedPrompt = fullPrompt.replace(/'/g, "'\"'\"'");
+      
+      command = 'wsl.exe';
+      args = [
+        'bash', 
+        '-c', 
+        `echo '${escapedPrompt}' | claude --print --dangerously-skip-permissions --model sonnet --allowedTools "${(config.tools || employee.tools || []).join(',') || 'Bash,Edit,Write,Read,TodoRead,TodoWrite'}"`
+      ];
+    } else {
+      // Regular process without task
+      const claudeCmd = buildClaudeCommand({
+        ...config,
+        systemPrompt: config.systemPrompt || employee.systemPrompt,
+        tools: config.tools || employee.tools
+      });
+      command = claudeCmd.command;
+      args = claudeCmd.args;
+    }
 
     const claudeProcess: ClaudeProcess = {
       id: processId,
@@ -186,10 +223,11 @@ export class ProcessManager extends EventEmitter {
     
     return new Promise((resolve, reject) => {
       const childProcess = spawn(claudeProcess.command, claudeProcess.args, {
-        cwd: config.workingDirectory || process.cwd(),
+        cwd: config.workingDirectory || 'C:\\Users\\Projects\\ai-agency',
         env: {
           ...process.env,
-          ...config.environmentVariables
+          ...config.environmentVariables,
+          PATH: `${process.env['PATH']};C:\\WINDOWS\\system32`
         },
         stdio: ['pipe', 'pipe', 'pipe']
       });
@@ -201,20 +239,7 @@ export class ProcessManager extends EventEmitter {
 
       processInfo.childProcess = childProcess;
 
-      // If we have a task, build the full prompt and send it to Claude
-      if (config.task) {
-        const employee = this.employees.get(config.employeeId);
-        if (employee) {
-          // Build the full prompt like corporate workflow
-          const fullPrompt = this.buildFullPrompt(employee, config, config.task);
-          
-          // Send the prompt to Claude via stdin
-          if (childProcess.stdin) {
-            childProcess.stdin.write(fullPrompt);
-            childProcess.stdin.end();
-          }
-        }
-      }
+      // Prompt is now passed via bash pipe in the command, no need for stdin
 
       childProcess.stdout?.on('data', (data) => {
         this.handleProcessOutput(processId, 'stdout', data.toString());
@@ -278,8 +303,8 @@ export class ProcessManager extends EventEmitter {
     this.emit('process_stopped', { processId, claudeProcess, code, signal });
     
     // Update associated task status if process completed successfully
-    if (code === 0 && claudeProcess.config?.task && this.taskQueue) {
-      const task = this.taskQueue.getTask(claudeProcess.config.task.id);
+    if (code === 0 && claudeProcess.taskId && this.taskQueue) {
+      const task = this.taskQueue.getTask(claudeProcess.taskId);
       if (task && task.status === 'in_progress') {
         task.status = 'completed';
         task.completedAt = new Date();
@@ -448,9 +473,10 @@ export class ProcessManager extends EventEmitter {
     let systemPromptContent = '';
     if (config.systemPrompt) {
       try {
+        // Use Windows paths when running on Windows
         const systemPromptPath = config.systemPrompt.startsWith('/') 
           ? config.systemPrompt 
-          : `/mnt/c/Users/Projects/ai-agency/${config.systemPrompt}`;
+          : `C:\\Users\\Projects\\ai-agency\\${config.systemPrompt}`;
         
         systemPromptContent = readFileSync(systemPromptPath, 'utf8');
       } catch (error) {
@@ -461,27 +487,18 @@ export class ProcessManager extends EventEmitter {
       systemPromptContent = employee.systemPrompt || '';
     }
 
-    // Build the full prompt like corporate workflow
+    // Build a simplified prompt to avoid command line length issues
     const fullPrompt = `CORPORATE CONTEXT:
 You are ${employee.name}, a ${employee.role} at Claude AI Software Company.
-Department: ${employee.department}
-Task: ${task.title}
 
-TASK DETAILS:
-Title: ${task.title}
-Description: ${task.description}
-Priority: ${task.priority}
-Skills Required: ${task.skillsRequired?.join(', ') || 'General'}
+TASK: ${task.title}
+DESCRIPTION: ${task.description}
+PRIORITY: ${task.priority}
 
-CORPORATE STANDARDS:
-- Follow company coding standards and architectural guidelines
-- Collaborate effectively with other AI employees
-- Document decisions and progress in memory.md
-- Maintain high quality and professional standards
-- Update system/todo.md with task progress
-
-SYSTEM PROMPT:
-${systemPromptContent}
+INSTRUCTIONS:
+- Follow company coding standards
+- Create working, production-ready code
+- Work in the current directory: /mnt/c/Users/Projects/ai-agency
 
 USER REQUEST:
 ${task.description}`;

@@ -138,7 +138,9 @@
       "Bash(git.exe diff dashboard/frontend/src/services/api.ts)",
       "Bash(git.exe diff dashboard/backend/src/api/server.ts)",
       "Bash(git.exe add dashboard/backend/src/core/ProcessManager.ts dashboard/backend/src/core/TaskQueue.ts dashboard/backend/src/api/server.ts dashboard/backend/src/types/index.ts dashboard/frontend/src/views/ProcessesView.vue dashboard/frontend/src/views/TasksView.vue dashboard/frontend/src/services/api.ts)",
-      "Bash(wsl.exe git add:*)"
+      "Bash(wsl.exe git add:*)",
+      "Bash(tasklist:*)",
+      "Bash(wsl.exe:*)"
     ],
     "deny": []
   }

@@ -383,8 +383,25 @@ async function createTask() {
 }
 
 async function assignTask(taskId: string) {
-  // This would open an assignment modal or auto-assign based on skills
-  console.log('Assign task:', taskId)
+  try {
+    console.log('Assign task:', taskId)
+    
+    // Create process with the task using the working endpoint
+    const processData = await apiService.createProcessWithTask(taskId, 'emp_004')
+    
+    console.log('Process created:', processData)
+    
+    // Refresh tasks to show updated status
+    const tasks = await apiService.getTasks()
+    dashboardStore.updateTasks(tasks)
+    
+    // Refresh processes to show new process
+    const processes = await apiService.getProcesses()
+    dashboardStore.updateProcesses(processes)
+    
+  } catch (error) {
+    console.error('Failed to assign task:', error)
+  }
 }
 
 async function editTask(task: TaskInfo) {

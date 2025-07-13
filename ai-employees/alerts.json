@@ -1,0 +1,120 @@
+{
+  "created": "2025-07-12T12:56:14.259Z",
+  "active_alerts": [
+    {
+      "id": "overload_emp_002_1752324977407",
+      "type": "critical_workload",
+      "severity": "high",
+      "employee_id": "emp_002",
+      "employee_name": "Taylor Technical Lead",
+      "message": "Taylor Technical Lead has critical workload (85/5)",
+      "created_at": "2025-07-12T12:56:17.406Z",
+      "resolved": false
+    },
+    {
+      "id": "overload_emp_004_1752324977407",
+      "type": "critical_workload",
+      "severity": "high",
+      "employee_id": "emp_004",
+      "employee_name": "Sam Senior Developer",
+      "message": "Sam Senior Developer has critical workload (85/5)",
+      "created_at": "2025-07-12T12:56:17.406Z",
+      "resolved": false
+    },
+    {
+      "id": "overload_emp_006_1752324977407",
+      "type": "critical_workload",
+      "severity": "high",
+      "employee_id": "emp_006",
+      "employee_name": "Morgan QA Engineer",
+      "message": "Morgan QA Engineer has critical workload (30/5)",
+      "created_at": "2025-07-12T12:56:17.406Z",
+      "resolved": false
+    },
+    {
+      "id": "overload_emp_007_1752324977407",
+      "type": "critical_workload",
+      "severity": "high",
+      "employee_id": "emp_007",
+      "employee_name": "Riley Test Engineer",
+      "message": "Riley Test Engineer has critical workload (20/5)",
+      "created_at": "2025-07-12T12:56:17.406Z",
+      "resolved": false
+    },
+    {
+      "id": "overload_emp_008_1752324977407",
+      "type": "critical_workload",
+      "severity": "high",
+      "employee_id": "emp_008",
+      "employee_name": "Drew DevOps Engineer",
+      "message": "Drew DevOps Engineer has critical workload (40/5)",
+      "created_at": "2025-07-12T12:56:17.406Z",
+      "resolved": false
+    },
+    {
+      "id": "overload_emp_010_1752324977407",
+      "type": "critical_workload",
+      "severity": "high",
+      "employee_id": "emp_010",
+      "employee_name": "Phoenix Security Engineer",
+      "message": "Phoenix Security Engineer has critical workload (85/5)",
+      "created_at": "2025-07-12T12:56:17.406Z",
+      "resolved": false
+    },
+    {
+      "id": "overload_emp_012_1752324977407",
+      "type": "critical_workload",
+      "severity": "high",
+      "employee_id": "emp_012",
+      "employee_name": "Quinn UI/UX Designer",
+      "message": "Quinn UI/UX Designer has critical workload (85/5)",
+      "created_at": "2025-07-12T12:56:17.406Z",
+      "resolved": false
+    },
+    {
+      "id": "dept_capacity_Executive_1752324977407",
+      "type": "department_capacity",
+      "severity": "medium",
+      "department": "Executive",
+      "message": "Executive department at 1700% capacity",
+      "created_at": "2025-07-12T12:56:17.406Z",
+      "resolved": false
+    },
+    {
+      "id": "dept_capacity_Development_1752324977407",
+      "type": "department_capacity",
+      "severity": "medium",
+      "department": "Development",
+      "message": "Development department at 675% capacity",
+      "created_at": "2025-07-12T12:56:17.406Z",
+      "resolved": false
+    },
+    {
+      "id": "dept_capacity_Operations_1752324977407",
+      "type": "department_capacity",
+      "severity": "medium",
+      "department": "Operations",
+      "message": "Operations department at 1250% capacity",
+      "created_at": "2025-07-12T12:56:17.406Z",
+      "resolved": false
+    },
+    {
+      "id": "dept_capacity_Support_1752324977407",
+      "type": "department_capacity",
+      "severity": "medium",
+      "department": "Support",
+      "message": "Support department at 1700% capacity",
+      "created_at": "2025-07-12T12:56:17.406Z",
+      "resolved": false
+    },
+    {
+      "id": "system_health_1752324977407",
+      "type": "system_health",
+      "severity": "high",
+      "message": "System health score is 45/100 (poor)",
+      "created_at": "2025-07-12T12:56:17.406Z",
+      "resolved": false
+    }
+  ],
+  "resolved_alerts": []
+}

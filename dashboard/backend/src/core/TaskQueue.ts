@@ -348,7 +348,7 @@ export class TaskQueue extends EventEmitter {
       }
     });
 
-    task.updatedAt = new Date();
+    // task.updatedAt = new Date(); // Remove updatedAt property that doesn't exist
 
     // Save tasks after update
     await this.saveTasks();

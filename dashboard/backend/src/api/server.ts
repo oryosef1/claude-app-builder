@@ -408,9 +408,53 @@ export function createAPIRouter(
 
   router.post('/processes', async (req, res) => {
     try {
-      const config: ProcessConfig = req.body;
-      const processId = await processManager.createProcess(config);
-      res.status(201).json({ success: true, data: { processId } });
+      const { taskId, employeeId, ...otherConfig } = req.body;
+      
+      // If taskId is provided, handle task assignment
+      if (taskId) {
+        const task = taskQueue.getTask(taskId);
+        if (!task) {
+          res.status(404).json({ success: false, error: 'Task not found' });
+          return;
+        }
+        
+        const employee = agentRegistry.getEmployeeById(employeeId || task.assignedTo);
+        if (!employee) {
+          res.status(404).json({ success: false, error: 'Employee not found' });
+          return;
+        }
+        
+        const config: ProcessConfig = {
+          employeeId: employee.id,
+          systemPrompt: `corporate-prompts/${employee.role.toLowerCase().replace(/ /g, '-')}.md`,
+          tools: (employee as any).tools || [],
+          maxTurns: 20,
+          task: task,
+          ...otherConfig
+        };
+        
+        const processId = await processManager.createProcess(config);
+        
+        // Update task status
+        task.status = 'in_progress';
+        task.processId = processId;
+        task.assignedAt = new Date();
+        task.startedAt = new Date();
+        
+        res.status(201).json({ 
+          success: true, 
+          data: { 
+            processId,
+            taskId: task.id,
+            employeeId: employee.id
+          } 
+        });
+      } else {
+        // Regular process creation without task
+        const config: ProcessConfig = req.body;
+        const processId = await processManager.createProcess(config);
+        res.status(201).json({ success: true, data: { processId } });
+      }
     } catch (error) {
       logger.error('Error creating process:', error);
       res.status(500).json({ 
@@ -565,6 +609,30 @@ export function createAPIRouter(
       res.status(201).json({ success: true, data: { taskId } });
     } catch (error) {
       logger.error('Error creating task:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  router.put('/tasks/:id', async (req, res) => {
+    try {
+      const taskId = req.params.id;
+      const updates = req.body;
+      const task = taskQueue.getTask(taskId);
+      if (!task) {
+        res.status(404).json({ success: false, error: 'Task not found' });
+        return;
+      }
+      
+      // Update task properties
+      Object.assign(task, updates);
+      task.updatedAt = new Date();
+      
+      res.json({ success: true, data: task });
+    } catch (error) {
+      logger.error('Error updating task:', error);
       res.status(500).json({ 
         success: false, 
         error: error instanceof Error ? error.message : 'Unknown error' 

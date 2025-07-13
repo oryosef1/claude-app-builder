@@ -65,6 +65,14 @@ export const apiService = {
     return response.data
   },
 
+  async createProcessWithTask(taskId: string, employeeId?: string): Promise<ProcessInfo> {
+    const response = await api.post('/api/processes/create-with-task', {
+      taskId,
+      employeeId
+    })
+    return response.data
+  },
+
   async stopProcess(id: string): Promise<void> {
     await api.post(`/api/processes/${id}/stop`)
   },

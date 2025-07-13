@@ -73,7 +73,6 @@ export const findBestEmployee = (employees: AIEmployee[], requiredSkills: string
 
 export const buildClaudeCommand = (config: ProcessConfig): { command: string; args: string[] } => {
   const claudeArgs: string[] = [
-    'claude',
     '--print',
     '--dangerously-skip-permissions',
     '--model', 'sonnet'
@@ -91,9 +90,10 @@ export const buildClaudeCommand = (config: ProcessConfig): { command: string; ar
   }
   
   // Use wsl.exe to run claude in WSL environment from Windows
+  // Format: wsl.exe claude [claude-args]
   return {
     command: 'wsl.exe',
-    args: claudeArgs
+    args: ['claude', ...claudeArgs]
   };
 };
 

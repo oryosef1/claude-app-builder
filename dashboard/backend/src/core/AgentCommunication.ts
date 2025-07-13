@@ -254,12 +254,12 @@ export class AgentCommunication extends EventEmitter {
     if (employeeId) {
       return Array.from(this.collaborations.values()).filter(
         collab => collab.participants.includes(employeeId) && 
-                  (collab.status === 'active' || collab.status === 'in_progress')
+                  (collab.status === 'pending' || collab.status === 'completed')
       );
     } else {
       // Return all active/in_progress collaborations
       return Array.from(this.collaborations.values()).filter(
-        collab => collab.status === 'active' || collab.status === 'in_progress'
+        collab => collab.status === 'pending' || collab.status === 'completed'
       );
     }
   }
@@ -343,13 +343,13 @@ export class AgentCommunication extends EventEmitter {
     let broadcastMessages = 0;
 
     this.messages.forEach(msg => {
-      messagesByPriority[msg.priority]++;
+      messagesByPriority[msg.priority] = (messagesByPriority[msg.priority] || 0) + 1;
       
       // Count by employee
       if (!messagesByEmployee[msg.from]) {
         messagesByEmployee[msg.from] = 0;
       }
-      messagesByEmployee[msg.from]++;
+      messagesByEmployee[msg.from] = (messagesByEmployee[msg.from] || 0) + 1;
       
       // Count message types
       if (msg.to === 'broadcast') {
@@ -402,7 +402,7 @@ export class AgentCommunication extends EventEmitter {
       .filter(s => s.score > 0)
       .sort((a, b) => b.score - a.score)
       .slice(0, 3)
-      .map(s => s.employee);
+      .map(s => s.employee as unknown as AIEmployee);
   }
 
   // Handle agent status changes
@@ -473,11 +473,11 @@ export class AgentCommunication extends EventEmitter {
       if (!message.metadata) {
         message.metadata = {};
       }
-      if (!message.metadata.readBy) {
-        message.metadata.readBy = [];
+      if (!message.metadata['readBy']) {
+        message.metadata['readBy'] = [];
       }
-      if (!message.metadata.readBy.includes(employeeId)) {
-        message.metadata.readBy.push(employeeId);
+      if (!message.metadata['readBy'].includes(employeeId)) {
+        message.metadata['readBy'].push(employeeId);
       }
       
       // Remove from queue if exists

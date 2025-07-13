@@ -41,7 +41,7 @@
           </div>
           <div class="flex justify-between text-sm">
             <span class="text-gray-500">Uptime:</span>
-            <span class="font-medium">{{ formatUptime(process.uptime) }}</span>
+            <span class="font-medium">{{ formatUptime(calculateUptime(process)) }}</span>
           </div>
           <div class="flex justify-between text-sm">
             <span class="text-gray-500">Errors:</span>
@@ -148,7 +148,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useDashboardStore } from '../stores/dashboard'
 import { apiService } from '../services/api'
 import type { ProcessInfo } from '../types'
@@ -159,6 +159,8 @@ const processes = computed(() => dashboardStore.processes)
 const availableEmployees = computed(() => dashboardStore.availableEmployees)
 
 const showCreateModal = ref(false)
+const currentTime = ref(Date.now())
+let timeInterval: number | null = null
 const newProcess = ref({
   name: '',
   role: '',
@@ -177,6 +179,17 @@ onMounted(async () => {
   } catch (error) {
     console.error('Failed to load data:', error)
   }
+
+  // Start real-time clock for uptime calculation
+  timeInterval = window.setInterval(() => {
+    currentTime.value = Date.now()
+  }, 1000)
+})
+
+onUnmounted(() => {
+  if (timeInterval) {
+    clearInterval(timeInterval)
+  }
 })
 
 function getStatusClass(status: ProcessInfo['status']): string {
@@ -187,6 +200,18 @@ function getStatusClass(status: ProcessInfo['status']): string {
     case 'pending': return 'status-pending'
     default: return 'status-idle'
   }
+}
+
+function calculateUptime(process: ProcessInfo): number {
+  // Use currentTime to make this reactive
+  const now = currentTime.value
+  
+  if (process.status !== 'running' || !process.startedAt) {
+    return 0
+  }
+  
+  const startTime = new Date(process.startedAt).getTime()
+  return Math.floor((now - startTime) / 1000)
 }
 
 function formatUptime(seconds: number): string {

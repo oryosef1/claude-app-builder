@@ -37,12 +37,13 @@ export class PersistenceService {
   private async initializeRedis(): Promise<void> {
     try {
       this.redisClient = createClient({
-        host: process.env['REDIS_HOST'] || 'localhost',
-        port: parseInt(process.env['REDIS_PORT'] || '6379', 10),
+        socket: {
+          host: process.env['REDIS_HOST'] || 'localhost',
+          port: parseInt(process.env['REDIS_PORT'] || '6379', 10),
+          connectTimeout: 5000
+        },
         password: process.env['REDIS_PASSWORD'],
-        db: parseInt(process.env['REDIS_DB'] || '0', 10),
-        connectTimeout: 5000,
-        lazyConnect: true
+        database: parseInt(process.env['REDIS_DB'] || '0', 10)
       });
 
       this.redisClient.on('error', (error) => {

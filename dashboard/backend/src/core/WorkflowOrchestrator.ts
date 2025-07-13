@@ -268,7 +268,13 @@ export class WorkflowOrchestrator extends EventEmitter {
       title: `${workflow.name}: ${step.name}`,
       description: step.description,
       priority: 'medium',
+      status: 'pending',
       skillsRequired: step.requiredSkills,
+      createdAt: new Date(),
+      estimatedDuration: 30,
+      retryCount: 0,
+      maxRetries: 3,
+      comments: [],
       metadata: {
         workflowId,
         stepId,
@@ -307,15 +313,15 @@ export class WorkflowOrchestrator extends EventEmitter {
     
     if (experts.length === 0) {
       // Fallback to basic skill matching
-      const employees = this.registry.getEmployeesBySkills(requiredSkills);
-      const available = employees.filter(e => 
+      const employees = this.registry.getEmployeesBySkill(requiredSkills[0] || '');
+      const available = employees.filter((e: any) => 
         e.status === 'active' && e.workload < 80
       );
       
-      return available.length > 0 ? available[0] : null;
+      return available.length > 0 ? (available[0] as unknown as AIEmployee) : null;
     }
 
-    return experts[0];
+    return experts[0] || null;
   }
 
   // Handle step completion

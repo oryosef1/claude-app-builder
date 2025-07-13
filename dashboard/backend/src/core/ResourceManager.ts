@@ -81,6 +81,7 @@ export class ResourceManager extends EventEmitter {
 
         // Find employee with least tasks
         let selected = available[0];
+        if (!selected) return null;
         let minTasks = this.resourceUsage.get(selected.id)?.tasks || 0;
 
         available.forEach(emp => {
@@ -104,6 +105,7 @@ export class ResourceManager extends EventEmitter {
         if (available.length === 0) return null;
 
         let selected = available[0];
+        if (!selected) return null;
         let minLoad = this.calculateLoad(selected.id);
 
         available.forEach(emp => {
@@ -151,6 +153,7 @@ export class ResourceManager extends EventEmitter {
         if (available.length === 0) return null;
 
         let selected = available[0];
+        if (!selected) return null;
         let maxEfficiency = this.resourceUsage.get(selected.id)?.efficiency || 50;
 
         available.forEach(emp => {
@@ -183,9 +186,9 @@ export class ResourceManager extends EventEmitter {
     });
 
     // Monitor system resources
-    this.systemMetricsInterval = setInterval(() => {
+    this.systemMetricsInterval = setInterval(async () => {
       this.updateSystemMetrics();
-      this.updateResourceUsage();
+      await this.updateResourceUsage();
       this.checkResourceLimits();
     }, 5000); // Every 5 seconds
 
@@ -245,7 +248,7 @@ export class ResourceManager extends EventEmitter {
     return usage;
   }
 
-  private updateResourceUsage(): void {
+  private async updateResourceUsage(): Promise<void> {
     const processes = this.processManager.getAllProcesses();
     
     // Reset counters
@@ -266,8 +269,8 @@ export class ResourceManager extends EventEmitter {
     });
 
     // Update task counts
-    const tasks = this.taskQueue.getTasks();
-    tasks.forEach(task => {
+    const tasks = await this.taskQueue.getTasks();
+    tasks.forEach((task: any) => {
       if (task.assignedTo) {
         const usage = this.resourceUsage.get(task.assignedTo);
         if (usage) {
@@ -343,7 +346,7 @@ export class ResourceManager extends EventEmitter {
     const usage = this.resourceUsage.get(employeeId);
     if (!usage) return false;
 
-    const employee = this.registry.getEmployee(employeeId);
+    const employee = this.registry.getEmployeeById(employeeId);
     if (!employee || employee.status !== 'active') return false;
 
     // Check task limit
@@ -388,8 +391,8 @@ export class ResourceManager extends EventEmitter {
       return null;
     }
 
-    const employees = this.registry.getEmployeesBySkills(task.skillsRequired);
-    return strategy.calculate(employees, task);
+    const employees = this.registry.getEmployeesBySkill(task.skillsRequired[0] || '');
+    return strategy.calculate(employees as unknown as AIEmployee[], task);
   }
 
   // Set load balancing strategy

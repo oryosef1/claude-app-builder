@@ -43,11 +43,12 @@ export interface Task {
   title: string;
   description: string;
   priority: 'low' | 'medium' | 'high' | 'urgent';
-  status: 'pending' | 'assigned' | 'in_progress' | 'completed' | 'failed' | 'resolved' | 'reopened';
+  status: 'pending' | 'assigned' | 'in_progress' | 'completed' | 'failed' | 'resolved' | 'reopened' | 'cancelled';
   assignedTo?: string;
   processId?: string;
   skillsRequired: string[];
   createdAt: Date;
+  updatedAt?: Date;
   assignedAt?: Date;
   startedAt?: Date;
   completedAt?: Date;
@@ -59,6 +60,9 @@ export interface Task {
   retryCount: number;
   maxRetries: number;
   comments: TaskComment[];
+  metadata?: {
+    [key: string]: any;
+  };
 }
 
 export interface TaskComment {

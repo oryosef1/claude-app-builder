@@ -674,18 +674,19 @@ export class TaskQueue extends EventEmitter {
       try {
         const jobs = await Promise.race([
           this.taskQueue.getJobs(['waiting', 'active', 'delayed']),
-        new Promise<any[]>((_, reject) => 
-          setTimeout(() => reject(new Error('Queue timeout')), 2000)
-        )
-      ]);
-      
-      const job = jobs.find(j => j.data.taskId === taskId);
-      if (job) {
-        await job.remove();
+          new Promise<any[]>((_, reject) => 
+            setTimeout(() => reject(new Error('Queue timeout')), 2000)
+          )
+        ]);
+        
+        const job = jobs.find(j => j.data.taskId === taskId);
+        if (job) {
+          await job.remove();
+        }
+      } catch (error) {
+        this.logger.warn(`Could not remove job from queue: ${error}`);
+        // Continue anyway - the important part is removing from activeTasks
       }
-    } catch (error) {
-      this.logger.warn(`Could not remove job from queue: ${error}`);
-      // Continue anyway - the important part is removing from activeTasks
     }
 
     // Free up employee resources using AgentRegistry

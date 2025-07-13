@@ -97,12 +97,13 @@ export class AgentRegistry extends EventEmitter {
   private async initializeRedis(): Promise<void> {
     try {
       this.redisClient = createClient({
-        host: process.env['REDIS_HOST'] || 'localhost',
-        port: parseInt(process.env['REDIS_PORT'] || '6379', 10),
+        socket: {
+          host: process.env['REDIS_HOST'] || 'localhost',
+          port: parseInt(process.env['REDIS_PORT'] || '6379', 10),
+          connectTimeout: 5000
+        },
         password: process.env['REDIS_PASSWORD'],
-        db: parseInt(process.env['REDIS_DB'] || '0', 10),
-        connectTimeout: 5000,
-        lazyConnect: true
+        database: parseInt(process.env['REDIS_DB'] || '0', 10)
       });
 
       this.redisClient.on('error', (error) => {
@@ -128,7 +129,7 @@ export class AgentRegistry extends EventEmitter {
         if (redisData) {
           const parsed = JSON.parse(redisData);
           this.registry = parsed.data || parsed; // Handle both wrapped and direct data
-          console.log(`Loaded employee registry from Redis (${this.registry.employees_count || Object.keys(this.registry.employees).length} employees)`);
+          console.log(`Loaded employee registry from Redis (${this.registry.company.employees_count || Object.keys(this.registry.employees).length} employees)`);
           return;
         }
       } catch (error) {
@@ -141,7 +142,7 @@ export class AgentRegistry extends EventEmitter {
     try {
       const data = fs.readFileSync(this.registryPath, 'utf8');
       this.registry = JSON.parse(data);
-      console.log(`Loaded employee registry from file (${this.registry.employees_count || Object.keys(this.registry.employees).length} employees)`);
+      console.log(`Loaded employee registry from file (${this.registry.company.employees_count || Object.keys(this.registry.employees).length} employees)`);
       
       // If Redis is available, migrate data to Redis
       if (this.redisAvailable && this.redisClient) {
@@ -149,7 +150,7 @@ export class AgentRegistry extends EventEmitter {
           const registryData = {
             data: this.registry,
             timestamp: new Date().toISOString(),
-            count: this.registry.employees_count || Object.keys(this.registry.employees).length
+            count: this.registry.company.employees_count || Object.keys(this.registry.employees).length
           };
           await this.redisClient.set('dashboard:employee-registry', JSON.stringify(registryData));
           console.log(`Migrated employee registry to Redis (${registryData.count} employees)`);
@@ -173,7 +174,7 @@ export class AgentRegistry extends EventEmitter {
           const registryData = {
             data: this.registry,
             timestamp: new Date().toISOString(),
-            count: this.registry.employees_count || Object.keys(this.registry.employees).length
+            count: this.registry.company.employees_count || Object.keys(this.registry.employees).length
           };
           await this.redisClient.set('dashboard:employee-registry', JSON.stringify(registryData));
           console.log(`Saved employee registry to Redis (${registryData.count} employees)`);

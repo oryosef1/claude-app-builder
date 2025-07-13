@@ -1,93 +1,24 @@
 [
   {
-    "id": "15cefc6c-a002-46ad-9b97-008b1bed8b69",
-    "name": "bug fix",
-    "role": "Senior Developer",
-    "employeeId": "emp_004",
-    "pid": 23220,
-    "status": "stopped",
-    "command": "wsl.exe",
-    "args": [
-      "bash",
-      "-c",
-      "echo 'CORPORATE CONTEXT:\nYou are Sam Senior Developer, a Senior Developer at Claude AI Software Company.\n\nTASK: bug fix\nDESCRIPTION: in the dashboard, in the dashboard section it shows 12 employees even though we have 13, fix it please\nPRIORITY: urgent\n\nINSTRUCTIONS:\n- Follow company coding standards\n- Create working, production-ready code\n- Work in the current directory: /mnt/c/Users/Projects/ai-agency\n\nUSER REQUEST:\nin the dashboard, in the dashboard section it shows 12 employees even though we have 13, fix it please' | claude --print --dangerously-skip-permissions --model sonnet --allowedTools \"Bash,Edit,Write,Read,TodoRead,TodoWrite\""
-    ],
-    "createdAt": "2025-07-13T03:29:23.212Z",
-    "restarts": 0,
-    "memoryUsage": 6127616,
-    "cpuUsage": 0,
-    "taskId": "cae111e3-f78b-4481-b43c-8a9dcccb7971",
-    "errorCount": 0,
-    "startedAt": "2025-07-13T03:29:23.264Z",
-    "lastHeartbeat": "2025-07-13T03:38:05.168Z",
-    "stoppedAt": "2025-07-13T03:38:26.812Z"
-  },
-  {
-    "id": "195cdf1b-0a00-4efd-aa53-980a8aedf237",
+    "id": "a7d26c14-edf3-46ed-8b95-dcc6d0347b8f",
     "name": "commit",
     "role": "Project Manager",
     "employeeId": "emp_001",
-    "pid": 16960,
-    "status": "stopped",
-    "command": "wsl.exe",
-    "args": [
-      "bash",
-      "-c",
-      "echo 'CORPORATE CONTEXT:\nYou are Alex Project Manager, a Project Manager at Claude AI Software Company.\n\nTASK: commit\nDESCRIPTION: commit to git\nPRIORITY: urgent\n\nINSTRUCTIONS:\n- Follow company coding standards\n- Create working, production-ready code\n- Work in the current directory: /mnt/c/Users/Projects/ai-agency\n\nUSER REQUEST:\ncommit to git' | claude --print --dangerously-skip-permissions --model sonnet --allowedTools \"Bash,Edit,Write,Read,TodoRead,TodoWrite\""
-    ],
-    "createdAt": "2025-07-13T03:41:03.470Z",
-    "restarts": 1,
-    "memoryUsage": 6242304,
-    "cpuUsage": 0,
-    "taskId": "bbd2ac41-0727-4ec4-b0ff-e66b33c2c009",
-    "errorCount": 0,
-    "startedAt": "2025-07-13T03:43:19.130Z",
-    "lastHeartbeat": "2025-07-13T03:43:35.895Z",
-    "stoppedAt": "2025-07-13T03:43:46.307Z"
-  },
-  {
-    "id": "0021de47-288f-4e95-afd3-049a4f129f29",
-    "name": "commit",
-    "role": "Project Manager",
-    "employeeId": "emp_001",
-    "pid": 20576,
-    "status": "stopped",
-    "command": "wsl.exe",
-    "args": [
-      "bash",
-      "-c",
-      "echo 'CORPORATE CONTEXT:\nYou are Alex Project Manager, a Project Manager at Claude AI Software Company.\n\nTASK: commit\nDESCRIPTION: commit to git\nPRIORITY: urgent\n\nINSTRUCTIONS:\n- Follow company coding standards\n- Create working, production-ready code\n- Work in the current directory: /mnt/c/Users/Projects/ai-agency\n\nUSER REQUEST:\ncommit to git' | claude --print --dangerously-skip-permissions --model sonnet --allowedTools \"Bash,Edit,Write,Read,TodoRead,TodoWrite\""
-    ],
-    "createdAt": "2025-07-13T03:49:22.645Z",
-    "restarts": 0,
-    "memoryUsage": 6238208,
-    "cpuUsage": 0,
-    "taskId": "bbd2ac41-0727-4ec4-b0ff-e66b33c2c009",
-    "errorCount": 0,
-    "startedAt": "2025-07-13T03:49:22.712Z",
-    "lastHeartbeat": "2025-07-13T03:53:18.013Z",
-    "stoppedAt": "2025-07-13T03:53:48.075Z"
-  },
-  {
-    "id": "e39f25a8-8726-4424-bfae-6f3e8eca3ece",
-    "name": "system status fix ",
-    "role": "QA Director",
-    "employeeId": "emp_003",
-    "pid": 3204,
+    "pid": 10072,
     "status": "running",
     "command": "wsl.exe",
     "args": [
       "bash",
       "-c",
-      "echo 'CORPORATE CONTEXT:\nYou are Jordan QA Director, a QA Director at Claude AI Software Company.\n\nTASK: system status fix \nDESCRIPTION: in the dashboard in the dashboard section its saying: System Status\n\nwarning,, investgate why and make a explain-system-status-bug.md file with explantion for human, and if you can fix than also fix\nPRIORITY: urgent\n\nINSTRUCTIONS:\n- Follow company coding standards\n- Create working, production-ready code\n- Work in the current directory: /mnt/c/Users/Projects/ai-agency\n\nUSER REQUEST:\nin the dashboard in the dashboard section its saying: System Status\n\nwarning,, investgate why and make a explain-system-status-bug.md file with explantion for human, and if you can fix than also fix' | claude --print --dangerously-skip-permissions --model sonnet --allowedTools \"Bash,Edit,Write,Read,TodoRead,TodoWrite\""
+      "echo 'CORPORATE CONTEXT:\nYou are Alex Project Manager, a Project Manager at Claude AI Software Company.\n\nTASK: commit\nDESCRIPTION: commit the project to the git repository\nPRIORITY: urgent\n\nINSTRUCTIONS:\n- Follow company coding standards\n- Create working, production-ready code\n- Work in the current directory: /mnt/c/Users/Projects/ai-agency\n\nUSER REQUEST:\ncommit the project to the git repository' | claude --print --dangerously-skip-permissions --model sonnet --allowedTools \"Bash,Edit,Write,Read,TodoRead,TodoWrite\""
     ],
-    "createdAt": "2025-07-13T04:36:05.229Z",
+    "createdAt": "2025-07-13T14:20:22.376Z",
     "restarts": 0,
     "memoryUsage": 0,
     "cpuUsage": 0,
-    "taskId": "bd8e9d3f-5735-4d15-a994-dcf1f0381f71",
+    "taskId": "337c64e2-bc92-4003-9ade-fbb197bfdd2a",
     "errorCount": 0,
-    "startedAt": "2025-07-13T04:36:05.276Z",
-    "lastHeartbeat": "2025-07-13T04:36:05.276Z"
+    "startedAt": "2025-07-13T14:20:22.428Z",
+    "lastHeartbeat": "2025-07-13T14:20:22.428Z"
   }
 ]

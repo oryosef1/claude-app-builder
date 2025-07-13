@@ -29,7 +29,7 @@ export class ServiceRegistry extends EventEmitter {
     
     this.registerService('api-bridge', {
       name: 'API Bridge',
-      url: process.env['API_BRIDGE_URL'] || 'http://localhost:3002',
+      url: process.env['API_BRIDGE_URL'] || 'http://localhost:3001',
       status: 'unknown',
       lastCheck: new Date()
     });
@@ -72,7 +72,7 @@ export class ServiceRegistry extends EventEmitter {
     // Try common ports for our services
     const commonPorts = {
       'memory-api': [3333, 3334, 3335],
-      'api-bridge': [3002, 3003, 3004]
+      'api-bridge': [3001, 3002, 3003, 3004]
     };
     
     for (const [serviceId, ports] of Object.entries(commonPorts)) {

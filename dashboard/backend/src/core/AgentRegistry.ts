@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { EventEmitter } from 'events';
+import { createClient, RedisClientType } from 'redis';
 
 // Using a workaround for CommonJS compatibility
 const __dirname = path.dirname(new URL(import.meta.url).pathname).replace(/^\/(\w):/, '$1:');
@@ -43,6 +44,8 @@ interface EmployeeRegistry {
 export class AgentRegistry extends EventEmitter {
   private registry!: EmployeeRegistry;
   private registryPath: string;
+  private redisClient: RedisClientType | null = null;
+  private redisAvailable: boolean = false;
 
   constructor() {
     super();
@@ -83,27 +86,121 @@ export class AgentRegistry extends EventEmitter {
     }
     
     this.registryPath = foundPath;
-    this.loadRegistry();
+    this.initializeRedis().then(() => {
+      this.loadRegistry();
+    }).catch((error) => {
+      console.warn('Redis initialization failed for AgentRegistry:', error);
+      this.loadRegistry();
+    });
   }
 
-  private loadRegistry(): void {
+  private async initializeRedis(): Promise<void> {
+    try {
+      this.redisClient = createClient({
+        host: process.env['REDIS_HOST'] || 'localhost',
+        port: parseInt(process.env['REDIS_PORT'] || '6379', 10),
+        password: process.env['REDIS_PASSWORD'],
+        db: parseInt(process.env['REDIS_DB'] || '0', 10),
+        connectTimeout: 5000,
+        lazyConnect: true
+      });
+
+      this.redisClient.on('error', (error) => {
+        console.warn('Redis connection error in AgentRegistry:', error);
+        this.redisAvailable = false;
+      });
+
+      await this.redisClient.connect();
+      this.redisAvailable = true;
+      console.log('Redis connected for AgentRegistry');
+    } catch (error) {
+      console.warn('Redis not available for AgentRegistry:', error);
+      this.redisAvailable = false;
+      this.redisClient = null;
+    }
+  }
+
+  private async loadRegistry(): Promise<void> {
+    // Try Redis first
+    if (this.redisAvailable && this.redisClient) {
+      try {
+        const redisData = await this.redisClient.get('dashboard:employee-registry');
+        if (redisData) {
+          const parsed = JSON.parse(redisData);
+          this.registry = parsed.data || parsed; // Handle both wrapped and direct data
+          console.log(`Loaded employee registry from Redis (${this.registry.employees_count || Object.keys(this.registry.employees).length} employees)`);
+          return;
+        }
+      } catch (error) {
+        console.warn('Failed to load employee registry from Redis, falling back to file:', error);
+        this.redisAvailable = false;
+      }
+    }
+
+    // Fall back to file
     try {
       const data = fs.readFileSync(this.registryPath, 'utf8');
       this.registry = JSON.parse(data);
+      console.log(`Loaded employee registry from file (${this.registry.employees_count || Object.keys(this.registry.employees).length} employees)`);
+      
+      // If Redis is available, migrate data to Redis
+      if (this.redisAvailable && this.redisClient) {
+        try {
+          const registryData = {
+            data: this.registry,
+            timestamp: new Date().toISOString(),
+            count: this.registry.employees_count || Object.keys(this.registry.employees).length
+          };
+          await this.redisClient.set('dashboard:employee-registry', JSON.stringify(registryData));
+          console.log(`Migrated employee registry to Redis (${registryData.count} employees)`);
+        } catch (error) {
+          console.warn('Failed to migrate employee registry to Redis:', error);
+        }
+      }
     } catch (error) {
       console.error('Error loading employee registry:', error);
       throw new Error('Failed to load employee registry');
     }
   }
 
-  private saveRegistry(): void {
+  private async saveRegistry(): Promise<void> {
     try {
       this.registry.last_updated = new Date().toISOString();
+      
+      // Try Redis first
+      if (this.redisAvailable && this.redisClient) {
+        try {
+          const registryData = {
+            data: this.registry,
+            timestamp: new Date().toISOString(),
+            count: this.registry.employees_count || Object.keys(this.registry.employees).length
+          };
+          await this.redisClient.set('dashboard:employee-registry', JSON.stringify(registryData));
+          console.log(`Saved employee registry to Redis (${registryData.count} employees)`);
+        } catch (error) {
+          console.warn('Failed to save employee registry to Redis, falling back to file:', error);
+          this.redisAvailable = false;
+        }
+      }
+
+      // Always save to file as backup
       fs.writeFileSync(this.registryPath, JSON.stringify(this.registry, null, 2));
+      console.log(`Saved employee registry to file (${this.redisAvailable ? 'backup' : 'primary'})`);
       this.emit('registry-updated');
     } catch (error) {
       console.error('Error saving employee registry:', error);
       throw new Error('Failed to save employee registry');
+    }
+  }
+
+  async cleanup(): Promise<void> {
+    if (this.redisClient) {
+      try {
+        await this.redisClient.quit();
+        console.log('Redis connection closed for AgentRegistry');
+      } catch (error) {
+        console.warn('Error closing Redis connection for AgentRegistry:', error);
+      }
     }
   }
 

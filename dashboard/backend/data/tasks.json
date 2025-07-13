@@ -31,7 +31,7 @@
   },
   {
     "id": "bbd2ac41-0727-4ec4-b0ff-e66b33c2c009",
-    "status": "pending",
+    "status": "resolved",
     "createdAt": "2025-07-13T03:40:59.314Z",
     "retryCount": 1,
     "title": "commit",
@@ -53,10 +53,27 @@
         "type": "reopen_reason"
       }
     ],
-    "processId": "195cdf1b-0a00-4efd-aa53-980a8aedf237",
-    "assignedAt": "2025-07-13T03:41:03.519Z",
-    "startedAt": "2025-07-13T03:41:03.519Z",
-    "completedAt": "2025-07-13T03:41:29.619Z",
-    "reopenedAt": "2025-07-13T03:42:56.719Z"
+    "processId": "0021de47-288f-4e95-afd3-049a4f129f29",
+    "assignedAt": "2025-07-13T03:49:22.732Z",
+    "startedAt": "2025-07-13T03:49:22.732Z",
+    "completedAt": "2025-07-13T03:53:46.964Z",
+    "reopenedAt": "2025-07-13T03:42:56.719Z",
+    "resolvedAt": "2025-07-13T03:55:31.996Z"
+  },
+  {
+    "id": "bd8e9d3f-5735-4d15-a994-dcf1f0381f71",
+    "status": "pending",
+    "createdAt": "2025-07-13T04:36:00.417Z",
+    "retryCount": 0,
+    "title": "system status fix ",
+    "description": "in the dashboard in the dashboard section its saying: System Status\n\nwarning,, investgate why and make a explain-system-status-bug.md file with explantion for human, and if you can fix than also fix",
+    "priority": "urgent",
+    "assignedTo": "emp_003",
+    "updatedAt": "2025-07-13T04:36:00.417Z",
+    "progress": 0,
+    "skillsRequired": [],
+    "estimatedDuration": 0,
+    "maxRetries": 3,
+    "comments": []
   }
 ]

@@ -82,6 +82,23 @@
                 <span v-if="task.assignedTo">Assigned to: {{ getEmployeeName(task.assignedTo) }}</span>
                 <span v-if="task.completedAt">Completed: {{ formatDate(task.completedAt) }}</span>
               </div>
+              
+              <!-- Comments Display -->
+              <div v-if="task.comments && task.comments.length > 0" class="mt-3 space-y-2">
+                <div v-for="comment in task.comments" :key="comment.id" class="text-xs p-2 rounded" 
+                     :class="comment.type === 'reopen_reason' ? 'bg-yellow-50 border-l-4 border-yellow-400' : 
+                             comment.type === 'resolution' ? 'bg-green-50 border-l-4 border-green-400' : 
+                             'bg-gray-50 border-l-4 border-gray-400'">
+                  <div class="flex items-center space-x-2 text-gray-600">
+                    <span class="font-medium">{{ comment.authorName }}</span>
+                    <span>•</span>
+                    <span>{{ formatDate(comment.createdAt) }}</span>
+                    <span v-if="comment.type === 'reopen_reason'" class="text-yellow-600">(Reopen Reason)</span>
+                    <span v-if="comment.type === 'resolution'" class="text-green-600">(Resolution)</span>
+                  </div>
+                  <p class="mt-1 text-gray-700">{{ comment.text }}</p>
+                </div>
+              </div>
             </div>
             
             <div class="flex items-center space-x-2">

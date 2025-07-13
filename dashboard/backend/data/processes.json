@@ -51,7 +51,7 @@
     "role": "Project Manager",
     "employeeId": "emp_001",
     "pid": 20576,
-    "status": "running",
+    "status": "stopped",
     "command": "wsl.exe",
     "args": [
       "bash",
@@ -60,11 +60,34 @@
     ],
     "createdAt": "2025-07-13T03:49:22.645Z",
     "restarts": 0,
-    "memoryUsage": 0,
+    "memoryUsage": 6238208,
     "cpuUsage": 0,
     "taskId": "bbd2ac41-0727-4ec4-b0ff-e66b33c2c009",
     "errorCount": 0,
     "startedAt": "2025-07-13T03:49:22.712Z",
-    "lastHeartbeat": "2025-07-13T03:49:22.712Z"
+    "lastHeartbeat": "2025-07-13T03:53:18.013Z",
+    "stoppedAt": "2025-07-13T03:53:48.075Z"
+  },
+  {
+    "id": "e39f25a8-8726-4424-bfae-6f3e8eca3ece",
+    "name": "system status fix ",
+    "role": "QA Director",
+    "employeeId": "emp_003",
+    "pid": 3204,
+    "status": "running",
+    "command": "wsl.exe",
+    "args": [
+      "bash",
+      "-c",
+      "echo 'CORPORATE CONTEXT:\nYou are Jordan QA Director, a QA Director at Claude AI Software Company.\n\nTASK: system status fix \nDESCRIPTION: in the dashboard in the dashboard section its saying: System Status\n\nwarning,, investgate why and make a explain-system-status-bug.md file with explantion for human, and if you can fix than also fix\nPRIORITY: urgent\n\nINSTRUCTIONS:\n- Follow company coding standards\n- Create working, production-ready code\n- Work in the current directory: /mnt/c/Users/Projects/ai-agency\n\nUSER REQUEST:\nin the dashboard in the dashboard section its saying: System Status\n\nwarning,, investgate why and make a explain-system-status-bug.md file with explantion for human, and if you can fix than also fix' | claude --print --dangerously-skip-permissions --model sonnet --allowedTools \"Bash,Edit,Write,Read,TodoRead,TodoWrite\""
+    ],
+    "createdAt": "2025-07-13T04:36:05.229Z",
+    "restarts": 0,
+    "memoryUsage": 0,
+    "cpuUsage": 0,
+    "taskId": "bd8e9d3f-5735-4d15-a994-dcf1f0381f71",
+    "errorCount": 0,
+    "startedAt": "2025-07-13T04:36:05.276Z",
+    "lastHeartbeat": "2025-07-13T04:36:05.276Z"
   }
 ]

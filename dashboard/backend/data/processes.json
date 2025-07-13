@@ -5,7 +5,7 @@
     "role": "Project Manager",
     "employeeId": "emp_001",
     "pid": 10072,
-    "status": "running",
+    "status": "stopped",
     "command": "wsl.exe",
     "args": [
       "bash",
@@ -14,11 +14,34 @@
     ],
     "createdAt": "2025-07-13T14:20:22.376Z",
     "restarts": 0,
-    "memoryUsage": 0,
+    "memoryUsage": 6418432,
     "cpuUsage": 0,
     "taskId": "337c64e2-bc92-4003-9ade-fbb197bfdd2a",
     "errorCount": 0,
     "startedAt": "2025-07-13T14:20:22.428Z",
-    "lastHeartbeat": "2025-07-13T14:20:22.428Z"
+    "lastHeartbeat": "2025-07-13T14:22:14.293Z",
+    "stoppedAt": "2025-07-13T14:22:45.754Z"
+  },
+  {
+    "id": "3528cd38-589c-4558-b9cd-94a966f507ec",
+    "name": "push to git",
+    "role": "Project Manager",
+    "employeeId": "emp_001",
+    "pid": 8864,
+    "status": "running",
+    "command": "wsl.exe",
+    "args": [
+      "bash",
+      "-c",
+      "echo 'CORPORATE CONTEXT:\nYou are Alex Project Manager, a Project Manager at Claude AI Software Company.\n\nTASK: push to git\nDESCRIPTION: push the project to git repo\nPRIORITY: urgent\n\nINSTRUCTIONS:\n- Follow company coding standards\n- Create working, production-ready code\n- Work in the current directory: /mnt/c/Users/Projects/ai-agency\n\nUSER REQUEST:\npush the project to git repo' | claude --print --dangerously-skip-permissions --model sonnet --allowedTools \"Bash,Edit,Write,Read,TodoRead,TodoWrite\""
+    ],
+    "createdAt": "2025-07-13T14:31:48.064Z",
+    "restarts": 0,
+    "memoryUsage": 0,
+    "cpuUsage": 0,
+    "taskId": "2e52ff4f-5df0-4dcd-a32e-c47ae637fd2e",
+    "errorCount": 0,
+    "startedAt": "2025-07-13T14:31:48.098Z",
+    "lastHeartbeat": "2025-07-13T14:31:48.098Z"
   }
 ]

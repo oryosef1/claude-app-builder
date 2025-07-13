@@ -62,7 +62,7 @@
   },
   {
     "id": "337c64e2-bc92-4003-9ade-fbb197bfdd2a",
-    "status": "pending",
+    "status": "resolved",
     "createdAt": "2025-07-13T14:20:08.475Z",
     "retryCount": 0,
     "title": "commit",
@@ -70,6 +70,36 @@
     "priority": "urgent",
     "assignedTo": "emp_001",
     "updatedAt": "2025-07-13T14:20:08.475Z",
+    "progress": 100,
+    "skillsRequired": [],
+    "estimatedDuration": 0,
+    "maxRetries": 3,
+    "comments": [
+      {
+        "id": "758720fb-0635-4ab7-8ffc-4e99307995ec",
+        "text": "commit succesfully",
+        "authorId": "system",
+        "authorName": "System",
+        "createdAt": "2025-07-13T14:23:17.655Z",
+        "type": "resolution"
+      }
+    ],
+    "processId": "a7d26c14-edf3-46ed-8b95-dcc6d0347b8f",
+    "assignedAt": "2025-07-13T14:20:22.439Z",
+    "startedAt": "2025-07-13T14:20:22.439Z",
+    "completedAt": "2025-07-13T14:22:42.868Z",
+    "resolvedAt": "2025-07-13T14:23:17.654Z"
+  },
+  {
+    "id": "2e52ff4f-5df0-4dcd-a32e-c47ae637fd2e",
+    "status": "pending",
+    "createdAt": "2025-07-13T14:31:45.639Z",
+    "retryCount": 0,
+    "title": "push to git",
+    "description": "push the project to git repo",
+    "priority": "urgent",
+    "assignedTo": "emp_001",
+    "updatedAt": "2025-07-13T14:31:45.639Z",
     "progress": 0,
     "skillsRequired": [],
     "estimatedDuration": 0,
